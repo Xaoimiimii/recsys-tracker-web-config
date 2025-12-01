@@ -1,0 +1,216 @@
+.container {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-sidebar-bg);
+  padding: 2rem;
+  overflow: hidden;
+}
+
+.card {
+  position: relative;
+  background-color: var(--color-white);
+  border-radius: 1.5rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  width: 100%;
+  max-width: 1000px;
+  max-height: calc(100vh - 4rem);
+  border: 1px solid var(--color-border);
+  display: flex;
+  overflow: hidden;
+}
+
+.card.signUpMode .illustrationSide {
+  order: 2;
+}
+
+.card.signUpMode .formSide {
+  order: 1;
+}
+
+.illustrationSide {
+  flex: 1;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3.5rem 3rem;
+  position: relative;
+}
+
+.illustrationContent {
+  text-align: center;
+  color: white;
+}
+
+.imageContainer {
+  width: 20rem;
+  height: 20rem;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.authImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.brandTitle {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.brandTitleReco {
+  color: var(--color-text-main);
+}
+
+.brandTitleTrack {
+  color: var(--color-primary);
+}
+
+.brandSubtitle {
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  max-width: 350px;
+  margin: 0 auto;
+}
+
+.formSide {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  position: relative;
+
+}
+
+.formContent {
+  width: 100%;
+  max-width: 400px;
+}
+
+.formTitle {
+  font-size: 1rem;
+  font-weight: bold;
+  color: var(--color-text-main);
+  margin-bottom: 0.25rem;
+}
+
+.formSubtitle {
+  color: var(--color-text-secondary);
+  margin-bottom: 1.25rem;
+  font-size: 0.875rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.input {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  outline: none;
+  transition: all 0.2s;
+  font-size: 0.95rem;
+}
+
+.input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.submitButton {
+  width: 100%;
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  padding: 0.875rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3);
+  font-size: 1rem;
+  margin-top: 0.5rem;
+}
+
+.submitButton:hover {
+  background-color: var(--color-primary-hover);
+  box-shadow: 0 6px 12px -2px rgba(37, 99, 235, 0.4);
+}
+
+.toggleText {
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  margin-top: 1rem;
+}
+
+.toggleButton {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.toggleButton:hover {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .card {
+    flex-direction: column;
+    min-height: auto;
+  }
+  
+  .card.signUpMode .illustrationSide,
+  .card.signUpMode .formSide {
+    order: initial;
+  }
+  
+  .illustrationSide {
+    padding: 2rem;
+  }
+  
+  .formSide {
+    padding: 2rem;
+  }
+  
+  .brandTitle {
+    font-size: 2rem;
+  }
+  
+  .formTitle {
+    font-size: 1.5rem;
+  }
+}

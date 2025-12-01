@@ -1,0 +1,223 @@
+.container {
+  display: flex;
+  height: 100vh;
+  background-color: var(--color-sidebar-bg);
+  color: var(--color-text-main);
+  font-family: sans-serif;
+}
+
+.sidebar {
+  width: 14rem;
+  background-color: var(--color-white);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 10;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.sidebarHeader {
+  padding: 1.25rem 1.75rem;
+}
+
+.logoContainer {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  font-weight: bold;
+  font-size: 1.5rem;
+}
+
+.logoReco {
+  color: var(--color-primary);
+}
+
+.logoTrack {
+  color: var(--color-indigo-400);
+}
+
+.nav {
+  flex: 1;
+  padding: 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.navButton {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.navButton:not(.navButtonActive) {
+  color: var(--color-text-secondary);
+}
+
+.navButton:not(.navButtonActive):hover {
+  background-color: var(--color-sidebar-bg);
+}
+
+.navButtonActive {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.main {
+  flex: 1;
+  margin-left: 14rem;
+  overflow-y: auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 2rem;
+  top: 0;
+  background-color: var(--color-white);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  position: sticky;
+  z-index: 5;
+}
+
+.headerTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  color: var(--color-text-main);
+  margin-left: 0.5rem;
+}
+
+.userSection {
+  position: relative;
+}
+
+.userAvatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.userAvatar:hover {
+  background-color: var(--color-primary-hover);
+  color: var(--color-white);
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background-color: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  min-width: 12rem;
+  overflow: hidden;
+  z-index: 50;
+  animation: dropdownFadeIn 0.2s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdownHeader {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-bg-light);
+}
+
+.userEmail {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  word-break: break-all;
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: none;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.dropdownItem:hover {
+  background-color: var(--color-bg-light);
+  color: var(--color-primary);
+}
+
+.content {
+  padding: 2rem;
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+.navigation-arrows {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.nav-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 999rem;
+  color: var(--color-text-secondary);
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav-arrow:not(.nav-arrow-disabled):hover {
+  background-color: var(--color-bg-light);
+  color: var(--color-primary);
+}
+
+.nav-arrow-disabled {
+  color: var(--color-text-tertiary);
+  cursor: not-allowed;
+  opacity: 0.4;
+}

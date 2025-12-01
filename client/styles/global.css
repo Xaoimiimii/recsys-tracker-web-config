@@ -1,0 +1,47 @@
+:root {
+  /* Primary Colors */
+  --color-primary: #2AA79B;
+  --color-primary-light: #E5F7F6;
+  --color-primary-hover: #238E85;
+
+  /* Neutral Colors */
+  --color-text-main: #1A1D23;
+  --color-text-secondary: #5A5F68;
+  --color-text-tertiary: #8C929B;
+  --color-border: #E5E7EB;
+  --color-sidebar-bg: #F6FBFA;
+  --color-bg-light: #F3F5F5;
+  --color-white: #FFFFFF;
+
+  /* Status Colors */
+  --color-success: #10B981;
+  --color-success-light: #D1FAE5;
+  --color-warning: #F59E0B;
+  --color-warning-light: #FEF3C7;
+  --color-danger: #EF4444;
+  --color-danger-light: #FEE2E2;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: var(--color-text-main);
+}
+
+/* Áp dụng font Lato cho tất cả các element */
+body, button, input, textarea, select, p, span, div, h1, h2, h3, h4, h5, h6, a, label, li {
+  font-family: 'Lato', sans-serif !important;
+}
+
+code {
+  font-family: 'Courier New', Courier, monospace;
+}
