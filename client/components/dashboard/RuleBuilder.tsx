@@ -102,6 +102,18 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
               <option value="regex">Regex Selector</option>
               <option value="url">URL Pattern</option>
             </select>
+            <select 
+              className={styles.selectorMethodSelect}
+              value="contains"
+            >
+              <option value="contains">Contains</option>
+              <option value="not_contains">Does Not Contain</option>
+              <option value="equals">Equals</option>
+              <option value="not_equals">Does Not Equal</option>
+              <option value="starts_with">Starts With</option>
+              <option value="ends_with">Ends With</option>
+              <option value="match_regex">Match Regex</option>
+            </select>
             <input 
               type="text" 
               className={styles.selectorInput}
@@ -125,13 +137,22 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
           <div className={styles.selectorInputGroup}>
             <select 
               className={styles.selectorMethodSelect}
+              value="url"
+            >
+              <option value="url">URL Pattern</option>
+              <option value="css">CSS Selector</option>
+              <option value="dom_path">DOM Path</option>
+              <option value="custom">Custom Condition</option>
+            </select>
+            <select 
+              className={styles.selectorMethodSelect}
               value={conditionType}
               onChange={e => setConditionType(e.target.value)}
             >
-              <option value="match">Match</option>
-              <option value="not_match">Does Not Match</option>
               <option value="contains">Contains</option>
               <option value="not_contains">Does Not Contain</option>
+              <option value="equals">Equals</option>
+              <option value="not_equals">Does Not Equal</option>
               <option value="starts_with">Starts With</option>
               <option value="ends_with">Ends With</option>
               <option value="match_regex">Match Regex</option>
@@ -154,28 +175,43 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
           </h4>
           <div className={styles.extractionList}>
             {extraction.map((rule, idx) => (
-              <div key={idx} className={styles.extractionItem}>
-                 <div className={styles.extractionField}>
-                    {rule.field}
-                 </div>
-                 <select 
-                    className={styles.extractionMethod}
+              <div key={idx} className={styles.extractionRow}>
+                <label className={styles.selectorLabel}>
+                  {rule.field === 'itemId' ? 'Item ID' : rule.field === 'userId' ? 'User ID' : rule.field}
+                </label>
+                <div className={styles.selectorInputGroup}>
+                  <select 
+                    className={styles.selectorMethodSelect}
                     value={rule.method}
                     onChange={e => updateExtraction(idx, 'method', e.target.value)}
-                 >
-                    <option value="static">Static Value</option>
-                    <option value="css_attribute">DOM Attribute</option>
-                    <option value="inner_text">Inner Text</option>
+                  >
+                    <option value="css_attribute">CSS Selector</option>
+                    <option value="dom_path">DOM Path</option>
                     <option value="url_param">URL Param</option>
                     <option value="js_variable">JS Variable</option>
-                 </select>
-                 <input 
+                    <option value="inner_text">Inner Text</option>
+                    <option value="static">Static Value</option>
+                  </select>
+                  <select 
+                    className={styles.selectorMethodSelect}
+                    value="contains"
+                  >
+                    <option value="contains">Contains</option>
+                    <option value="not_contains">Does Not Contain</option>
+                    <option value="equals">Equals</option>
+                    <option value="not_equals">Does Not Equal</option>
+                    <option value="starts_with">Starts With</option>
+                    <option value="ends_with">Ends With</option>
+                    <option value="match_regex">Match Regex</option>
+                  </select>
+                  <input 
                     type="text" 
-                    className={styles.extractionValue}
-                    placeholder={rule.method === 'static' ? 'Value...' : 'Attribute/Selector/Var Name...'}
+                    className={styles.selectorInput}
+                    placeholder={rule.method === 'static' ? 'Value...' : rule.method === 'js_variable' ? 'window.USER_ID' : 'Attribute/Selector/Var Name...'}
                     value={rule.value}
                     onChange={e => updateExtraction(idx, 'value', e.target.value)}
-                 />
+                  />
+                </div>
               </div>
             ))}
           </div>
