@@ -105,6 +105,9 @@ export type DomainScalarFieldEnum = (typeof DomainScalarFieldEnum)[keyof typeof 
 
 export const DomainReturnScalarFieldEnum = {
   DomainID: 'DomainID',
+  SlotName: 'SlotName',
+  Value: 'Value',
+  TargetUrl: 'TargetUrl',
   ReturnMethodID: 'ReturnMethodID'
 } as const
 
@@ -113,9 +116,7 @@ export type DomainReturnScalarFieldEnum = (typeof DomainReturnScalarFieldEnum)[k
 
 export const ReturnMethodScalarFieldEnum = {
   Id: 'Id',
-  Name: 'Name',
-  Value: 'Value',
-  TargetUrl: 'TargetUrl'
+  Name: 'Name'
 } as const
 
 export type ReturnMethodScalarFieldEnum = (typeof ReturnMethodScalarFieldEnum)[keyof typeof ReturnMethodScalarFieldEnum]

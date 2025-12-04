@@ -37,22 +37,16 @@ export type ReturnMethodSumAggregateOutputType = {
 export type ReturnMethodMinAggregateOutputType = {
   Id: number | null
   Name: string | null
-  Value: string | null
-  TargetUrl: string | null
 }
 
 export type ReturnMethodMaxAggregateOutputType = {
   Id: number | null
   Name: string | null
-  Value: string | null
-  TargetUrl: string | null
 }
 
 export type ReturnMethodCountAggregateOutputType = {
   Id: number
   Name: number
-  Value: number
-  TargetUrl: number
   _all: number
 }
 
@@ -68,22 +62,16 @@ export type ReturnMethodSumAggregateInputType = {
 export type ReturnMethodMinAggregateInputType = {
   Id?: true
   Name?: true
-  Value?: true
-  TargetUrl?: true
 }
 
 export type ReturnMethodMaxAggregateInputType = {
   Id?: true
   Name?: true
-  Value?: true
-  TargetUrl?: true
 }
 
 export type ReturnMethodCountAggregateInputType = {
   Id?: true
   Name?: true
-  Value?: true
-  TargetUrl?: true
   _all?: true
 }
 
@@ -176,8 +164,6 @@ export type ReturnMethodGroupByArgs<ExtArgs extends runtime.Types.Extensions.Int
 export type ReturnMethodGroupByOutputType = {
   Id: number
   Name: string
-  Value: string | null
-  TargetUrl: string | null
   _count: ReturnMethodCountAggregateOutputType | null
   _avg: ReturnMethodAvgAggregateOutputType | null
   _sum: ReturnMethodSumAggregateOutputType | null
@@ -206,16 +192,12 @@ export type ReturnMethodWhereInput = {
   NOT?: Prisma.ReturnMethodWhereInput | Prisma.ReturnMethodWhereInput[]
   Id?: Prisma.IntFilter<"ReturnMethod"> | number
   Name?: Prisma.StringFilter<"ReturnMethod"> | string
-  Value?: Prisma.StringNullableFilter<"ReturnMethod"> | string | null
-  TargetUrl?: Prisma.StringNullableFilter<"ReturnMethod"> | string | null
   DomainReturns?: Prisma.DomainReturnListRelationFilter
 }
 
 export type ReturnMethodOrderByWithRelationInput = {
   Id?: Prisma.SortOrder
   Name?: Prisma.SortOrder
-  Value?: Prisma.SortOrderInput | Prisma.SortOrder
-  TargetUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   DomainReturns?: Prisma.DomainReturnOrderByRelationAggregateInput
 }
 
@@ -225,16 +207,12 @@ export type ReturnMethodWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.ReturnMethodWhereInput[]
   NOT?: Prisma.ReturnMethodWhereInput | Prisma.ReturnMethodWhereInput[]
   Name?: Prisma.StringFilter<"ReturnMethod"> | string
-  Value?: Prisma.StringNullableFilter<"ReturnMethod"> | string | null
-  TargetUrl?: Prisma.StringNullableFilter<"ReturnMethod"> | string | null
   DomainReturns?: Prisma.DomainReturnListRelationFilter
 }, "Id">
 
 export type ReturnMethodOrderByWithAggregationInput = {
   Id?: Prisma.SortOrder
   Name?: Prisma.SortOrder
-  Value?: Prisma.SortOrderInput | Prisma.SortOrder
-  TargetUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.ReturnMethodCountOrderByAggregateInput
   _avg?: Prisma.ReturnMethodAvgOrderByAggregateInput
   _max?: Prisma.ReturnMethodMaxOrderByAggregateInput
@@ -248,58 +226,42 @@ export type ReturnMethodScalarWhereWithAggregatesInput = {
   NOT?: Prisma.ReturnMethodScalarWhereWithAggregatesInput | Prisma.ReturnMethodScalarWhereWithAggregatesInput[]
   Id?: Prisma.IntWithAggregatesFilter<"ReturnMethod"> | number
   Name?: Prisma.StringWithAggregatesFilter<"ReturnMethod"> | string
-  Value?: Prisma.StringNullableWithAggregatesFilter<"ReturnMethod"> | string | null
-  TargetUrl?: Prisma.StringNullableWithAggregatesFilter<"ReturnMethod"> | string | null
 }
 
 export type ReturnMethodCreateInput = {
   Name: string
-  Value?: string | null
-  TargetUrl?: string | null
   DomainReturns?: Prisma.DomainReturnCreateNestedManyWithoutReturnMethodInput
 }
 
 export type ReturnMethodUncheckedCreateInput = {
   Id?: number
   Name: string
-  Value?: string | null
-  TargetUrl?: string | null
   DomainReturns?: Prisma.DomainReturnUncheckedCreateNestedManyWithoutReturnMethodInput
 }
 
 export type ReturnMethodUpdateInput = {
   Name?: Prisma.StringFieldUpdateOperationsInput | string
-  Value?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  TargetUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   DomainReturns?: Prisma.DomainReturnUpdateManyWithoutReturnMethodNestedInput
 }
 
 export type ReturnMethodUncheckedUpdateInput = {
   Id?: Prisma.IntFieldUpdateOperationsInput | number
   Name?: Prisma.StringFieldUpdateOperationsInput | string
-  Value?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  TargetUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   DomainReturns?: Prisma.DomainReturnUncheckedUpdateManyWithoutReturnMethodNestedInput
 }
 
 export type ReturnMethodCreateManyInput = {
   Id?: number
   Name: string
-  Value?: string | null
-  TargetUrl?: string | null
 }
 
 export type ReturnMethodUpdateManyMutationInput = {
   Name?: Prisma.StringFieldUpdateOperationsInput | string
-  Value?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  TargetUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type ReturnMethodUncheckedUpdateManyInput = {
   Id?: Prisma.IntFieldUpdateOperationsInput | number
   Name?: Prisma.StringFieldUpdateOperationsInput | string
-  Value?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  TargetUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type ReturnMethodScalarRelationFilter = {
@@ -310,8 +272,6 @@ export type ReturnMethodScalarRelationFilter = {
 export type ReturnMethodCountOrderByAggregateInput = {
   Id?: Prisma.SortOrder
   Name?: Prisma.SortOrder
-  Value?: Prisma.SortOrder
-  TargetUrl?: Prisma.SortOrder
 }
 
 export type ReturnMethodAvgOrderByAggregateInput = {
@@ -321,15 +281,11 @@ export type ReturnMethodAvgOrderByAggregateInput = {
 export type ReturnMethodMaxOrderByAggregateInput = {
   Id?: Prisma.SortOrder
   Name?: Prisma.SortOrder
-  Value?: Prisma.SortOrder
-  TargetUrl?: Prisma.SortOrder
 }
 
 export type ReturnMethodMinOrderByAggregateInput = {
   Id?: Prisma.SortOrder
   Name?: Prisma.SortOrder
-  Value?: Prisma.SortOrder
-  TargetUrl?: Prisma.SortOrder
 }
 
 export type ReturnMethodSumOrderByAggregateInput = {
@@ -350,21 +306,13 @@ export type ReturnMethodUpdateOneRequiredWithoutDomainReturnsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ReturnMethodUpdateToOneWithWhereWithoutDomainReturnsInput, Prisma.ReturnMethodUpdateWithoutDomainReturnsInput>, Prisma.ReturnMethodUncheckedUpdateWithoutDomainReturnsInput>
 }
 
-export type NullableStringFieldUpdateOperationsInput = {
-  set?: string | null
-}
-
 export type ReturnMethodCreateWithoutDomainReturnsInput = {
   Name: string
-  Value?: string | null
-  TargetUrl?: string | null
 }
 
 export type ReturnMethodUncheckedCreateWithoutDomainReturnsInput = {
   Id?: number
   Name: string
-  Value?: string | null
-  TargetUrl?: string | null
 }
 
 export type ReturnMethodCreateOrConnectWithoutDomainReturnsInput = {
@@ -385,15 +333,11 @@ export type ReturnMethodUpdateToOneWithWhereWithoutDomainReturnsInput = {
 
 export type ReturnMethodUpdateWithoutDomainReturnsInput = {
   Name?: Prisma.StringFieldUpdateOperationsInput | string
-  Value?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  TargetUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type ReturnMethodUncheckedUpdateWithoutDomainReturnsInput = {
   Id?: Prisma.IntFieldUpdateOperationsInput | number
   Name?: Prisma.StringFieldUpdateOperationsInput | string
-  Value?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  TargetUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 
@@ -430,8 +374,6 @@ export type ReturnMethodCountOutputTypeCountDomainReturnsArgs<ExtArgs extends ru
 export type ReturnMethodSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   Id?: boolean
   Name?: boolean
-  Value?: boolean
-  TargetUrl?: boolean
   DomainReturns?: boolean | Prisma.ReturnMethod$DomainReturnsArgs<ExtArgs>
   _count?: boolean | Prisma.ReturnMethodCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["returnMethod"]>
@@ -439,25 +381,19 @@ export type ReturnMethodSelect<ExtArgs extends runtime.Types.Extensions.Internal
 export type ReturnMethodSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   Id?: boolean
   Name?: boolean
-  Value?: boolean
-  TargetUrl?: boolean
 }, ExtArgs["result"]["returnMethod"]>
 
 export type ReturnMethodSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   Id?: boolean
   Name?: boolean
-  Value?: boolean
-  TargetUrl?: boolean
 }, ExtArgs["result"]["returnMethod"]>
 
 export type ReturnMethodSelectScalar = {
   Id?: boolean
   Name?: boolean
-  Value?: boolean
-  TargetUrl?: boolean
 }
 
-export type ReturnMethodOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"Id" | "Name" | "Value" | "TargetUrl", ExtArgs["result"]["returnMethod"]>
+export type ReturnMethodOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"Id" | "Name", ExtArgs["result"]["returnMethod"]>
 export type ReturnMethodInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   DomainReturns?: boolean | Prisma.ReturnMethod$DomainReturnsArgs<ExtArgs>
   _count?: boolean | Prisma.ReturnMethodCountOutputTypeDefaultArgs<ExtArgs>
@@ -473,8 +409,6 @@ export type $ReturnMethodPayload<ExtArgs extends runtime.Types.Extensions.Intern
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     Id: number
     Name: string
-    Value: string | null
-    TargetUrl: string | null
   }, ExtArgs["result"]["returnMethod"]>
   composites: {}
 }
@@ -901,8 +835,6 @@ export interface Prisma__ReturnMethodClient<T, Null = never, ExtArgs extends run
 export interface ReturnMethodFieldRefs {
   readonly Id: Prisma.FieldRef<"ReturnMethod", 'Int'>
   readonly Name: Prisma.FieldRef<"ReturnMethod", 'String'>
-  readonly Value: Prisma.FieldRef<"ReturnMethod", 'String'>
-  readonly TargetUrl: Prisma.FieldRef<"ReturnMethod", 'String'>
 }
     
 
