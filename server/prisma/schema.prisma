@@ -1,0 +1,149 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Ternant {
+  Id                Int      @id @default(autoincrement())
+  Name              String   @unique
+  Username          String   @unique
+  Password          String
+
+  Domains           Domain[]
+}
+
+model Domain {
+  Id                Int      @id @default(autoincrement())
+  Key               String   @unique
+  Url               String
+  Type              Int?
+  CreatedAt         DateTime @default(now())
+
+  TernantID         Int
+  Ternant           Ternant  @relation(fields: [TernantID], references: [Id])
+  Rules             Rule[]
+  DomainReturns     DomainReturn[]
+}
+
+model DomainReturn {
+  DomainID          Int
+  ReturnMethodID    Int
+
+  Domain            Domain       @relation(fields: [DomainID], references: [Id])
+  ReturnMethod      ReturnMethod @relation(fields: [ReturnMethodID], references: [Id])
+
+  @@id([DomainID, ReturnMethodID])
+}
+
+model ReturnMethod {
+  Id                Int     @id @default(autoincrement())
+  Name              String
+  Value             String?
+  TargetUrl         String?
+
+  DomainReturns     DomainReturn[]
+}
+
+model Rule {
+  Id                Int    @id @default(autoincrement())
+  Name              String
+
+  DomainID          Int
+  Domain            Domain @relation(fields: [DomainID], references: [Id])
+
+  TriggerEventID    Int
+  TriggerEvent      TriggerEvent @relation(fields: [TriggerEventID], references: [Id])
+
+  TargetElementID   Int
+  TargetElement     TargetElement @relation(fields: [TargetElementID], references: [Id])
+
+  Conditions        Condition[]
+  PayloadConfigs    PayloadConfig[]
+}
+
+model TriggerEvent {
+  Id                Int    @id @default(autoincrement())
+  Name              String
+
+  Rules Rule[]
+}
+
+model TargetElement {
+  Id                Int    @id @default(autoincrement())
+  Value             String
+
+  EventPatternID    Int
+  EventPattern      EventPattern @relation(fields: [EventPatternID], references: [Id])
+
+  OperatorID        Int
+  Operator          Operator @relation(fields: [OperatorID], references: [Id])
+
+  Rules Rule[]
+}
+
+model Condition {
+  Id                Int    @id @default(autoincrement())
+  Value             String
+
+  RuleID            Int
+  Rule              Rule @relation(fields: [RuleID], references: [Id])  
+
+  EventPatternID    Int
+  EventPattern      EventPattern @relation(fields: [EventPatternID], references: [Id])
+
+  OperatorID        Int
+  Operator          Operator @relation(fields: [OperatorID], references: [Id])
+}
+
+model PayloadConfig {
+  PayloadPatternID  Int
+  RuleID            Int
+  
+  Value String?
+  Type  String?
+
+  PayloadPattern    PayloadPattern @relation(fields: [PayloadPatternID], references: [Id])
+  Rule              Rule           @relation(fields: [RuleID], references: [Id])
+
+  OperatorID        Int
+  Operator          Operator @relation(fields: [OperatorID], references: [Id])
+
+  @@id([PayloadPatternID, RuleID])
+}
+
+model PayloadPattern {
+  Id                Int     @id @default(autoincrement())
+  Name              String
+  Type              String?
+
+  PayloadConfigs    PayloadConfig[]
+}
+
+
+model EventPattern {
+  Id                Int    @id @default(autoincrement())
+  Name              String
+
+  TargetElements    TargetElement[]
+  Conditions        Condition[]
+}
+
+model Operator {
+  Id                Int    @id @default(autoincrement())
+  Name              String
+
+  Conditions        Condition[]
+  TargetElements    TargetElement[]
+  PayloadConfigs    PayloadConfig[]
+}
