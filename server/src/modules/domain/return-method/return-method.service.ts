@@ -23,7 +23,6 @@ export class ReturnMethodService {
     }
 
     async createReturnMethods(key: string, slotName: string, returnMethodId: number, value: string, targetUrl: string) {
-        
         const domain = await this.prisma.domain.findUnique({
             where: {
                 Key: key

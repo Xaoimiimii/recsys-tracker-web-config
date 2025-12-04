@@ -1,1 +1,1 @@
-export * from './CreateDomain.dto';
+export * from './create-domain.dto';

@@ -1,7 +1,7 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { DomainService } from './domain.service';
 import { JwtAuthGuard } from '../auth/guard';
-import { CreateDomainDto } from './dto/CreateDomain.dto';
+import { CreateDomainDto } from './dto/create-domain.dto';
 
 @Controller('domain')
 export class DomainController {
