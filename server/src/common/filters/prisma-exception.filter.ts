@@ -3,6 +3,7 @@ import {
     Catch,
     ArgumentsHost,
     HttpStatus,
+    HttpException,
 } from '@nestjs/common';
 
 @Catch()
@@ -11,44 +12,54 @@ export class PrismaExceptionFilter implements ExceptionFilter {
         const ctx = host.switchToHttp();
         const response = ctx.getResponse();
 
+        // Nếu là HttpException (UnauthorizedException, NotFoundException, etc.), pass through
+        if (exception instanceof HttpException) {
+            const status = exception.getStatus();
+            const exceptionResponse = exception.getResponse();
+            return response.status(status).json(exceptionResponse);
+        }
+
+        // Handle Prisma errors
         if (exception.code && exception.clientVersion) {
             switch (exception.code) {
                 case 'P2002': // Unique constraint
-                    return response.status(HttpStatus.BAD_REQUEST).json({
-                        statusCode: 400,
+                    return response.status(HttpStatus.CONFLICT).json({
+                        statusCode: HttpStatus.CONFLICT,
                         message: `Unique constraint failed on field(s): ${exception.meta?.target}`,
                     });
 
                 case 'P2003': // Foreign key fail
-                    return response.status(400).json({
-                        statusCode: 400,
+                    return response.status(HttpStatus.BAD_REQUEST).json({
+                        statusCode: HttpStatus.BAD_REQUEST,
                         message: 'Foreign key constraint failed',
                     });
 
                 case 'P2025': // Record not found
-                    return response.status(404).json({
-                        statusCode: 404,
+                    return response.status(HttpStatus.NOT_FOUND).json({
+                        statusCode: HttpStatus.NOT_FOUND,
                         message: 'Record not found',
                     });
 
                 default:
-                    return response.status(500).json({
-                        statusCode: 500,
+                    return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+                        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
                         message: `Database error: ${exception.code}`,
                     });
             }
         }
 
+        // Handle Prisma validation errors
         if (exception.name === 'PrismaClientValidationError') {
-            return response.status(400).json({
-                statusCode: 400,
-                message: exception.message,
+            return response.status(HttpStatus.BAD_REQUEST).json({
+                statusCode: HttpStatus.BAD_REQUEST,
+                message: 'Validation error',
             });
         }
 
-        console.error(exception);
-        return response.status(500).json({
-            statusCode: 500,
+        // Unknown errors
+        console.error('Unhandled exception:', exception);
+        return response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+            statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
             message: 'Internal server error',
         });
     }
