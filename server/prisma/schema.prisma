@@ -38,19 +38,21 @@ model Domain {
 
 model DomainReturn {
   DomainID          Int
-  ReturnMethodID    Int
+  SlotName          String
+  Value             String?
+  TargetUrl         String?
 
   Domain            Domain       @relation(fields: [DomainID], references: [Id])
+  
+  ReturnMethodID    Int
   ReturnMethod      ReturnMethod @relation(fields: [ReturnMethodID], references: [Id])
 
-  @@id([DomainID, ReturnMethodID])
+  @@id([DomainID, SlotName])
 }
 
 model ReturnMethod {
   Id                Int     @id @default(autoincrement())
   Name              String
-  Value             String?
-  TargetUrl         String?
 
   DomainReturns     DomainReturn[]
 }
