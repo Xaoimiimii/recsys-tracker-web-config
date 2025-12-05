@@ -17,15 +17,16 @@ export class AuthController {
     @Post('signin')
     async signin(@Body() dto: AuthDto, @Res({passthrough: true}) res: Response)
     {
-        const token = await this.authService.signin(dto);
-        res.cookie('AccessToken', token.accessToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none',
-            maxAge: this.config.get<number>('COOKIE_EXPIRATION'),
-        });
+        const tokens = await this.authService.signin(dto, res);
+        // res.cookie('AccessToken', token.accessToken, {
+        //     httpOnly: true,
+        //     secure: false,
+        //     sameSite: 'none',
+        //     maxAge: this.config.get<number>('COOKIE_EXPIRATION'),
+        // });
     
-        return { message: 'Đăng nhập thành công' };
+        // return { message: 'Đăng nhập thành công' };
+        return tokens;
     }
 
     @Post('signout')
@@ -37,5 +38,16 @@ export class AuthController {
             sameSite: 'none',
         });
         return { message: 'Đăng xuất thành công' };
+    }
+
+    @Post('refresh')
+    async refresh(@Res({passthrough: true}) res: Response, @Req() req)
+    {
+        const refreshToken = req.cookies['RefreshToken'];
+        if (!refreshToken) {
+            throw new Error('No refresh token provided');
+        }
+
+        return this.authService.refresh(res, refreshToken);
     }
 }

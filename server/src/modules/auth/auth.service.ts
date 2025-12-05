@@ -1,9 +1,10 @@
-import { Injectable } from "@nestjs/common";
+import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuthDto, SignUpDto } from "./dto";
 import * as argon2 from 'argon2';
 import { JwtService } from "@nestjs/jwt/dist/jwt.service";
 import { ConfigService } from "@nestjs/config";
+import { Response } from "express";
 
 @Injectable()
 export class AuthService {
@@ -30,34 +31,70 @@ export class AuthService {
         return ternant;
     }
 
-    async signin(dto: AuthDto) {
+    async signin(dto: AuthDto, res: Response) {
         const ternant = await this.prisma.ternant.findUnique({
             where: {
                 Username: dto.username
             }
         });
         if (!ternant) {
-            throw new Error('Invalid username or password');
+            throw new HttpException('Username does not exist', HttpStatus.UNAUTHORIZED);
         }
         const isPasswordValid = await argon2.verify(ternant.Password, dto.password);
         if (!isPasswordValid) {
-            throw new Error('Invalid username or password');
+            throw new HttpException('Invalid username or password', HttpStatus.UNAUTHORIZED);
         }
 
-        return this.signToken(ternant.Id, ternant.Username);
+        const tokens = await this.signToken(ternant.Id, ternant.Username);
+
+        this.setRefreshToken(res, tokens.refreshToken);
+        
+        return tokens;
     }
 
-    async signToken(ternantId: number, username: string) : Promise<{accessToken: string}> {
+    async signToken(ternantId: number, username: string) : Promise<{accessToken: string, refreshToken: string}> {
         const payload = {
             sub: ternantId,
             username: username
         };
 
-        const token = await this.jwt.signAsync(payload, {
-            expiresIn: this.config.get('JWT_EXPIRATION'),
-            secret: this.config.get('JWT_SECRET')
+        const accessToken = await this.jwt.signAsync(payload, {
+            expiresIn: this.config.get('JWT_ACCESS_EXPIRES'),
+            secret: this.config.get('JWT_ACCESS_SECRET')
         });
 
-        return { accessToken: token };
+        const refreshToken = await this.jwt.signAsync(payload, {
+            expiresIn: this.config.get('JWT_REFRESH_EXPIRES'),
+            secret: this.config.get('JWT_REFRESH_SECRET')
+        });
+
+        return { accessToken: accessToken, refreshToken: refreshToken };
+    }
+
+    setRefreshToken(res: Response, refreshToken: string) {
+        res.cookie('RefreshToken', refreshToken, {
+            httpOnly: true,
+            secure: false,
+            sameSite: 'none',
+            maxAge: this.config.get<number>('COOKIE_EXPIRATION'),
+        });
+    }
+
+    async refresh(res: Response, token: string)
+    {
+        try {
+            const payload = await this.jwt.verifyAsync(
+                token,
+                {
+                    secret: this.config.get('JWT_REFRESH_SECRET')
+                }
+            );
+
+            const tokens = await this.signToken(payload.sub, payload.username);
+            this.setRefreshToken(res, tokens.refreshToken);
+            return { accessToken: tokens.accessToken };
+        } catch (error) {
+            throw new Error("Invalid refresh token");
+        }
     }
 }
