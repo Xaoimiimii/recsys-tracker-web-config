@@ -10,7 +10,7 @@ import { LoaderScriptPage } from './app/loader-script/LoaderScriptPage';
 import { MainLayout } from './components/layout/MainLayout';
 
 export default function App() {
-  const { user, handleLogin, handleLogout } = useAuth();
+  const { user, loading, signin, signout } = useAuth();
   const {
     container,
     setContainer,
@@ -19,24 +19,24 @@ export default function App() {
     selectDomainType,
     startOnboarding,
   } = useContainer(user);
-
+  const isAuthenticated = user !== null;
   // Start onboarding when user logs in
   useEffect(() => {
-    if (user.isAuthenticated && onboardingStep === 0 && !container) {
+    if (isAuthenticated && onboardingStep === 0 && !container) {
       startOnboarding();
     }
-  }, [user.isAuthenticated]);
-
+  }, [isAuthenticated]);
+  if (loading) return <div>Loading...</div>;
   return (
     <BrowserRouter>
       <Routes>
         <Route 
           path="/login" 
           element={
-            user.isAuthenticated ? (
+            isAuthenticated ? (
               <Navigate to="/dashboard" replace />
             ) : (
-              <AuthPage onLogin={handleLogin} />
+              <AuthPage onLogin={signin} />
             )
           } 
         />
@@ -44,7 +44,7 @@ export default function App() {
         <Route 
           path="/onboarding" 
           element={
-            !user.isAuthenticated ? (
+            !isAuthenticated ? (
               <Navigate to="/login" replace />
             ) : onboardingStep === 0 ? (
               <Navigate to="/dashboard" replace />
@@ -61,14 +61,14 @@ export default function App() {
         <Route 
           path="/dashboard/*" 
           element={
-            !user.isAuthenticated ? (
+            !isAuthenticated ? (
               <Navigate to="/login" replace />
             ) : onboardingStep > 0 ? (
               <Navigate to="/onboarding" replace />
             ) : (
               <MainLayout 
-                userEmail={user.currentUser?.email}
-                onLogout={handleLogout}
+                userEmail={user?.username}
+                onLogout={signout}
               />
             )
           }
@@ -81,7 +81,7 @@ export default function App() {
                 user={user} 
                 container={container} 
                 setContainer={setContainer} 
-                onLogout={handleLogout} 
+                onLogout={signout} 
               />
             } 
           />
@@ -117,7 +117,7 @@ export default function App() {
         <Route 
           path="*" 
           element={
-            <Navigate to={!user.isAuthenticated ? "/login" : onboardingStep > 0 ? "/onboarding" : "/dashboard"} replace />
+            <Navigate to={!isAuthenticated ? "/login" : onboardingStep > 0 ? "/onboarding" : "/dashboard"} replace />
           } 
         />
       </Routes>

@@ -16,7 +16,7 @@ datasource db {
 
 model Ternant {
   Id                Int      @id @default(autoincrement())
-  Name              String   @unique
+  Name              String   
   Username          String   @unique
   Password          String
 

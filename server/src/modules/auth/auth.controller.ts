@@ -18,7 +18,7 @@ export class AuthController {
     async signin(@Body() dto: AuthDto, @Res({passthrough: true}) res: Response)
     {
         const tokens = await this.authService.signin(dto, res);
-        // res.cookie('AccessToken', token.accessToken, {
+        // res.cookie('AccessToken', tokens.accessToken, {
         //     httpOnly: true,
         //     secure: false,
         //     sameSite: 'none',
@@ -43,7 +43,7 @@ export class AuthController {
     @Post('refresh')
     async refresh(@Res({passthrough: true}) res: Response, @Req() req)
     {
-        const refreshToken = req.cookies['RefreshToken'];
+        const refreshToken = req.cookies?.RefreshToken;
         if (!refreshToken) {
             throw new Error('No refresh token provided');
         }

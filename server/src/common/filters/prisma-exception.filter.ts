@@ -23,9 +23,14 @@ export class PrismaExceptionFilter implements ExceptionFilter {
         if (exception.code && exception.clientVersion) {
             switch (exception.code) {
                 case 'P2002': // Unique constraint
+                    const fields = exception.meta?.target
+                        ? Array.isArray(exception.meta.target)
+                            ? exception.meta.target.join(', ')
+                            : exception.meta.target
+                        : 'unknown';
                     return response.status(HttpStatus.CONFLICT).json({
                         statusCode: HttpStatus.CONFLICT,
-                        message: `Unique constraint failed on field(s): ${exception.meta?.target}`,
+                        message: `Unique constraint failed on field(s): ${fields}`,
                     });
 
                 case 'P2003': // Foreign key fail

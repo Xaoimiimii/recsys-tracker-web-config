@@ -1,5 +1,5 @@
 import { apiFetch } from './client';
-import type { SignUpDto, AuthDto, AuthResponse } from './types';
+import type { SignUpDto, AuthDto, AuthResponse, RefreshResponse } from './types';
 
 export const authApi = {
     signup: (data: SignUpDto) => 
@@ -17,5 +17,10 @@ export const authApi = {
     signout: () => 
         apiFetch<void>('/auth/signout', {
             method: 'POST',
+        }),
+    
+    refresh: () =>
+        apiFetch<RefreshResponse>("/auth/refresh", {
+            method: "POST",
         }),
 };

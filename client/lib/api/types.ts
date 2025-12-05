@@ -1,23 +1,41 @@
 // ==================== AUTH TYPES ====================
 
 export interface SignUpDto {
-  email: string;
+  username: string;
   password: string;
   name: string;
 }
 
 export interface AuthDto {
-  email: string;
+  username: string;
   password: string;
 }
 
 export interface AuthResponse {
-  access_token: string;
+  accessToken: string;
+  refreshToken: string;
   user: {
-    id: string;
-    email: string;
+    id: number;
+    username: string;
     name: string;
   };
+}
+
+export interface RefreshResponse {
+  accessToken: string;
+  user: {
+    id: number;
+    username: string;
+    name: string;
+  }
+}
+
+export interface UserState {
+    isAuthenticated: boolean;
+    currentUser: {
+        name: string;
+        email: string;
+    } | null;
 }
 
 // ==================== DOMAIN TYPES ====================

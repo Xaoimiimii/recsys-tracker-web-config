@@ -214,3 +214,43 @@
     font-size: 1.5rem;
   }
 }
+
+.errorMessage {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+  color: #dc2626;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.errorIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+}
+
+.successMessage {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  background-color: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 0.5rem;
+  color: #16a34a;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+
+.successIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+}
