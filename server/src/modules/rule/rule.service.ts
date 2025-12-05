@@ -133,10 +133,17 @@ export class RuleService {
         return rule;
     }
 
-    async getRulesByDomainId(domainId: number) {
+    async getRulesByDomainKey(domainKey: string) {
+        const domain = await this.prisma.domain.findUnique({
+            where: {
+                Key: domainKey,
+            },
+        });
+        if (!domain) return null;
+
         const rules = await this.prisma.rule.findMany({
             where: {
-                DomainID: domainId,
+                DomainID: domain.Id,
             },
             include: {
                 PayloadConfigs: true,

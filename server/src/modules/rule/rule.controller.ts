@@ -69,10 +69,10 @@ export class RuleController {
     }
 
     // @UseGuards(JwtAuthGuard)
-    @Get('/domain/:id')
-    async getRulesByDomainId(@Param('id', ParseIntPipe) id: number)
+    @Get('/domain/:key')
+    async getRulesByDomainKey(@Param('key') key: string)
     {
-        const rules = await this.ruleService.getRulesByDomainId(id);
+        const rules = await this.ruleService.getRulesByDomainKey(key);
         if (!rules) {
             throw new HttpException(
                 { statusCode: 404, message: 'No rules found for this domain' },
