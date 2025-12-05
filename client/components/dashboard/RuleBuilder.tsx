@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TrackingRule, TriggerType, DataExtractionRule } from '../../types';
 import { TRIGGER_ICONS } from '../../lib/constants';
+import { ruleApi, EventPattern, PayloadPattern, Operator } from '../../lib/api/';
 import styles from './RuleBuilder.module.css';
 
 interface RuleBuilderProps {
@@ -23,6 +24,36 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
   const [conditionType, setConditionType] = useState<string>('match');
   const [conditionValue, setConditionValue] = useState<string>('');
   const [extraction, setExtraction] = useState<DataExtractionRule[]>(initialRule?.extraction || DEFAULT_EXTRACTION);
+  
+  // API data states
+  const [eventPatterns, setEventPatterns] = useState<EventPattern[]>([]);
+  const [payloadPatterns, setPayloadPatterns] = useState<PayloadPattern[]>([]);
+  const [operators, setOperators] = useState<Operator[]>([]);
+  const [isLoadingOptions, setIsLoadingOptions] = useState(true);
+
+  // Fetch dropdown options from API
+  useEffect(() => {
+    const fetchOptions = async () => {
+      setIsLoadingOptions(true);
+      try {
+        const [events, payloads, ops] = await Promise.all([
+          ruleApi.getEventPatterns(),
+          ruleApi.getPayloadPatterns(),
+          ruleApi.getOperators(),
+        ]);
+        
+        setEventPatterns(events);
+        setPayloadPatterns(payloads);
+        setOperators(ops);
+      } catch (error) {
+        console.error('Failed to fetch rule options:', error);
+      } finally {
+        setIsLoadingOptions(false);
+      }
+    };
+
+    fetchOptions();
+  }, []);
 
   const updateExtraction = (index: number, field: keyof DataExtractionRule, value: string) => {
     const newExt = [...extraction];
@@ -73,11 +104,10 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
                 value={trigger}
                 onChange={e => setTrigger(e.target.value as TriggerType)}
                 >
-                <option value="click">Click Element</option>
-                <option value="form_submit">Form Submission</option>
-                <option value="scroll">Scroll Depth</option>
-                <option value="view">Element View (Impression)</option>
-                <option value="timer">Time on Page</option>
+                  <option value="click">Click</option>
+                  <option value="form_submit">Form Submission</option>
+                  <option value="scroll">Scroll</option>
+                  <option value="view">Page view</option>
                 </select>
                 <div className={styles.selectIcon}>
                     {React.createElement(TRIGGER_ICONS[trigger], { size: 18 })}
@@ -96,23 +126,47 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
               className={styles.selectorMethodSelect}
               value={selectorMethod}
               onChange={e => setSelectorMethod(e.target.value)}
+              disabled={isLoadingOptions}
             >
-              <option value="css">CSS Selector</option>
-              <option value="dom_path">DOM Path</option>
-              <option value="regex">Regex Selector</option>
-              <option value="url">URL Pattern</option>
+              {isLoadingOptions ? (
+                <option>Loading...</option>
+              ) : eventPatterns.length > 0 ? (
+                eventPatterns.map(pattern => (
+                  <option key={pattern.Id} value={pattern.Id}>
+                    {pattern.Name}
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="css">CSS Selector</option>
+                  <option value="regex">Regex Selector</option>
+                </>
+              )}
             </select>
             <select 
               className={styles.selectorMethodSelect}
               value="contains"
+              disabled={isLoadingOptions}
             >
-              <option value="contains">Contains</option>
-              <option value="not_contains">Does Not Contain</option>
-              <option value="equals">Equals</option>
-              <option value="not_equals">Does Not Equal</option>
-              <option value="starts_with">Starts With</option>
-              <option value="ends_with">Ends With</option>
-              <option value="match_regex">Match Regex</option>
+              {isLoadingOptions ? (
+                <option>Loading operators...</option>
+              ) : operators.length > 0 ? (
+                operators.map(op => (
+                  <option key={op.Id} value={op.Id}>
+                    {op.Name}
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="contains">Contains</option>
+                  <option value="not_contains">Does Not Contain</option>
+                  <option value="equals">Equals</option>
+                  <option value="not_equals">Does Not Equal</option>
+                  <option value="starts_with">Starts With</option>
+                  <option value="ends_with">Ends With</option>
+                  <option value="match_regex">Match Regex</option>
+                </>
+              )}
             </select>
             <input 
               type="text" 
@@ -148,14 +202,27 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
               className={styles.selectorMethodSelect}
               value={conditionType}
               onChange={e => setConditionType(e.target.value)}
+              disabled={isLoadingOptions}
             >
-              <option value="contains">Contains</option>
-              <option value="not_contains">Does Not Contain</option>
-              <option value="equals">Equals</option>
-              <option value="not_equals">Does Not Equal</option>
-              <option value="starts_with">Starts With</option>
-              <option value="ends_with">Ends With</option>
-              <option value="match_regex">Match Regex</option>
+              {isLoadingOptions ? (
+                <option>Loading operators...</option>
+              ) : operators.length > 0 ? (
+                operators.map(op => (
+                  <option key={op.Id} value={op.Id}>
+                    {op.Name}
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="contains">Contains</option>
+                  <option value="not_contains">Does Not Contain</option>
+                  <option value="equals">Equals</option>
+                  <option value="not_equals">Does Not Equal</option>
+                  <option value="starts_with">Starts With</option>
+                  <option value="ends_with">Ends With</option>
+                  <option value="match_regex">Match Regex</option>
+                </>
+              )}
             </select>
             <input 
               type="text" 
@@ -184,25 +251,51 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
                     className={styles.selectorMethodSelect}
                     value={rule.method}
                     onChange={e => updateExtraction(idx, 'method', e.target.value)}
+                    disabled={isLoadingOptions}
                   >
-                    <option value="css_attribute">CSS Selector</option>
-                    <option value="dom_path">DOM Path</option>
-                    <option value="url_param">URL Param</option>
-                    <option value="js_variable">JS Variable</option>
-                    <option value="inner_text">Inner Text</option>
-                    <option value="static">Static Value</option>
+                    {isLoadingOptions ? (
+                      <option>Loading patterns...</option>
+                    ) : payloadPatterns.length > 0 ? (
+                      payloadPatterns.map(pattern => (
+                        <option key={pattern.Id} value={pattern.Id}>
+                          {pattern.Name}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="css_attribute">CSS Selector</option>
+                        <option value="dom_path">DOM Path</option>
+                        <option value="url_param">URL Param</option>
+                        <option value="js_variable">JS Variable</option>
+                        <option value="inner_text">Inner Text</option>
+                        <option value="static">Static Value</option>
+                      </>
+                    )}
                   </select>
                   <select 
                     className={styles.selectorMethodSelect}
                     value="contains"
+                    disabled={isLoadingOptions}
                   >
-                    <option value="contains">Contains</option>
-                    <option value="not_contains">Does Not Contain</option>
-                    <option value="equals">Equals</option>
-                    <option value="not_equals">Does Not Equal</option>
-                    <option value="starts_with">Starts With</option>
-                    <option value="ends_with">Ends With</option>
-                    <option value="match_regex">Match Regex</option>
+                    {isLoadingOptions ? (
+                      <option>Loading operators...</option>
+                    ) : operators.length > 0 ? (
+                      operators.map(op => (
+                        <option key={op.Id} value={op.Id}>
+                          {op.Name}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="contains">Contains</option>
+                        <option value="not_contains">Does Not Contain</option>
+                        <option value="equals">Equals</option>
+                        <option value="not_equals">Does Not Equal</option>
+                        <option value="starts_with">Starts With</option>
+                        <option value="ends_with">Ends With</option>
+                        <option value="match_regex">Match Regex</option>
+                      </>
+                    )}
                   </select>
                   <input 
                     type="text" 

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, OutputMethod, DisplayMethodConfig } from '../../types';
 import { Edit2, Trash2, Plus } from 'lucide-react';
+import { returnMethodApi } from '../../lib/api/';
 import styles from './RecommendationPage.module.css';
 
 interface RecommendationPageProps {
@@ -15,8 +16,44 @@ export const RecommendationPage: React.FC<RecommendationPageProps> = ({ containe
     const [slot, setSlot] = useState('');
     const [targetUrl, setTargetUrl] = useState('');
     const [targetSelector, setTargetSelector] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const displayMethods = container?.outputConfig.displayMethods || [];
+
+    // Fetch return methods when component mounts or container changes
+    useEffect(() => {
+        const fetchReturnMethods = async () => {
+            if (!container?.uuid) return;
+            
+            setIsLoading(true);
+            try {
+                const methods = await returnMethodApi.getByDomainKey(container.uuid);
+                
+                // Convert API response to DisplayMethodConfig format
+                const displayMethodConfigs: DisplayMethodConfig[] = methods.map(m => ({
+                    id: m.id,
+                    slot: m.slot,
+                    targetUrl: m.targetUrl,
+                    method: m.method as OutputMethod,
+                    targetSelector: m.targetSelector,
+                }));
+
+                setContainer({
+                    ...container,
+                    outputConfig: {
+                        ...container.outputConfig,
+                        displayMethods: displayMethodConfigs
+                    }
+                });
+            } catch (error) {
+                console.error('Failed to fetch return methods:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchReturnMethods();
+    }, [container?.uuid]); // Only depend on uuid to avoid infinite loop
 
     const getMethodDescription = (method: OutputMethod) => {
         switch(method) {
@@ -75,36 +112,53 @@ export const RecommendationPage: React.FC<RecommendationPageProps> = ({ containe
         setTargetSelector('');
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!container || !slot.trim() || !targetUrl.trim()) {
             alert('Please enter full details');
             return;
         }
 
-        const newMethod: DisplayMethodConfig = {
-            id: editingMethod?.id || `dm-${Date.now()}`,
-            slot: slot.trim(),
-            targetUrl: targetUrl.trim(),
-            method: selectedMethod,
-            targetSelector: selectedMethod === 'inline_injection' ? targetSelector : undefined
-        };
+        setIsLoading(true);
+        try {
+            // Call API to create return method
+            const response = await returnMethodApi.create({
+                domainKey: container.uuid,
+                method: selectedMethod,
+                slot: slot.trim(),
+                targetUrl: targetUrl.trim(),
+                targetSelector: selectedMethod === 'inline_injection' ? targetSelector : undefined
+            });
 
-        let updatedMethods: DisplayMethodConfig[];
-        if (editingMethod) {
-            updatedMethods = displayMethods.map(m => m.id === editingMethod.id ? newMethod : m);
-        } else {
-            updatedMethods = [...displayMethods, newMethod];
-        }
+            const newMethod: DisplayMethodConfig = {
+                id: response.id,
+                slot: response.slot,
+                targetUrl: response.targetUrl,
+                method: response.method as OutputMethod,
+                targetSelector: response.targetSelector
+            };
 
-        setContainer({
-            ...container,
-            outputConfig: {
-                ...container.outputConfig,
-                displayMethods: updatedMethods
+            let updatedMethods: DisplayMethodConfig[];
+            if (editingMethod) {
+                updatedMethods = displayMethods.map(m => m.id === editingMethod.id ? newMethod : m);
+            } else {
+                updatedMethods = [...displayMethods, newMethod];
             }
-        });
 
-        closeModal();
+            setContainer({
+                ...container,
+                outputConfig: {
+                    ...container.outputConfig,
+                    displayMethods: updatedMethods
+                }
+            });
+
+            closeModal();
+        } catch (error) {
+            console.error('Failed to save return method:', error);
+            alert('Failed to save return method. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleDelete = (id: string) => {
@@ -132,7 +186,11 @@ export const RecommendationPage: React.FC<RecommendationPageProps> = ({ containe
                     </button>
                 </div>
 
-                {displayMethods.length === 0 ? (
+                {isLoading ? (
+                    <div className={styles.emptyState}>
+                        <p>Loading return methods...</p>
+                    </div>
+                ) : displayMethods.length === 0 ? (
                     <div className={styles.emptyState}>
                         <p>No display methods configured yet.</p>
                         <p>Click "Add Display Method" to create one.</p>

@@ -35,7 +35,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
             <div className={styles.statsGrid}>
                 <div className={styles.gradientCard}>
                     <p className={styles.cardLabel}>Domain Key</p>
-                    <code className={styles.domainKey}>{container?.uuid.split('-')[0]}...</code>
+                    <code className={styles.domainKey}>{container?.uuid.substring(0, 12)}...</code>
                     <p className={styles.domainUrl}>{container?.url}</p>
                 </div>
                 <div className={styles.whiteCard}>

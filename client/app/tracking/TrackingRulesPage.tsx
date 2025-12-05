@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, TrackingRule } from '../../types';
 import { RuleBuilder } from '../../components/dashboard/RuleBuilder';
 import { TRIGGER_ICONS } from '../../lib/constants';
 import { Box, Plus, Trash2, Edit2 } from 'lucide-react';
+import { ruleApi, RuleResponse } from '../../lib/api/';
 import styles from './TrackingRulesPage.module.css';
 
 interface TrackingRulesPageProps {
@@ -13,6 +14,45 @@ interface TrackingRulesPageProps {
 export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container, setContainer }) => {
     const [isEditingRule, setIsEditingRule] = useState(false);
     const [currentRule, setCurrentRule] = useState<TrackingRule | undefined>(undefined);
+    const [isLoading, setIsLoading] = useState(false);
+    const [apiRules, setApiRules] = useState<RuleResponse[]>([]);
+
+    // Fetch rules from API when component mounts or container changes
+    useEffect(() => {
+        const fetchRules = async () => {
+            if (!container?.id) return;
+            
+            setIsLoading(true);
+            try {
+                const rules = await ruleApi.getByDomainId(container.id);
+                setApiRules(rules);
+                
+                // Convert API rules to TrackingRule format for display
+                const trackingRules: TrackingRule[] = rules.map(rule => ({
+                    id: rule.id?.toString() || '',
+                    name: rule.name,
+                    trigger: (rule.eventPattern?.type || 'click') as any,
+                    selector: rule.targetElement?.selector || '',
+                    extraction: rule.payloads?.map(p => ({
+                        field: 'itemId',
+                        method: p.payloadConfig.extractionMethod as any,
+                        value: p.payloadConfig.extractionValue
+                    })) || []
+                }));
+
+                setContainer({
+                    ...container,
+                    rules: trackingRules
+                });
+            } catch (error) {
+                console.error('Failed to fetch rules:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchRules();
+    }, [container?.id]); // Only depend on ID to avoid infinite loop
 
     const getTriggerLabel = (trigger: string) => {
         switch(trigger) {
@@ -31,19 +71,45 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
         }
     };
 
-    const saveRule = (rule: TrackingRule) => {
+    const saveRule = async (rule: TrackingRule) => {
         if (!container) return;
-        let newRules = [...container.rules];
-        const existingIndex = newRules.findIndex(r => r.id === rule.id);
-    
-        if (existingIndex >= 0) {
-            newRules[existingIndex] = rule;
-        } else {
-            newRules.push(rule);
+        
+        setIsLoading(true);
+        try {
+            // For now, we only support creating new rules
+            // TODO: Implement PUT /rule/:id for updates
+            
+            // Call API to create rule
+            // Note: This is a simplified mapping. You may need to adjust based on actual API requirements
+            const response = await ruleApi.create({
+                name: rule.name,
+                domainKey: container.uuid,
+                eventPatternId: rule.trigger, // This should be the actual event pattern ID from the API
+                // Add other required fields based on your API
+            });
+
+            // Update local state with the new rule
+            let newRules = [...container.rules];
+            const existingIndex = newRules.findIndex(r => r.id === rule.id);
+        
+            if (existingIndex >= 0) {
+                newRules[existingIndex] = rule;
+            } else {
+                newRules.push({
+                    ...rule,
+                    id: response.id // Use the ID from API response
+                });
+            }
+            
+            setContainer({ ...container, rules: newRules });
+            setIsEditingRule(false);
+            setCurrentRule(undefined);
+        } catch (error) {
+            console.error('Failed to save rule:', error);
+            alert('Failed to save tracking rule. Please try again.');
+        } finally {
+            setIsLoading(false);
         }
-        setContainer({ ...container, rules: newRules });
-        setIsEditingRule(false);
-        setCurrentRule(undefined);
     };
 
     const deleteRule = (id: string) => {
@@ -65,7 +131,11 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                             Add Rule
                         </button>
                     </div>
-                    {container?.rules.length === 0 ? (
+                    {isLoading ? (
+                        <div className={styles.emptyState}>
+                            <p>Loading tracking rules...</p>
+                        </div>
+                    ) : container?.rules.length === 0 ? (
                         <div className={styles.emptyState}>
                             <p>No rules configured yet.</p>
                             <p>Click "Add Rule" to create one.</p>

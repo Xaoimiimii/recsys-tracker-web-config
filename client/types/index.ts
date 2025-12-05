@@ -45,3 +45,55 @@ export interface UserState {
   isAuthenticated: boolean;
   currentUser: { name: string; email: string } | null;
 }
+
+// API Response Types (imported from lib/api.ts for reference)
+export interface ApiEventPattern {
+  id: string;
+  type: string;
+  description?: string;
+}
+
+export interface ApiPayloadPattern {
+  id: string;
+  pattern: string;
+  description?: string;
+}
+
+export interface ApiOperator {
+  id: string;
+  operator: string;
+  description?: string;
+}
+
+export interface ApiRuleResponse {
+  id: string;
+  name: string;
+  domainKey: string;
+  eventPattern: ApiEventPattern;
+  targetElement?: {
+    id: string;
+    selector: string;
+    selectorType: string;
+  };
+  conditions?: Array<{
+    id: string;
+    condition: {
+      id: string;
+      type: string;
+    };
+    operator: ApiOperator;
+    value: string;
+  }>;
+  payloads?: Array<{
+    id: string;
+    payloadPattern: ApiPayloadPattern;
+    payloadConfig: {
+      id: string;
+      extractionMethod: string;
+      extractionValue: string;
+    };
+  }>;
+  createdAt: string;
+  updatedAt: string;
+}
+

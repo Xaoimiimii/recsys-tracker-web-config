@@ -1,9 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Container, UserState, TrackingRule, DomainType } from './types';
-import { DOMAIN_PRESETS } from './lib/constants';
-import { generateUUID } from './lib/utils';
-
+import { useAuth, useContainer } from './hooks';
 import { AuthPage } from './app/auth/AuthPage';
 import { OnboardingPage } from './app/onboarding/OnboardingPage';
 import { DashboardPage } from './app/dashboard/DashboardPage';
@@ -13,53 +10,22 @@ import { LoaderScriptPage } from './app/loader-script/LoaderScriptPage';
 import { MainLayout } from './components/layout/MainLayout';
 
 export default function App() {
-  // --- Global State ---
-  const [user, setUser] = useState<UserState>({ isAuthenticated: false, currentUser: null });
-  const [container, setContainer] = useState<Container | null>(null);
-  const [onboardingStep, setOnboardingStep] = useState(0);
+  const { user, handleLogin, handleLogout } = useAuth();
+  const {
+    container,
+    setContainer,
+    onboardingStep,
+    createContainer,
+    selectDomainType,
+    startOnboarding,
+  } = useContainer(user);
 
-  // --- Auth Handlers (Mock) ---
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setUser({ isAuthenticated: true, currentUser: { name: 'Demo User', email: 'user@example.com' } });
-    setOnboardingStep(1);
-  };
-
-  // --- Container Handlers ---
-  const createContainer = (url: string) => {
-    const newContainer: Container = {
-      id: generateUUID(),
-      uuid: generateUUID(),
-      name: new URL(url).hostname,
-      url: url,
-      domainType: 'general',
-      rules: [],
-      outputConfig: { displayMethods: [] }
-    };
-    setContainer(newContainer);
-    setOnboardingStep(2);
-  };
-
-  const selectDomainType = (type: DomainType) => {
-    if (!container) return;
-    
-    // Apply presets
-    const presets = DOMAIN_PRESETS[type].map(p => ({
-        id: generateUUID(),
-        name: p.name!,
-        trigger: p.trigger!,
-        selector: p.selector!,
-        extraction: [
-            { field: 'itemId', method: 'static', value: '{{auto_detect}}' },
-            { field: 'event', method: 'static', value: p.name?.toLowerCase().replace(' ', '_') },
-            { field: 'category', method: 'static', value: type },
-            { field: 'userId', method: 'js_variable', value: 'window.USER_ID' },
-        ]
-    } as TrackingRule));
-
-    setContainer({ ...container, domainType: type, rules: presets });
-    setOnboardingStep(0);
-  };
+  // Start onboarding when user logs in
+  useEffect(() => {
+    if (user.isAuthenticated && onboardingStep === 0 && !container) {
+      startOnboarding();
+    }
+  }, [user.isAuthenticated]);
 
   return (
     <BrowserRouter>
@@ -102,7 +68,7 @@ export default function App() {
             ) : (
               <MainLayout 
                 userEmail={user.currentUser?.email}
-                onLogout={() => setUser({ isAuthenticated: false, currentUser: null })}
+                onLogout={handleLogout}
               />
             )
           }
@@ -115,7 +81,7 @@ export default function App() {
                 user={user} 
                 container={container} 
                 setContainer={setContainer} 
-                onLogout={() => setUser({ isAuthenticated: false, currentUser: null })} 
+                onLogout={handleLogout} 
               />
             } 
           />
