@@ -23,8 +23,8 @@ export const ruleApi = {
             body: JSON.stringify(data),
         }),
 
-    getById: (id: string) => 
-        apiFetch<RuleResponse>(`/rule/${id}`),
+    // getById: (id: string) => 
+    //     apiFetch<RuleResponse>(`/rule/${domainKey}`),
 
     getByDomainId: (domainId: string) => 
         apiFetch<RuleResponse[]>(`/rule/domain/${domainId}`),

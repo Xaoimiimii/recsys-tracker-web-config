@@ -21,6 +21,9 @@ model Ternant {
   Password          String
 
   Domains           Domain[]
+  Items             Item[]
+  Users             User[]
+  Ratings           Rating[]
 }
 
 model Domain {
@@ -148,4 +151,121 @@ model Operator {
   Conditions        Condition[]
   TargetElements    TargetElement[]
   PayloadConfigs    PayloadConfig[]
+}
+
+model Category {
+  Id                Int     @id @default(autoincrement())
+  Name              String
+
+  ItemCategories    ItemCategory[]
+}
+
+model ItemCategory {
+  CategoryId        Int
+  ItemId            Int
+  Category          Category @relation(fields: [CategoryId], references: [Id])
+  Item              Item     @relation(fields: [ItemId], references: [Id])
+  @@id([CategoryId, ItemId])
+}
+
+model Item {
+  Id                Int     @id @default(autoincrement())
+  TernantId         Int
+  Ternant           Ternant @relation(fields: [TernantId], references: [Id])
+  Title             String
+  EmbeddingVector   Float[]
+  ModifiedAt        DateTime
+
+  ItemCategories    ItemCategory[]
+  ItemFactors       ItemFactor[]
+  Predicts          Predict[]
+  Ratings           Rating[]
+  Interactions      Interaction[]
+}
+
+model Model {
+  Id                Int     @id @default(autoincrement())
+  Name              String
+  Description       String?
+  AverageRating     Float
+  LearnableParameters   Float[]
+  ModifiedAt        DateTime
+
+  ItemFactors       ItemFactor[]
+  UserFactors       UserFactor[]
+}
+
+model ItemFactor {
+  Id              Int     @id @default(autoincrement())
+  ItemId            Int
+  ModelId           Int
+  ItemBias          Float
+  ItemFactors       Float[]
+
+  Item              Item    @relation(fields: [ItemId], references: [Id])
+  Model             Model   @relation(fields: [ModelId], references: [Id])
+}
+
+model User {
+  Id                Int     @id @default(autoincrement())
+  TernantId         Int
+  Ternant           Ternant @relation(fields: [TernantId], references: [Id])
+  UserEmbeddingVector Float[]
+  CreatedAt         DateTime @default(now())
+  ModifiedAt        DateTime @updatedAt
+
+  UserFactors       UserFactor[]
+  Predicts          Predict[]
+  Ratings           Rating[]
+  Interactions      Interaction[]
+}
+
+model UserFactor {
+  Id                Int     @id @default(autoincrement())
+  UserId            Int
+  ModelId           Int
+  UserBias          Float
+  UserFactors       Float[]
+
+  User              User    @relation(fields: [UserId], references: [Id])
+  Model             Model   @relation(fields: [ModelId], references: [Id])
+}
+
+model Predict {
+  UserId            Int
+  User              User    @relation(fields: [UserId], references: [Id])
+  ItemId            Int
+  Item              Item    @relation(fields: [ItemId], references: [Id])
+  Value             Float
+
+  @@id([UserId, ItemId])
+}
+
+model Rating {
+  Id                Int     @id @default(autoincrement())
+  UserId            Int
+  User              User    @relation(fields: [UserId], references: [Id])
+  ItemId            Int
+  Item              Item    @relation(fields: [ItemId], references: [Id])
+  TernantId         Int
+  Ternant           Ternant @relation(fields: [TernantId], references: [Id])
+  Value             Float
+  ReviewText        String?
+  ConvertedScore    Float    @default(3)
+  CreatedAt         DateTime @default(now())
+
+  @@unique([UserId, ItemId])
+}
+
+model Interaction {
+  Id                Int     @id @default(autoincrement())
+  UserId            Int
+  User              User    @relation(fields: [UserId], references: [Id])
+  ItemId            Int
+  Item              Item    @relation(fields: [ItemId], references: [Id])
+  InteractionType   String
+  CreatedAt         DateTime @default(now())
+
+  @@index([UserId])
+  @@index([ItemId])
 }

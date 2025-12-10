@@ -67,14 +67,11 @@ export interface CreateReturnMethodDto {
 }
 
 export interface ReturnMethodResponse {
-  id: string;
-  domainKey: string;
-  method: string;
-  slot: string;
-  targetUrl?: string;
-  targetSelector?: string;
-  createdAt: string;
-  updatedAt: string;
+  DomainID?: number;
+  SlotName?: string;
+  Value?: string;
+  TargetUrl?: string;
+  ReturnMethodID?: number;
 }
 
 // ==================== RULE TYPES ====================
@@ -112,9 +109,8 @@ export interface CreateRuleDto {
 }
 
 export interface RuleResponse {
-  id: string;
-  name: string;
   domainKey: string;
+  name: string;
   eventPattern: EventPattern;
   targetElement?: {
     id: string;

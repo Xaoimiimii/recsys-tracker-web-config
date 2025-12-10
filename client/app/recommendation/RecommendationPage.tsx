@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, OutputMethod, DisplayMethodConfig } from '../../types';
 import { Edit2, Trash2, Plus } from 'lucide-react';
 import { returnMethodApi } from '../../lib/api/';
+import { useDataCache } from '../../contexts/DataCacheContext';
 import styles from './RecommendationPage.module.css';
 
 interface RecommendationPageProps {
@@ -10,6 +11,7 @@ interface RecommendationPageProps {
 }
 
 export const RecommendationPage: React.FC<RecommendationPageProps> = ({ container, setContainer }) => {
+    const { getReturnMethods, clearReturnMethodsCache } = useDataCache();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingMethod, setEditingMethod] = useState<DisplayMethodConfig | null>(null);
     const [selectedMethod, setSelectedMethod] = useState<OutputMethod>('custom_widget');
@@ -20,6 +22,22 @@ export const RecommendationPage: React.FC<RecommendationPageProps> = ({ containe
 
     const displayMethods = container?.outputConfig.displayMethods || [];
 
+    // Map ReturnMethodID to OutputMethod
+    const getMethodFromId = (returnMethodId: number): OutputMethod => {
+        switch(returnMethodId) {
+            case 1:
+                return 'popup';
+            case 2:
+                return 'inline_injection';
+            case 3:
+                return 'custom_widget';
+            case 4:
+                return 'sdk_callback';
+            default:
+                return 'custom_widget';
+        }
+    };
+
     // Fetch return methods when component mounts or container changes
     useEffect(() => {
         const fetchReturnMethods = async () => {
@@ -27,15 +45,15 @@ export const RecommendationPage: React.FC<RecommendationPageProps> = ({ containe
             
             setIsLoading(true);
             try {
-                const methods = await returnMethodApi.getByDomainKey(container.uuid);
+                const methods = await getReturnMethods(container.uuid);
                 
                 // Convert API response to DisplayMethodConfig format
                 const displayMethodConfigs: DisplayMethodConfig[] = methods.map(m => ({
-                    id: m.id,
-                    slot: m.slot,
-                    targetUrl: m.targetUrl,
-                    method: m.method as OutputMethod,
-                    targetSelector: m.targetSelector,
+                    id: m.DomainID?.toString() || '',
+                    slot: m.SlotName || '',
+                    targetUrl: m.TargetUrl || '',
+                    method: m.ReturnMethodID ? getMethodFromId(m.ReturnMethodID) : 'custom_widget',
+                    targetSelector: m.Value || '',
                 }));
 
                 setContainer({
@@ -130,11 +148,11 @@ export const RecommendationPage: React.FC<RecommendationPageProps> = ({ containe
             });
 
             const newMethod: DisplayMethodConfig = {
-                id: response.id,
-                slot: response.slot,
-                targetUrl: response.targetUrl,
-                method: response.method as OutputMethod,
-                targetSelector: response.targetSelector
+                id: response.ReturnMethodID?.toString() || '',
+                slot: response.SlotName || '',
+                targetUrl: response.TargetUrl || '',
+                method: response.ReturnMethodID ? getMethodFromId(response.ReturnMethodID) : 'custom_widget',
+                targetSelector: response.Value || ''
             };
 
             let updatedMethods: DisplayMethodConfig[];
@@ -152,6 +170,8 @@ export const RecommendationPage: React.FC<RecommendationPageProps> = ({ containe
                 }
             });
 
+            // Clear cache to force refresh on next load
+            clearReturnMethodsCache(container.uuid);
             closeModal();
         } catch (error) {
             console.error('Failed to save return method:', error);
@@ -210,8 +230,12 @@ export const RecommendationPage: React.FC<RecommendationPageProps> = ({ containe
                             {displayMethods.map((method, index) => (
                                 <tr key={method.id}>
                                     <td>#{index + 1}</td>
-                                    <td>{method.slot}</td>
-                                    <td>{method.targetUrl}</td>
+                                    <td title={method.slot}>
+                                        {method.slot.length > 30 ? `${method.slot.substring(0, 30)}...` : method.slot}
+                                    </td>
+                                    <td title={method.targetUrl}>
+                                        {method.targetUrl.length > 40 ? `${method.targetUrl.substring(0, 40)}...` : method.targetUrl}
+                                    </td>
                                     <td>{getMethodLabel(method.method)}</td>
                                     <td>
                                         <button 
