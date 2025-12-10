@@ -8,6 +8,7 @@ import { TrackingRulesPage } from './app/tracking/TrackingRulesPage';
 import { RecommendationPage } from './app/recommendation/RecommendationPage';
 import { LoaderScriptPage } from './app/loader-script/LoaderScriptPage';
 import { MainLayout } from './components/layout/MainLayout';
+import { DataCacheProvider } from './contexts/DataCacheContext';
 
 export default function App() {
   const { user, loading, signin, signout } = useAuth();
@@ -28,8 +29,9 @@ export default function App() {
   }, [isAuthenticated]);
   if (loading) return <div>Loading...</div>;
   return (
-    <BrowserRouter>
-      <Routes>
+    <DataCacheProvider>
+      <BrowserRouter>
+        <Routes>
         <Route 
           path="/login" 
           element={
@@ -120,7 +122,8 @@ export default function App() {
             <Navigate to={!isAuthenticated ? "/login" : onboardingStep > 0 ? "/onboarding" : "/dashboard"} replace />
           } 
         />
-      </Routes>
-    </BrowserRouter>
+        </Routes>
+      </BrowserRouter>
+    </DataCacheProvider>
   );
 }

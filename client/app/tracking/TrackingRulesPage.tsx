@@ -4,6 +4,7 @@ import { RuleBuilder } from '../../components/dashboard/RuleBuilder';
 import { TRIGGER_ICONS } from '../../lib/constants';
 import { Box, Plus, Trash2, Edit2 } from 'lucide-react';
 import { ruleApi, RuleResponse } from '../../lib/api/';
+import { useDataCache } from '../../contexts/DataCacheContext';
 import styles from './TrackingRulesPage.module.css';
 
 interface TrackingRulesPageProps {
@@ -12,10 +13,12 @@ interface TrackingRulesPageProps {
 }
 
 export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container, setContainer }) => {
+    const { getRules, clearRulesCache } = useDataCache();
     const [isEditingRule, setIsEditingRule] = useState(false);
     const [currentRule, setCurrentRule] = useState<TrackingRule | undefined>(undefined);
     const [isLoading, setIsLoading] = useState(false);
     const [apiRules, setApiRules] = useState<RuleResponse[]>([]);
+    const [fetchError, setFetchError] = useState(false);
 
     // Fetch rules from API when component mounts or container changes
     useEffect(() => {
@@ -23,8 +26,9 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
             if (!container?.id) return;
             
             setIsLoading(true);
+            setFetchError(false);
             try {
-                const rules = await ruleApi.getByDomainId(container.id);
+                const rules = await getRules(container.uuid);
                 setApiRules(rules);
                 
                 // Convert API rules to TrackingRule format for display
@@ -46,6 +50,12 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                 });
             } catch (error) {
                 console.error('Failed to fetch rules:', error);
+                setFetchError(true);
+                // Clear rules on error
+                setContainer({
+                    ...container,
+                    rules: []
+                });
             } finally {
                 setIsLoading(false);
             }
@@ -104,6 +114,9 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
             setContainer({ ...container, rules: newRules });
             setIsEditingRule(false);
             setCurrentRule(undefined);
+            
+            // Clear cache to force refresh on next load
+            clearRulesCache(container.uuid);
         } catch (error) {
             console.error('Failed to save rule:', error);
             alert('Failed to save tracking rule. Please try again.');
