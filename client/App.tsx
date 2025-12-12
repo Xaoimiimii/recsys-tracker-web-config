@@ -7,6 +7,7 @@ import { DashboardPage } from './app/dashboard/DashboardPage';
 import { TrackingRulesPage } from './app/tracking/TrackingRulesPage';
 import { RecommendationPage } from './app/recommendation/RecommendationPage';
 import { LoaderScriptPage } from './app/loader-script/LoaderScriptPage';
+import { ItemUploadPage } from './app/item-upload/ItemUploadPage';
 import { MainLayout } from './components/layout/MainLayout';
 import { DataCacheProvider } from './contexts/DataCacheContext';
 
@@ -119,6 +120,10 @@ function AppContent() {
                 container={container} 
               />
             } 
+          />
+          <Route 
+            path="item-upload" 
+            element={<ItemUploadPage />} 
           />
           <Route path="documentation"/>
         </Route>
