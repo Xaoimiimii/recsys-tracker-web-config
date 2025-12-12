@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { ruleApi, returnMethodApi, RuleResponse, ReturnMethodResponse } from '../lib/api';
+import { ruleApi, returnMethodApi, domainApi, RuleResponse, ReturnMethodResponse, GetDomainResponse } from '../lib/api';
 
 interface CacheEntry<T> {
     data: T;
@@ -9,18 +9,21 @@ interface CacheEntry<T> {
 interface DataCacheContextType {
     getRules: (domainId: string, forceRefresh?: boolean) => Promise<RuleResponse[]>;
     getReturnMethods: (domainKey: string, forceRefresh?: boolean) => Promise<ReturnMethodResponse[]>;
+    getDomain: (domainKey: string, forceRefresh?: boolean) => Promise<GetDomainResponse>;
     clearCache: () => void;
     clearRulesCache: (domainId?: string) => void;
     clearReturnMethodsCache: (domainKey?: string) => void;
+    clearDomainCache: (domainKey?: string) => void;
 }
 
-const DataCacheContext = createContext<DataCacheContextType | undefined>(undefined);
+export const DataCacheContext = createContext<DataCacheContextType | undefined>(undefined);
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 export const DataCacheProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [rulesCache, setRulesCache] = useState<Map<string, CacheEntry<RuleResponse[]>>>(new Map());
     const [returnMethodsCache, setReturnMethodsCache] = useState<Map<string, CacheEntry<ReturnMethodResponse[]>>>(new Map());
+    const [domainCache, setDomainCache] = useState<Map<string, CacheEntry<GetDomainResponse>>>(new Map());
 
     const isCacheValid = (timestamp: number): boolean => {
         return Date.now() - timestamp < CACHE_DURATION;
@@ -72,9 +75,31 @@ export const DataCacheProvider: React.FC<{ children: ReactNode }> = ({ children 
         return methods;
     }, [returnMethodsCache]);
 
+    const getDomain = useCallback(async (domainKey: string, forceRefresh = false): Promise<GetDomainResponse> => {
+        const cachedEntry = domainCache.get(domainKey);
+        
+        if (!forceRefresh && cachedEntry && isCacheValid(cachedEntry.timestamp)) {
+            return cachedEntry.data;
+        }
+
+        const domain = await domainApi.getByKey(domainKey);
+        
+        setDomainCache(prev => {
+            const newCache = new Map(prev);
+            newCache.set(domainKey, {
+                data: domain,
+                timestamp: Date.now()
+            });
+            return newCache;
+        });
+
+        return domain;
+    }, [domainCache]);
+
     const clearCache = useCallback(() => {
         setRulesCache(new Map());
         setReturnMethodsCache(new Map());
+        setDomainCache(new Map());
         console.log('All cache cleared');
     }, []);
 

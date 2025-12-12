@@ -179,10 +179,8 @@ ${loaderScript}`;
   <link rel="stylesheet" href="styles.css">
   
   <!-- ✅ RecSys Tracker Script - Place here -->
-  <script>
-    window.RecSysTrackerConfig = { ... };
-  </script>
-  <script src="https://cdn.recsys-tracker.com/loader.v1.js" async></script>
+  <script>window.__RECSYS_DOMAIN_KEY__ = "${container.uuid}";</script>
+  <script src="https://cdn.jsdelivr.net/gh/Xaoimiimii/recsys-tracker-module/packages/sdk/dist/loader.js"></script>
   <!-- ✅ End of RecSys Tracker Script -->
   
 </head>

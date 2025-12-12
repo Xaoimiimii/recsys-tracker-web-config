@@ -10,7 +10,7 @@ import { LoaderScriptPage } from './app/loader-script/LoaderScriptPage';
 import { MainLayout } from './components/layout/MainLayout';
 import { DataCacheProvider } from './contexts/DataCacheContext';
 
-export default function App() {
+function AppContent() {
   const { user, loading, signin, signout } = useAuth();
   const {
     container,
@@ -19,19 +19,26 @@ export default function App() {
     createContainer,
     selectDomainType,
     startOnboarding,
-  } = useContainer(user);
+    isLoadingDomain,
+  } = useContainer(
+    user ? { 
+      isAuthenticated: true, 
+      currentUser: { 
+        name: user.name, 
+        email: user.username 
+      } 
+    } : { 
+      isAuthenticated: false, 
+      currentUser: null 
+    }, user?.username // Sử dụng username làm domainKey tạm thời
+  );
   const isAuthenticated = user !== null;
-  // Start onboarding when user logs in
-  useEffect(() => {
-    if (isAuthenticated && onboardingStep === 0 && !container) {
-      startOnboarding();
-    }
-  }, [isAuthenticated]);
-  if (loading) return <div>Loading...</div>;
+
+  if (loading || isLoadingDomain) return <div>Loading...</div>;
+  
   return (
-    <DataCacheProvider>
-      <BrowserRouter>
-        <Routes>
+    <BrowserRouter>
+      <Routes>
         <Route 
           path="/login" 
           element={
@@ -123,7 +130,14 @@ export default function App() {
           } 
         />
         </Routes>
-      </BrowserRouter>
+    </BrowserRouter>
+  );
+}
+
+export default function App() {
+  return (
+    <DataCacheProvider>
+      <AppContent />
     </DataCacheProvider>
   );
 }

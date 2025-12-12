@@ -37,21 +37,6 @@ export const DOMAIN_PRESETS: Record<DomainType, Partial<TrackingRule>[]> = {
   general: []
 };
 
-export const MOCK_SCRIPT_TEMPLATE = (config: any) => `
-<!-- RecSys Tracker Configuration -->
-<script>
-  window.RecSysTrackerConfig = {
-    domainKey: "${config.uuid}",
-    endpoint: "https://api.recsys-tracker.com/collect",
-    displayMethods: ${JSON.stringify(config.outputConfig.displayMethods || [])},
-    userIdResolver: () => window.localStorage.getItem('user_id') || 'anonymous',
-    rules: ${JSON.stringify(config.rules.map((r: any) => ({
-      id: r.id,
-      trigger: r.trigger,
-      selector: r.selector,
-      extract: r.extraction
-    })))}
-  };
-</script>
-<script src="https://cdn.recsys-tracker.com/loader.v1.js" async></script>
-`;
+export const MOCK_SCRIPT_TEMPLATE = (config: any) => `<script>window.__RECSYS_DOMAIN_KEY__ = "${config.uuid}";</script>
+<script src="https://cdn.jsdelivr.net/gh/Xaoimiimii/recsys-tracker-module/packages/sdk/dist/loader.js"></script>`;
+
