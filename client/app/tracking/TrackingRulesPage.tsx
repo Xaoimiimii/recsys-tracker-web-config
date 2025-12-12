@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, TrackingRule } from '../../types';
 import { RuleBuilder } from '../../components/dashboard/RuleBuilder';
 import { TRIGGER_ICONS } from '../../lib/constants';
-import { Box, Plus, Trash2, Edit2 } from 'lucide-react';
+import { Box, Plus, Trash2, Edit2, MousePointer, Eye, Star } from 'lucide-react';
 import { ruleApi, RuleListItem, RuleDetailResponse } from '../../lib/api/';
 import { useDataCache } from '../../contexts/DataCacheContext';
 import styles from './TrackingRulesPage.module.css';
@@ -103,16 +103,16 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
         }
     };
 
-    const getTriggerTypeFromId = (triggerEventId: number | undefined): string => {
+    const getTriggerTypeFromId = (triggerEventId: number | undefined) => {
         switch(triggerEventId) {
             case 1:
-                return 'Click';
+                return { label: 'Click', icon: MousePointer };
             case 2:
-                return 'Rate';
+                return { label: 'Rate', icon: Star };
             case 3:
-                return 'View';
+                return { label: 'View', icon: Eye };
             default:
-                return 'Unknown';
+                return { label: 'Unknown', icon: Box };
         }
     };
 
@@ -202,13 +202,21 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                                 </tr>
                             </thead>
                             <tbody>
-                                {rulesWithDetails.map((rule, index) => (
-                                    <tr key={rule.id}>
-                                        <td>#{index + 1}</td>
-                                        <td>{getTriggerTypeFromId(rule.details?.TriggerEventID)}</td>
-                                        <td>{rule.name}</td>
-                                        <td>{rule.details?.TargetElement?.Value || 'N/A'}</td>
-                                        <td>
+                                {rulesWithDetails.map((rule, index) => {
+                                    const triggerInfo = getTriggerTypeFromId(rule.details?.TriggerEventID);
+                                    const TriggerIcon = triggerInfo.icon;
+                                    return (
+                                        <tr key={rule.id}>
+                                            <td>#{index + 1}</td>
+                                            <td>
+                                                <div className={styles.triggerCell}>
+                                                    <TriggerIcon size={16} className={styles.triggerIcon} />
+                                                    {triggerInfo.label}
+                                                </div>
+                                            </td>
+                                            <td>{rule.name}</td>
+                                            <td>{rule.details?.TargetElement?.Value || 'N/A'}</td>
+                                            <td>
                                             <button 
                                                 className={styles.editButton}
                                                 onClick={() => { 
@@ -230,7 +238,8 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                                             </button>
                                         </td>
                                     </tr>
-                                ))}
+                                    );
+                                })}
                             </tbody>
                         </table>
                     )}
