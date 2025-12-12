@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation, Link, Outlet } from 'react-router-dom';
-import { User, ChevronLeft, ChevronRight, LayoutDashboard, Container, ListChecks, Sparkles, FileText, LogOut, Code } from 'lucide-react';
+import { User, ChevronLeft, ChevronRight, LayoutDashboard, Container, ListChecks, Sparkles, FileText, LogOut, Code, Upload } from 'lucide-react';
 import styles from './MainLayout.module.css';
 
 interface MainLayoutProps {
@@ -78,6 +78,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ userEmail, onLogout }) =
           >
             <Code className="w-5 h-5" />
             Loader Script
+          </Link>
+          <Link
+            to="/dashboard/item-upload"
+            className={`${styles.navButton} ${activeTab === 'item-upload' ? styles.navButtonActive : ''}`}
+          >
+            <Upload className="w-5 h-5" />
+            Item Upload
           </Link>
           <Link
             to="/dashboard/documentation"

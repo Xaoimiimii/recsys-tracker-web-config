@@ -1,10 +1,13 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+const SERVER_API_BASE_URL = import.meta.env.SERVER_API_BASE_URL || 'http://localhost:3000';
 
 export async function apiFetch<T>(
     endpoint: string,
-    options?: RequestInit
+    options?: RequestInit,
+    useServerUrl: boolean = false
 ): Promise<T> {
-    const url = `${API_BASE_URL}${endpoint}`;
+    const baseUrl = useServerUrl ? SERVER_API_BASE_URL : VITE_API_BASE_URL;
+    const url = `${baseUrl}${endpoint}`;
   
     try {
         const response = await fetch(url, {
@@ -28,4 +31,4 @@ export async function apiFetch<T>(
     }
 }
 
-export { API_BASE_URL };
+export { VITE_API_BASE_URL, SERVER_API_BASE_URL };

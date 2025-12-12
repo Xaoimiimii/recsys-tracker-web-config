@@ -1,12 +1,65 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Container, DomainType, TrackingRule, UserState } from '../types';
 import { DOMAIN_PRESETS } from '../lib/constants';
 import { generateUUID } from '../lib/utils';
 import { domainApi } from '../lib/api/';
+import { useDataCache } from './useDataCache';
 
-export const useContainer = (user: UserState) => {
+export const useContainer = (user: UserState, userDomainKey?: string) => {
   const [container, setContainer] = useState<Container | null>(null);
   const [onboardingStep, setOnboardingStep] = useState(0);
+  const [isLoadingDomain, setIsLoadingDomain] = useState(false);
+  const { getDomain } = useDataCache();
+
+  // Fetch domain info khi user đăng nhập
+  useEffect(() => {
+    const fetchDomainInfo = async () => {
+      if (user && userDomainKey && !container) {
+        setIsLoadingDomain(true);
+        try {
+          const domainInfo = await getDomain(userDomainKey);
+          
+          // Kiểm tra domainUrl và domainType để quyết định onboarding step
+          if (!domainInfo.domainUrl) {
+            // Chưa có domainUrl -> onboarding step 1
+            setOnboardingStep(1);
+          } else if (!domainInfo.domainType) {
+            // Có domainUrl nhưng chưa có domainType -> onboarding step 2
+            setOnboardingStep(2);
+            setContainer({
+              id: '1',
+              uuid: domainInfo.domainKey,
+              name: new URL(domainInfo.domainUrl).hostname,
+              url: domainInfo.domainUrl,
+              domainType: 'general',
+              rules: [],
+              outputConfig: { displayMethods: [] }
+            });
+          } else {
+            // Có cả domainUrl và domainType -> skip onboarding
+            setOnboardingStep(0);
+            setContainer({
+              id: '1',
+              uuid: domainInfo.domainKey,
+              name: new URL(domainInfo.domainUrl).hostname,
+              url: domainInfo.domainUrl,
+              domainType: domainInfo.domainType as DomainType,
+              rules: [],
+              outputConfig: { displayMethods: [] }
+            });
+          }
+        } catch (error) {
+          console.error('Failed to fetch domain info:', error);
+          // Nếu lỗi, bắt đầu onboarding từ đầu
+          setOnboardingStep(1);
+        } finally {
+          setIsLoadingDomain(false);
+        }
+      }
+    };
+
+    fetchDomainInfo();
+  }, [user, userDomainKey, container, getDomain]);
 
   const createContainer = async (url: string) => {
     try {
@@ -75,5 +128,6 @@ export const useContainer = (user: UserState) => {
     createContainer,
     selectDomainType,
     startOnboarding,
+    isLoadingDomain,
   };
 };

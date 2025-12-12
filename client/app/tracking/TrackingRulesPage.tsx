@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Container, TrackingRule } from '../../types';
 import { RuleBuilder } from '../../components/dashboard/RuleBuilder';
 import { TRIGGER_ICONS } from '../../lib/constants';
-import { Box, Plus, Trash2, Edit2 } from 'lucide-react';
-import { ruleApi, RuleResponse } from '../../lib/api/';
+import { Box, Plus, Trash2, Edit2, MousePointer, Eye, Star } from 'lucide-react';
+import { ruleApi, RuleListItem, RuleDetailResponse } from '../../lib/api/';
 import { useDataCache } from '../../contexts/DataCacheContext';
 import styles from './TrackingRulesPage.module.css';
 
@@ -12,35 +12,56 @@ interface TrackingRulesPageProps {
     setContainer: (c: Container) => void;
 }
 
+interface RuleWithDetails extends RuleListItem {
+    details?: RuleDetailResponse;
+}
+
 export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container, setContainer }) => {
     const { getRules, clearRulesCache } = useDataCache();
     const [isEditingRule, setIsEditingRule] = useState(false);
     const [currentRule, setCurrentRule] = useState<TrackingRule | undefined>(undefined);
     const [isLoading, setIsLoading] = useState(false);
-    const [apiRules, setApiRules] = useState<RuleResponse[]>([]);
+    const [rulesWithDetails, setRulesWithDetails] = useState<RuleWithDetails[]>([]);
     const [fetchError, setFetchError] = useState(false);
 
     // Fetch rules from API when component mounts or container changes
     useEffect(() => {
         const fetchRules = async () => {
-            if (!container?.id) return;
+            if (!container?.uuid) return;
             
             setIsLoading(true);
             setFetchError(false);
             try {
-                const rules = await getRules(container.uuid);
-                setApiRules(rules);
+                // Step 1: Get list of rules for the domain
+                const rulesList = await ruleApi.getRulesByDomain(container.uuid);
                 
-                // Convert API rules to TrackingRule format for display
-                const trackingRules: TrackingRule[] = rules.map(rule => ({
-                    id: rule.id?.toString() || '',
+                // Step 2: Fetch detailed information for each rule
+                const rulesWithDetailsPromises = rulesList.map(async (rule) => {
+                    try {
+                        const details = await ruleApi.getRuleById(rule.id);
+                        return {
+                            ...rule,
+                            details
+                        };
+                    } catch (error) {
+                        console.error(`Failed to fetch details for rule ${rule.id}:`, error);
+                        return rule; // Return rule without details if fetch fails
+                    }
+                });
+                
+                const rulesData: RuleWithDetails[] = await Promise.all(rulesWithDetailsPromises);
+                setRulesWithDetails(rulesData);
+                
+                // Convert API rules to TrackingRule format for display (legacy support)
+                const trackingRules: TrackingRule[] = rulesData.map(rule => ({
+                    id: rule.id.toString(),
                     name: rule.name,
-                    trigger: (rule.eventPattern?.type || 'click') as any,
-                    selector: rule.targetElement?.selector || '',
-                    extraction: rule.payloads?.map(p => ({
+                    trigger: (rule.TriggerTypeName?.toLowerCase() || 'click') as any,
+                    selector: rule.details?.TargetElement?.Value || '',
+                    extraction: rule.details?.PayloadConfigs?.map(p => ({
                         field: 'itemId',
-                        method: p.payloadConfig.extractionMethod as any,
-                        value: p.payloadConfig.extractionValue
+                        method: 'attribute' as any,
+                        value: p.Value
                     })) || []
                 }));
 
@@ -51,6 +72,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
             } catch (error) {
                 console.error('Failed to fetch rules:', error);
                 setFetchError(true);
+                setRulesWithDetails([]);
                 // Clear rules on error
                 setContainer({
                     ...container,
@@ -62,7 +84,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
         };
 
         fetchRules();
-    }, [container?.id]); // Only depend on ID to avoid infinite loop
+    }, [container?.uuid]); // Only depend on UUID to avoid infinite loop
 
     const getTriggerLabel = (trigger: string) => {
         switch(trigger) {
@@ -78,6 +100,19 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                 return 'View';
             default:
                 return trigger;
+        }
+    };
+
+    const getTriggerTypeFromId = (triggerEventId: number | undefined) => {
+        switch(triggerEventId) {
+            case 1:
+                return { label: 'Click', icon: MousePointer };
+            case 2:
+                return { label: 'Rate', icon: Star };
+            case 3:
+                return { label: 'View', icon: Eye };
+            default:
+                return { label: 'Unknown', icon: Box };
         }
     };
 
@@ -105,9 +140,11 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
             if (existingIndex >= 0) {
                 newRules[existingIndex] = rule;
             } else {
+                // Use a generated ID for new rules if not returned from API
+                const newId = ('id' in response && response.id) ? response.id : Date.now().toString();
                 newRules.push({
                     ...rule,
-                    id: response.id // Use the ID from API response
+                    id: newId.toString()
                 });
             }
             
@@ -158,44 +195,51 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                             <thead>
                                 <tr>
                                     <th>#</th>
-                                    <th>Trigger</th>
+                                    <th>Trigger Type</th>
                                     <th>Rule Name</th>
-                                    <th>Selector</th>
+                                    <th>Selector (Value)</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {container?.rules.map((rule, index) => (
-                                    <tr key={rule.id}>
-                                        <td>#{index + 1}</td>
-                                        <td>
-                                            <div className={styles.triggerCell}>
-                                                <div className={styles.triggerIcon}>
-                                                    {React.createElement(TRIGGER_ICONS[rule.trigger], { size: 18 })}
+                                {rulesWithDetails.map((rule, index) => {
+                                    const triggerInfo = getTriggerTypeFromId(rule.details?.TriggerEventID);
+                                    const TriggerIcon = triggerInfo.icon;
+                                    return (
+                                        <tr key={rule.id}>
+                                            <td>#{index + 1}</td>
+                                            <td>
+                                                <div className={styles.triggerCell}>
+                                                    <TriggerIcon size={16} className={styles.triggerIcon} />
+                                                    {triggerInfo.label}
                                                 </div>
-                                                <span>{getTriggerLabel(rule.trigger)}</span>
-                                            </div>
-                                        </td>
-                                        <td>{rule.name}</td>
-                                        <td>{rule.selector || 'Global Page Trigger'}</td>
-                                        <td>
+                                            </td>
+                                            <td>{rule.name}</td>
+                                            <td>{rule.details?.TargetElement?.Value || 'N/A'}</td>
+                                            <td>
                                             <button 
                                                 className={styles.editButton}
-                                                onClick={() => { setCurrentRule(rule); setIsEditingRule(true); }}
+                                                onClick={() => { 
+                                                    // Find the corresponding TrackingRule
+                                                    const trackingRule = container?.rules.find(r => r.id === rule.id.toString());
+                                                    setCurrentRule(trackingRule); 
+                                                    setIsEditingRule(true); 
+                                                }}
                                                 title="Edit"
                                             >
                                                 <Edit2 size={16} />
                                             </button>
                                             <button 
                                                 className={styles.deleteButton}
-                                                onClick={() => deleteRule(rule.id)}
+                                                onClick={() => deleteRule(rule.id.toString())}
                                                 title="Delete"
                                             >
                                                 <Trash2 size={16} />
                                             </button>
                                         </td>
                                     </tr>
-                                ))}
+                                    );
+                                })}
                             </tbody>
                         </table>
                     )}

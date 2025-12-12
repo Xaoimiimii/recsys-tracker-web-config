@@ -56,6 +56,12 @@ export interface DomainResponse {
   updatedAt: string;
 }
 
+export interface GetDomainResponse {
+  domainKey: string;
+  domainUrl: string | null;
+  domainType: string | null;
+}
+
 // ==================== RETURN METHOD TYPES ====================
 
 export interface CreateReturnMethodDto {
@@ -108,7 +114,50 @@ export interface CreateRuleDto {
   }[];
 }
 
+// Response from /rule/domain/:domainKey - list of rules
+export interface RuleListItem {
+  id: number;
+  name: string;
+  TriggerTypeName: string;
+}
+
+// Response from /rule/:id - detailed rule info
+export interface PayloadConfig {
+  PayloadPatternID: number;
+  RuleID: number;
+  Value: string;
+  Type: string;
+  OperatorID: number;
+}
+
+export interface RuleCondition {
+  Id: number;
+  Value: string;
+  RuleID: number;
+  EventPatternID: number;
+  OperatorID: number;
+}
+
+export interface RuleTargetElement {
+  Id: number;
+  Value: string;
+  EventPatternID: number;
+  OperatorID: number;
+}
+
+export interface RuleDetailResponse {
+  Id: number;
+  Name: string;
+  TriggerEventID: number;
+  TargetElementID: number;
+  PayloadConfigs: PayloadConfig[];
+  Conditions: RuleCondition[];
+  TargetElement: RuleTargetElement;
+}
+
+// Legacy type - keep for backwards compatibility
 export interface RuleResponse {
+  id?: number | string;
   domainKey: string;
   name: string;
   eventPattern: EventPattern;

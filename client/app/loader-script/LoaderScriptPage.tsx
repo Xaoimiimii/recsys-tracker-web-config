@@ -179,10 +179,8 @@ ${loaderScript}`;
   <link rel="stylesheet" href="styles.css">
   
   <!-- ✅ RecSys Tracker Script - Place here -->
-  <script>
-    window.RecSysTrackerConfig = { ... };
-  </script>
-  <script src="https://cdn.recsys-tracker.com/loader.v1.js" async></script>
+  <script>window.__RECSYS_DOMAIN_KEY__ = "${container.uuid}";</script>
+  <script src="https://cdn.jsdelivr.net/gh/Xaoimiimii/recsys-tracker-module/packages/sdk/dist/loader.js"></script>
   <!-- ✅ End of RecSys Tracker Script -->
   
 </head>
@@ -463,13 +461,13 @@ ${loaderScript}`;
       {/* General Information */}
       <div className={styles.footer}>
         <div className={styles.infoCard}>
-          <h3>🎯 Container Information</h3>
+          <h3>Container Information</h3>
           <div className={styles.infoGrid}>
             <div>
               <strong>Container Name:</strong> {container.name}
             </div>
             <div>
-              <strong>Domain Key (UUID):</strong> <code>{container.uuid}</code>
+              <strong>Domain Key (UUID):</strong> <code>{container?.uuid.substring(0, 40)}...</code>
             </div>
             <div>
               <strong>Domain Type:</strong> {container.domainType}
@@ -481,7 +479,7 @@ ${loaderScript}`;
         </div>
 
         <div className={styles.infoCard}>
-          <h3>📚 Additional Resources</h3>
+          <h3>Additional Resources</h3>
           <ul>
             <li>
               <a href="#" target="_blank" rel="noopener noreferrer">
