@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Container, UserState } from '../../types';
-import { Check, Globe, Activity } from 'lucide-react';
+import { Check, Globe, Activity, X, Copy } from 'lucide-react';
 import styles from './DashboardPage.module.css';
+import { MOCK_SCRIPT_TEMPLATE } from '../../lib/constants';
 
 interface DashboardPageProps {
     user: UserState;
@@ -11,6 +12,15 @@ interface DashboardPageProps {
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, setContainer, onLogout }) => {
+    const [showModal, setShowModal] = useState(false);
+
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text);
+    };
+
+    const generateLoaderScript = () => {
+        return MOCK_SCRIPT_TEMPLATE(container);
+    };
 
     // Mock data for behavior tracking chart
     const generateMockData = () => {
@@ -33,30 +43,73 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
         <div className={styles.container}>
             {/* Top Stats / Info */}
             <div className={styles.statsGrid}>
-                <div className={styles.gradientCard}>
+                <div className={styles.gradientCard} onClick={() => setShowModal(true)} style={{ cursor: 'pointer' }}>
                     <p className={styles.cardLabel}>Domain Key</p>
-                    <code className={styles.domainKey}>{container?.uuid.substring(0, 12)}...</code>
+                    {/* <code className={styles.domainKey}>{container?.uuid.substring(0, 40)}...</code> */}
                     <p className={styles.domainUrl}>{container?.url}</p>
                 </div>
-                <div className={styles.whiteCard}>
-                    <div className={styles.cardContent}>
-                        <p className={styles.cardLabelGray}>Active Rules</p>
-                        <p className={styles.cardValue}>{container?.rules.length}</p>
-                    </div>
-                    <div className={styles.iconCircleGreen}>
-                        <Check className="w-6 h-6" />
-                    </div>
-                </div>
-                <div className={styles.whiteCard}>
-                    <div className={styles.cardContent}>
-                        <p className={styles.cardLabelGray}>Configuration Mode</p>
-                        <p className={styles.cardValueSmall}>{container?.domainType}</p>
-                    </div>
-                    <div className={styles.iconCircleBlue}>
-                        <Globe className="w-6 h-6" />
-                    </div>
-                </div>
             </div>
+
+            {/* Modal for Domain Details */}
+            {showModal && (
+                <div className={styles.modalOverlay} onClick={() => setShowModal(false)}>
+                    <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+                        <div className={styles.modalHeader}>
+                            <h2>Domain Details</h2>
+                            <button className={styles.closeButton} onClick={() => setShowModal(false)}>
+                                <X />
+                            </button>
+                        </div>
+                        <div className={styles.modalBody}>
+                            <div className={styles.detailSection}>
+                                <h3>Domain Information</h3>
+                                <div className={styles.detailItem}>
+                                    <label>Domain Key:</label>
+                                    <div className={styles.copyContainer}>
+                                        <code>{container?.uuid}</code>
+                                        <button 
+                                            className={styles.copyButton} 
+                                            onClick={() => copyToClipboard(container?.uuid || '')}
+                                            title="Copy to clipboard"
+                                        >
+                                            <Copy size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className={styles.detailItem}>
+                                    <label>Domain URL:</label>
+                                    <div className={styles.copyContainer}>
+                                        <code>{container?.url}</code>
+                                        <button 
+                                            className={styles.copyButton} 
+                                            onClick={() => copyToClipboard(container?.url || '')}
+                                            title="Copy to clipboard"
+                                        >
+                                            <Copy size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className={styles.detailItem}>
+                                    <label>Domain Type:</label>
+                                    <span className={styles.domainType}>{container?.domainType}</span>
+                                </div>
+                            </div>
+                            <div className={styles.detailSection}>
+                                <h3>Loader Script</h3>
+                                <div className={styles.scriptContainer}>
+                                    <pre className={styles.scriptCode}>{generateLoaderScript()}</pre>
+                                    <button 
+                                        className={styles.copyButtonLarge} 
+                                        onClick={() => copyToClipboard(generateLoaderScript())}
+                                    >
+                                        <Copy size={16} /> Copy Script
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Behavior Tracking Chart */}
             <div className={styles.overviewCard}>
