@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import styles from './ItemUploadPage.module.css';
 import { parseItemImportExcelFile, parseReviewExcelFile } from '@/utils/parseExcel';
 import * as XLSX from 'xlsx';
+import { Container } from '@/types';
 
 interface ItemUploadPageProps {
   onUploadComplete?: () => void;
+  container: Container | null;
 }
 
 type TabType = 'metadata' | 'review';
@@ -19,7 +21,7 @@ const SAMPLE_ROW = [
 ];
 const REVIEW_SAMPLE_ROW = ['SP-001', 'nguyenvana', 5, 'Sản phẩm rất tốt, giao hàng nhanh!'];
 
-export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({ onUploadComplete }) => {
+export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({ onUploadComplete, container }) => {
   const [activeTab, setActiveTab] = useState<TabType>('metadata');
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -101,24 +103,23 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({ onUploadComplete
 
     setUploading(true);
     setError(null);
-
     try {
       let jsonData;
 
       if (activeTab === 'metadata') {
-          jsonData = await parseItemImportExcelFile(file);
+        jsonData = await parseItemImportExcelFile(file);
       } else {
-          jsonData = await parseReviewExcelFile(file);
+        jsonData = await parseReviewExcelFile(file);
       }
       
       console.log('Parsed Data:', jsonData);
-      setSuccess(`Successfully parsed ${jsonData.length} items from "${file.name}"! Check Console for JSON.`);
+      setSuccess(`Successfully parsed ${jsonData.length} items from "${file.name}"!`);
       
       if (onUploadComplete) onUploadComplete();
 
     } catch (err: any) {
       console.error(err);
-      setError('Failed to parse file. Please check the format.');
+      setError(err.message || 'Failed to parse file. Please check the format.');
     } finally {
       setUploading(false);
     }

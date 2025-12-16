@@ -170,6 +170,7 @@ model ItemCategory {
 
 model Item {
   Id                Int     @id @default(autoincrement())
+  TitleId           String
   TernantId         Int
   Ternant           Ternant @relation(fields: [TernantId], references: [Id])
   Title             String

@@ -110,6 +110,7 @@ export const parseItemImportExcelFile = async (file: File): Promise<ProductImpor
     };
 
     reader.onerror = () => reject(new Error("Lỗi đọc file."));
+    reader.readAsBinaryString(file);
   });
 };
 
@@ -211,5 +212,6 @@ export const parseReviewExcelFile = async (file: File): Promise<ReviewImportData
     };
 
     reader.onerror = () => reject(new Error("Lỗi đọc file."));
+    reader.readAsBinaryString(file);
   });
 };
