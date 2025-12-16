@@ -3,6 +3,7 @@ import styles from './ItemUploadPage.module.css';
 import { parseItemImportExcelFile, parseReviewExcelFile } from '@/utils/parseExcel';
 import * as XLSX from 'xlsx';
 import { Container } from '@/types';
+import { CreateItemInput, CreateReviewInput, itemApi, reviewApi } from '@/lib/api/item';
 
 interface ItemUploadPageProps {
   onUploadComplete?: () => void;
@@ -105,15 +106,53 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({ onUploadComplete
     setError(null);
     try {
       let jsonData;
-
-      if (activeTab === 'metadata') {
-        jsonData = await parseItemImportExcelFile(file);
-      } else {
-        jsonData = await parseReviewExcelFile(file);
+      const currentDomainId = container?.uuid || "";
+      
+      if (!currentDomainId) {
+        throw new Error("Please select a domain first.");
       }
       
-      console.log('Parsed Data:', jsonData);
-      setSuccess(`Successfully parsed ${jsonData.length} items from "${file.name}"!`);
+      if (activeTab === 'metadata') {
+        jsonData = await parseItemImportExcelFile(file);
+        const mappedData: CreateItemInput[] = jsonData.map((row) => ({
+          TernantItemId: row.sku || '', 
+          Title: row.name || 'No Title',
+          Description: row.description || '',
+          Categories: row.categories || [],
+          DomainKey: currentDomainId,
+        }));
+        const validItems = mappedData.filter(item => item.Title && item.TernantItemId);
+
+        if (validItems.length === 0) {
+          throw new Error("No valid items found in the file.");
+        }
+
+        await itemApi.createBulk(validItems);
+
+      } else {
+        jsonData = await parseReviewExcelFile(file);
+        console.log('Parsed review data:', jsonData);
+        
+        const mappedReviews: CreateReviewInput[] = jsonData.map((row) => ({
+          itemId: row.itemId,
+          userId: row.userId,
+          rating: row.rating,
+          review: row.review,
+          DomainKey: currentDomainId,
+        }));
+        
+        const validReviews = mappedReviews.filter(r => r.itemId && r.userId && r.rating);
+        
+        if (validReviews.length === 0) {
+          throw new Error("No valid reviews found in the file.");
+        }
+        
+        console.log('Sending reviews to API:', validReviews);
+        await reviewApi.createBulk(validReviews);
+        jsonData = validReviews;
+      }
+      
+      setSuccess(`Successfully imported ${jsonData.length} ${activeTab === 'metadata' ? 'items' : 'reviews'} from "${file.name}"!`);
       
       if (onUploadComplete) onUploadComplete();
 

@@ -196,3 +196,12 @@ export interface UserResponse {
   name: string;
   createdAt: string;
 }
+
+// ==================== ITEM TYPES ====================
+export interface CreateItemDto {
+  ternantItemId: string;
+  title: string;
+  description?: string;
+  categories?: string[];
+  domainId: number;
+}

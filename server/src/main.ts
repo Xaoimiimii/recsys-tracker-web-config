@@ -17,7 +17,16 @@ async function bootstrap() {
   });
   
   app.useGlobalPipes(new ValidationPipe({
-    whitelist: true
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+    exceptionFactory: (errors) => {
+      const messages = errors.map(error => ({
+        field: error.property,
+        errors: Object.values(error.constraints || {}),
+      }));
+      return new ValidationPipe().createExceptionFactory()(errors);
+    },
   }));
   app.useGlobalFilters(new PrismaExceptionFilter());
   await app.listen(process.env.PORT ?? 3000);

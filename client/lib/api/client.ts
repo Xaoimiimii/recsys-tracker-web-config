@@ -21,7 +21,11 @@ export async function apiFetch<T>(
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-            throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+            console.error('API error detail:', errorData);
+            const errorMessage = Array.isArray(errorData.message) 
+                ? errorData.message.join(', ') 
+                : errorData.message;
+            throw new Error(errorMessage || `HTTP ${response.status}: ${response.statusText}`);
         }
 
         return await response.json();
