@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Container } from '../../types';
-import { ArrowLeft, Save, Copy } from 'lucide-react';
+import { Save, Copy } from 'lucide-react';
 import styles from './returnMethodPage.module.css';
 import { DisplayConfiguration, DisplayType, SelectorType, MatchOperator } from './types';
 
@@ -111,7 +111,6 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
   window.recoTrackWidget = {
     configId: '${configId}',
     containerId: 'recotrack-widget-${configId}',
-    selector: '${getSelectorString()}',
     layout: '${layoutStyle}',
     theme: '${theme}'
   };
@@ -131,14 +130,9 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
 </script>`;
     };
 
-    const getSelectorString = () => {
-        const prefix = selectorType === 'id' ? '#' : selectorType === 'class' ? '.' : '';
-        return `${prefix}${selectorValue}`;
-    };
-
     const getHelperText = () => {
         if (displayType === 'custom-widget') {
-            return `The widget will be rendered inside the element matching: ${getSelectorString()} (${matchOperator})`;
+            return `The widget will be rendered inside the element matching: ${selectorValue} (${matchOperator})`;
         } else {
             return `The popup will appear when URL ${urlOperator}: ${urlValue || '[enter value]'}`;
         }
@@ -154,14 +148,16 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
         <div className={styles.container}>
             <div className={styles.configCard}>
                 <div className={styles.formHeader}>
-                    <button className={styles.backButton} onClick={() => navigate('/dashboard/recommendation-display')}>
-                        <ArrowLeft size={20} />
-                        Back to list
-                    </button>
                     <h1 className={styles.formTitle}>
                         {mode === 'create' ? 'Create New Configuration' : 
                          mode === 'edit' ? 'Edit Configuration' : 'View Configuration'}
                     </h1>
+                    <button className={styles.closeButton} onClick={() => navigate('/dashboard/recommendation-display')}>
+                        <span className="sr-only">Close</span>
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                 </div>
 
                 <div className={styles.formContent}>
@@ -218,23 +214,10 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                     {displayType === 'custom-widget' && (
                         <>
                             <div className={styles.formSection}>
-                                <label className={styles.sectionLabel}>Target Element</label>
+                                <label className={styles.sectionLabel}>Target CSS Selector</label>
                                 <p className={styles.helperText}>Define where the widget should be rendered on your page</p>
                                 
                                 <div className={styles.formRow}>
-                                    <div className={styles.formCol}>
-                                        <label className={styles.fieldLabel}>Selector Type</label>
-                                        <select 
-                                            className={styles.selectInput}
-                                            value={selectorType}
-                                            onChange={(e) => setSelectorType(e.target.value as SelectorType)}
-                                            disabled={isReadOnly}
-                                        >
-                                            <option value="id">ID</option>
-                                            <option value="class">Class</option>
-                                            <option value="custom">Custom Selector</option>
-                                        </select>
-                                    </div>
                                     <div className={styles.formCol}>
                                         <label className={styles.fieldLabel}>Match Operator</label>
                                         <select 
@@ -250,7 +233,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                     </div>
                                     <div className={styles.formCol}>
                                         <label className={styles.fieldLabel}>
-                                            Selector Value <span className={styles.required}>*</span>
+                                            CSS Selector Value <span className={styles.required}>*</span>
                                         </label>
                                         <input
                                             type="text"
@@ -350,28 +333,13 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                             </div>
 
                             <div className={styles.formSection}>
-                                <label className={styles.sectionLabel}>Integration Guide</label>
+                                <label className={styles.sectionLabel}>How to integrate this widget:</label>
                                 <div className={styles.guideBox}>
-                                    <p className={styles.guideTitle}>How to integrate this widget:</p>
                                     <ol className={styles.guideList}>
                                         <li>Ensure the target element exists on your page</li>
-                                        <li>Copy the widget code below and add it to your page</li>
                                         <li>The widget will automatically render inside the target element</li>
-                                        <li>Test by navigating to a page containing the target element</li>
+                                        <li>Design your widget for best user experience</li>
                                     </ol>
-                                    <p className={styles.guideWarning}>
-                                        ⚠️ Common mistake: Make sure the target element exists before the widget script runs
-                                    </p>
-                                </div>
-                                <div className={styles.codeSection}>
-                                    <div className={styles.codeHeader}>
-                                        <span className={styles.codeLabel}>Widget Code</span>
-                                        <button className={styles.copyCodeButton} onClick={copyCode}>
-                                            <Copy size={16} />
-                                            Copy Code
-                                        </button>
-                                    </div>
-                                    <pre className={styles.codeBlock}>{generateWidgetCode()}</pre>
                                 </div>
                             </div>
                         </>
@@ -410,25 +378,6 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                             placeholder="e.g., /product"
                                             disabled={isReadOnly}
                                         />
-                                    </div>
-                                </div>
-
-                                <div className={styles.formRow}>
-                                    <div className={styles.formCol}>
-                                        <label className={styles.fieldLabel}>
-                                            Slot Name <span className={styles.required}>*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            className={styles.textInput}
-                                            value={slotName}
-                                            onChange={(e) => setSlotName(e.target.value)}
-                                            placeholder="e.g., homepage-slot"
-                                            disabled={isReadOnly}
-                                        />
-                                        <p className={styles.helperText}>
-                                            The slot name must match a predefined slot in your website
-                                        </p>
                                     </div>
                                 </div>
 
