@@ -55,6 +55,34 @@
   gap: 1.5rem;
 }
 
+.errorMessage {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background-color: #FEE2E2;
+  border: 1px solid #FCA5A5;
+  border-radius: 0.5rem;
+  color: #991B1B;
+  font-size: 0.875rem;
+  animation: fadeInSlideDown 0.3s ease-out;
+}
+
+@keyframes fadeInSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.errorIcon {
+  flex-shrink: 0;
+}
+
 .formGrid {
   display: grid;
   grid-template-columns: 1fr;
@@ -116,6 +144,80 @@
 .select:focus {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.conditionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.addButton {
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: background 0.2s;
+}
+
+.addButton:hover {
+  background: #059669;
+}
+
+.addButton span {
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.conditionEmptyState {
+  padding: 1rem;
+  text-align: center;
+  color: #6b7280;
+  border: 1px dashed #d1d5db;
+  border-radius: 0.25rem;
+}
+
+.conditionList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.conditionRow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.conditionRow .selectorInputGroup {
+  flex: 1;
+}
+
+.removeButton {
+  background: none;
+  color: var(--color-primary);
+  border: none;
+  cursor: pointer;
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+}
+
+.removeButton:hover {
+  opacity: 0.7;
 }
 
 .selectIcon {

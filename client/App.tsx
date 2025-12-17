@@ -8,6 +8,8 @@ import { TrackingRulesPage } from './app/tracking/TrackingRulesPage';
 import { RecommendationPage } from './app/recommendation/RecommendationPage';
 import { LoaderScriptPage } from './app/loader-script/LoaderScriptPage';
 import { ItemUploadPage } from './app/item-upload/ItemUploadPage';
+import { ReturnMethodPage } from './app/return-method/returnMethodPage';
+import { ReturnMethodFormPage } from './app/return-method/ReturnMethodFormPage';
 import { MainLayout } from './components/layout/MainLayout';
 import { DataCacheProvider } from './contexts/DataCacheContext';
 
@@ -107,9 +109,36 @@ function AppContent() {
           <Route 
             path="recommendation-display" 
             element={
-              <RecommendationPage 
+              <ReturnMethodPage 
                 container={container} 
                 setContainer={setContainer} 
+              />
+            } 
+          />
+          <Route 
+            path="recommendation-display/create" 
+            element={
+              <ReturnMethodFormPage 
+                container={container} 
+                mode="create"
+              />
+            } 
+          />
+          <Route 
+            path="recommendation-display/edit/:id" 
+            element={
+              <ReturnMethodFormPage 
+                container={container} 
+                mode="edit"
+              />
+            } 
+          />
+          <Route 
+            path="recommendation-display/view/:id" 
+            element={
+              <ReturnMethodFormPage 
+                container={container} 
+                mode="view"
               />
             } 
           />
