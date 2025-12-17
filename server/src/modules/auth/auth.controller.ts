@@ -34,7 +34,12 @@ export class AuthController {
     {
         res.clearCookie('AccessToken', {
             httpOnly: true,
-            secure: true,
+            secure: false,
+            sameSite: 'none',
+        });
+        res.clearCookie('RefreshToken', {
+            httpOnly: true,
+            secure: false,
             sameSite: 'none',
         });
         return { message: 'Đăng xuất thành công' };

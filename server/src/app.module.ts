@@ -7,6 +7,8 @@ import { PrismaModule } from './modules/prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { UserController } from './modules/user/user.controller';
 import { UserModule } from './modules/user/user.module';
+import { ItemModule } from './modules/item/item.module';
+import { RatingModule } from './modules/rating/rating.module';
 
 @Module({
   imports: [
@@ -18,7 +20,9 @@ import { UserModule } from './modules/user/user.module';
     RuleModule,
     EventModule,
     PrismaModule,
-    UserModule
+    UserModule,
+    ItemModule,
+    RatingModule
   ],
   controllers: [UserController],
 })

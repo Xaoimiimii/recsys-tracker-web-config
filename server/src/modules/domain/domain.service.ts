@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { randomBytes } from 'crypto';
 
@@ -43,5 +43,22 @@ export class DomainService {
         });
 
         return domain;
+    }
+
+    async getDomainsByTernantId(ternantId: number) {
+        const ternant = await this.prisma.ternant.findUnique({
+            where: {
+                Id: ternantId
+            }
+        });
+
+        if (!ternant) throw new NotFoundException('Ternant not found');
+
+        const domains = await this.prisma.domain.findMany({
+            where: {
+                TernantID: ternantId
+            }
+        });
+        return domains;
     }
 }

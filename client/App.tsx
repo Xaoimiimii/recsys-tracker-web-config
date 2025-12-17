@@ -152,7 +152,10 @@ function AppContent() {
           />
           <Route 
             path="item-upload" 
-            element={<ItemUploadPage />} 
+            element={
+              <ItemUploadPage
+                container={container}
+              />} 
           />
           <Route path="documentation"/>
         </Route>
