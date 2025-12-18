@@ -1,92 +1,33 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth, useContainer, useDomainSelection } from './hooks';
+import { useAuth, useContainer } from './hooks';
 import { AuthPage } from './app/auth/AuthPage';
-import { OnboardingPage } from './app/onboarding/OnboardingPage';
-import { DomainSelectionPage } from './app/domain-selection/DomainSelectionPage';
 import { DashboardPage } from './app/dashboard/DashboardPage';
 import { TrackingRulesPage } from './app/tracking/TrackingRulesPage';
-import { RecommendationPage } from './app/recommendation/RecommendationPage';
 import { LoaderScriptPage } from './app/loader-script/LoaderScriptPage';
 import { ItemUploadPage } from './app/item-upload/ItemUploadPage';
 import { ReturnMethodPage } from './app/return-method/returnMethodPage';
 import { ReturnMethodFormPage } from './app/return-method/ReturnMethodFormPage';
+import { DomainSelectionPage } from './app/domain-selection/DomainSelectionPage';
+import { OnboardingPage } from './app/onboarding/OnboardingPage';
 import { MainLayout } from './components/layout/MainLayout';
 import { DataCacheProvider } from './contexts/DataCacheContext';
 
-import { domainApi } from './lib/api';
-import { DOMAIN_TYPE_TO_NUMBER } from './lib/constants';
-import { DomainType } from './types';
-
 function AppContent() {
   const { user, loading, signin, signout } = useAuth();
-  const {
-    selectedDomainKey,
-    needsOnboarding,
-    selectDomain,
-    startNewDomainFlow,
-    completeOnboarding,
-  } = useDomainSelection();
-  
-  const [onboardingStep, setOnboardingStep] = useState(0);
-  const [onboardingUrl, setOnboardingUrl] = useState('');
-  
-  const {
-    container,
-    setContainer,
-    isLoadingDomain,
-  } = useContainer(
-    user ? { 
-      isAuthenticated: true, 
-      currentUser: { 
-        name: user.name, 
-        email: user.username 
-      } 
-    } : { 
-      isAuthenticated: false, 
-      currentUser: null 
-    }, 
-    selectedDomainKey || undefined
+  const { container, setContainer } = useContainer();
+  const [selectedDomainKey, setSelectedDomainKey] = useState<string | null>(
+    localStorage.getItem('selectedDomainKey')
   );
   
   const isAuthenticated = user !== null;
 
-  const handleCreateContainer = async (url: string) => {
-    setOnboardingUrl(url);
-    setOnboardingStep(2);
+  const handleSelectDomain = (domainKey: string) => {
+    setSelectedDomainKey(domainKey);
+    localStorage.setItem('selectedDomainKey', domainKey);
   };
 
-  const handleSelectDomainType = async (type: DomainType) => {
-    if (!user) return;
-    
-    try {
-      // Gọi API tạo domain mới với type number
-      const typeNumber = DOMAIN_TYPE_TO_NUMBER[type];
-      const newDomain = await domainApi.create({
-        ternantId: user.id,
-        url: onboardingUrl,
-        type: typeNumber,
-      });
-      
-      // Complete onboarding và select domain mới
-      completeOnboarding(newDomain.Key);
-      setOnboardingStep(0);
-    } catch (error) {
-      console.error('Failed to create domain:', error);
-      alert('Failed to create domain. Please try again.');
-    }
-  };
-
-  const handleSelectExistingDomain = (domainKey: string) => {
-    selectDomain(domainKey);
-  };
-
-  const handleCreateNewDomain = () => {
-    startNewDomainFlow();
-    setOnboardingStep(1);
-  };
-
-  if (loading || (selectedDomainKey && isLoadingDomain)) {
+  if (loading) {
     return <div>Loading...</div>;
   }
   
@@ -97,7 +38,7 @@ function AppContent() {
           path="/login" 
           element={
             isAuthenticated ? (
-              <Navigate to="/domain-selection" replace />
+              <Navigate to="/select-domain" replace />
             ) : (
               <AuthPage onLogin={signin} />
             )
@@ -105,18 +46,13 @@ function AppContent() {
         />
 
         <Route 
-          path="/domain-selection" 
+          path="/select-domain" 
           element={
             !isAuthenticated ? (
               <Navigate to="/login" replace />
-            ) : needsOnboarding ? (
-              <Navigate to="/onboarding" replace />
-            ) : selectedDomainKey ? (
-              <Navigate to="/dashboard" replace />
             ) : (
               <DomainSelectionPage 
-                onSelectDomain={handleSelectExistingDomain}
-                onCreateNewDomain={handleCreateNewDomain}
+                onSelectDomain={handleSelectDomain}
                 onLogout={signout}
               />
             )
@@ -128,17 +64,8 @@ function AppContent() {
           element={
             !isAuthenticated ? (
               <Navigate to="/login" replace />
-            ) : !needsOnboarding ? (
-              <Navigate to="/domain-selection" replace />
-            ) : onboardingStep === 0 ? (
-              <Navigate to="/domain-selection" replace />
             ) : (
-              <OnboardingPage 
-                step={onboardingStep} 
-                onCreateContainer={handleCreateContainer} 
-                onSelectDomain={handleSelectDomainType}
-                onLogout={signout}
-              />
+              <OnboardingPage onLogout={signout} />
             )
           } 
         />
@@ -148,8 +75,8 @@ function AppContent() {
           element={
             !isAuthenticated ? (
               <Navigate to="/login" replace />
-            ) : !selectedDomainKey || needsOnboarding ? (
-              <Navigate to="/domain-selection" replace />
+            ) : !selectedDomainKey ? (
+              <Navigate to="/select-domain" replace />
             ) : (
               <MainLayout 
                 userEmail={user?.username}
@@ -236,16 +163,10 @@ function AppContent() {
         <Route 
           path="*" 
           element={
-            <Navigate to={
-              !isAuthenticated 
-                ? "/login" 
-                : !selectedDomainKey || needsOnboarding
-                  ? "/domain-selection"
-                  : "/dashboard"
-            } replace />
+            <Navigate to={isAuthenticated ? "/select-domain" : "/login"} replace />
           } 
         />
-        </Routes>
+      </Routes>
     </BrowserRouter>
   );
 }

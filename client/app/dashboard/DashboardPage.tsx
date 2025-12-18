@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Container, UserState } from '../../types';
-import { Check, Globe, Activity, X, Copy } from 'lucide-react';
+import { Activity, X, Copy } from 'lucide-react';
 import styles from './DashboardPage.module.css';
 import { MOCK_SCRIPT_TEMPLATE } from '../../lib/constants';
 

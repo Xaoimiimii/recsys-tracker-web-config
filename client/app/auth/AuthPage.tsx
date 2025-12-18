@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import styles from './AuthPage.module.css';
 import { useAuth } from "@/hooks/useAuth";
@@ -17,6 +17,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Clear error and success messages when switching between sign in and sign up
+  useEffect(() => {
+    setError(null);
+    setSuccessMessage(null);
+  }, [isSignUp]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

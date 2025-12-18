@@ -41,7 +41,6 @@ export interface UserState {
 // ==================== DOMAIN TYPES ====================
 
 export interface CreateDomainDto {
-  ternantId: number;
   url: string;
   type: number;
 }

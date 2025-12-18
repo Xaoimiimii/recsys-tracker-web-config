@@ -1,17 +1,55 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { DomainType } from '../../types';
-import { DOMAIN_OPTIONS } from '../../lib/constants';
+import { DOMAIN_OPTIONS, DOMAIN_TYPE_TO_NUMBER } from '../../lib/constants';
 import { OnboardingLayout } from '../../components/layout/OnboardingLayout';
+import { domainApi } from '../../lib/api';
 import styles from './OnboardingPage.module.css';
 
 interface OnboardingPageProps {
-  step: number;
-  onCreateContainer: (url: string) => void;
-  onSelectDomain: (type: DomainType) => void;
+  step?: number;
+  onCreateContainer?: (url: string) => void;
+  onSelectDomain?: (type: DomainType) => void;
   onLogout?: () => void;
 }
 
-export const OnboardingPage: React.FC<OnboardingPageProps> = ({ step, onCreateContainer, onSelectDomain, onLogout }) => {
+export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onLogout }) => {
+  const navigate = useNavigate();
+  const [step, setStep] = useState(1);
+  const [createdDomainKey, setCreatedDomainKey] = useState<string | null>(null);
+  const [enteredUrl, setEnteredUrl] = useState<string>('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleCreateContainer = (url: string) => {
+    setEnteredUrl(url);
+    setStep(2);
+  };
+
+  const handleSelectDomainType = async (type: DomainType) => {
+    if (!enteredUrl) {
+      setError('URL is missing. Please go back and enter a URL.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      const typeNumber = DOMAIN_TYPE_TO_NUMBER[type];
+      const domain = await domainApi.create({ 
+        url: enteredUrl,
+        type: typeNumber 
+      });
+      setCreatedDomainKey(domain.Key);
+      localStorage.setItem('selectedDomainKey', domain.Key);
+      navigate('/dashboard');
+    } catch (err) {
+      console.error('Failed to create domain:', err);
+      setError('Failed to create domain. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
   if (step === 1) {
     return (
       <OnboardingLayout onLogout={onLogout}>
@@ -20,12 +58,28 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ step, onCreateCo
                 <h2 className={styles.title}>Let's set up your tracker</h2>
                 <p className={styles.subtitle}>Enter your website URL to generate a unique domain key.</p>
             </div>
+            {error && (
+              <div style={{ color: 'red', marginBottom: '1rem', textAlign: 'center' }}>
+                {error}
+              </div>
+            )}
             <div className={styles.card}>
-                <form onSubmit={(e) => { e.preventDefault(); const fd = new FormData(e.currentTarget); onCreateContainer(fd.get('url') as string); }}>
+                <form onSubmit={(e) => { 
+                  e.preventDefault(); 
+                  const fd = new FormData(e.currentTarget); 
+                  handleCreateContainer(fd.get('url') as string); 
+                }}>
                     <div className={styles.urlForm}>
-                        <input name="url" type="url" required placeholder="https://www.example.com" className={styles.urlInput} />
-                        <button type="submit" className={styles.nextButton}>
-                            Next
+                        <input 
+                          name="url" 
+                          type="url" 
+                          required 
+                          placeholder="https://www.example.com" 
+                          className={styles.urlInput}
+                          disabled={loading}
+                        />
+                        <button type="submit" className={styles.nextButton} disabled={loading}>
+                            {loading ? 'Creating...' : 'Next'}
                         </button>
                     </div>
                 </form>
@@ -49,26 +103,44 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ step, onCreateCo
                 <h2 className={styles.title}>What is your website about?</h2>
                 <p className={styles.subtitle}>We will optimize the tracking suggestions based on your industry.</p>
             </div>
-            <div className={styles.grid}>
-                {DOMAIN_OPTIONS.map((opt) => (
+            {error && (
+              <div style={{ color: 'red', marginBottom: '1rem', textAlign: 'center' }}>
+                {error}
+              </div>
+            )}
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: '2rem' }}>
+                <p>Creating your domain...</p>
+              </div>
+            ) : (
+              <>
+                <div className={styles.grid}>
+                    {DOMAIN_OPTIONS.map((opt) => (
+                        <button 
+                            key={opt.type}
+                            onClick={() => handleSelectDomainType(opt.type)}
+                            className={styles.domainCard}
+                            disabled={loading}
+                        >
+                            <div className={styles.iconCircle}>
+                                {React.createElement(opt.icon, { size: 32 })}
+                            </div>
+                            <h3 className={styles.cardTitle}>{opt.label}</h3>
+                            <p className={styles.cardDescription}>{opt.description}</p>
+                        </button>
+                    ))}
+                </div>
+                <div className={styles.skipSection}>
                     <button 
-                        key={opt.type}
-                        onClick={() => onSelectDomain(opt.type)}
-                        className={styles.domainCard}
+                      onClick={() => handleSelectDomainType('general')} 
+                      className={styles.skipButton}
+                      disabled={loading}
                     >
-                        <div className={styles.iconCircle}>
-                            {React.createElement(opt.icon, { size: 32 })}
-                        </div>
-                        <h3 className={styles.cardTitle}>{opt.label}</h3>
-                        <p className={styles.cardDescription}>{opt.description}</p>
+                        Skip this step
                     </button>
-                ))}
-            </div>
-            <div className={styles.skipSection}>
-                <button onClick={() => onSelectDomain('general')} className={styles.skipButton}>
-                    Skip this step
-                </button>
-            </div>
+                </div>
+              </>
+            )}
             <div className={styles.progressContainer}>
               <div className={styles.progressBar}>
                 <div className={styles.progressFill} style={{ width: '100%' }}></div>

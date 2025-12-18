@@ -6,7 +6,7 @@ export const domainApi = {
         apiFetch<DomainResponse>('/domain/create', {
             method: 'POST',
             body: JSON.stringify(data),
-        }, true),
+        }, false, true),
     
     getByKey: (key: string) =>
         apiFetch<DomainResponse>(`/domain/${key}`, {

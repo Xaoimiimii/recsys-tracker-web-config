@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { domainApi } from '../../lib/api';
 import type { DomainResponse } from '../../lib/api/types';
@@ -7,15 +8,14 @@ import styles from './DomainSelectionPage.module.css';
 
 interface DomainSelectionPageProps {
   onSelectDomain: (domainKey: string) => void;
-  onCreateNewDomain: () => void;
   onLogout?: () => void;
 }
 
 export const DomainSelectionPage: React.FC<DomainSelectionPageProps> = ({ 
   onSelectDomain,
-  onCreateNewDomain,
   onLogout
 }) => {
+  const navigate = useNavigate();
   const [domains, setDomains] = useState<DomainResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,10 +39,11 @@ export const DomainSelectionPage: React.FC<DomainSelectionPageProps> = ({
 
   const handleDomainClick = (domain: DomainResponse) => {
     onSelectDomain(domain.Key);
+    navigate('/dashboard');
   };
 
   const handleCreateNew = () => {
-    onCreateNewDomain();
+    navigate('/onboarding');
   };
 
   if (loading) {
@@ -63,28 +64,28 @@ export const DomainSelectionPage: React.FC<DomainSelectionPageProps> = ({
           </p>
         </div>
 
-        {/* {(domains.length === 0 && !error) && (
-          <div className={styles.spaceholder}></div>
-        )} */}
+        {/* Add New Domain Card */}
+        <button 
+          onClick={handleCreateNew}
+          className={styles.createCard}
+        >
+          <div className={styles.createCardIcon}>
+            <Plus size={48} />
+          </div>
+          <div className={styles.createCardContent}>
+            <h3 className={styles.cardTitle}>Create New Domain</h3>
+            <p className={styles.cardDescription}>
+              Create and configure a new domain for your website
+            </p>
+          </div>
+        </button>
+
+        {(domains.length > 0 && !error) && (
+          <div className={styles.sectionTitle}>Your Domains:
+          </div>
+        )}
 
         <div className={styles.grid}>
-          {/* Add New Domain Card */}
-          <button 
-            onClick={handleCreateNew}
-            className={`${styles.card} ${styles.createCard}`}
-          >
-            <div className={styles.createCardIcon}>
-              <Plus size={48} />
-            </div>
-            <div className={styles.createCardContent}>
-              <h3 className={styles.cardTitle}>Create New Domain</h3>
-              <p className={styles.cardDescription}>
-                Create and configure a new domain for your website
-              </p>
-            </div>
-
-          </button>
-
           {/* Existing Domain Cards */}
           {domains.map((domain) => {
             const domainUrl = new URL(domain.Url);
