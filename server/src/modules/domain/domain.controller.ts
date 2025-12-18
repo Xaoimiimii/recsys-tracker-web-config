@@ -8,12 +8,13 @@ import type { Request } from 'express';
 export class DomainController {
     constructor(private domainService: DomainService) { }
 
-    // @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard)
     @Post('create')
-    async createDomain(@Body() body: CreateDomainDto) {
-        const { ternantId, url, type } = body;
-        // console.log(body);
-        return this.domainService.createDomain(ternantId, url, type);
+    async createDomain(@Body() body: CreateDomainDto, @Req() req: Request) {
+        const { url, type } = body;
+        const tenant = req.user;
+        if (!tenant) throw new UnauthorizedException();
+        return this.domainService.createDomain(tenant['Id'], url, type);
     }
 
     @UseGuards(JwtAuthGuard)
