@@ -7,7 +7,7 @@ import { OnboardingLayout } from '../../components/layout/OnboardingLayout';
 import styles from './DomainSelectionPage.module.css';
 
 interface DomainSelectionPageProps {
-  onSelectDomain: (domainKey: string) => void;
+  onSelectDomain: (domainKey: string, domainsList: DomainResponse[]) => void;
   onLogout?: () => void;
 }
 
@@ -38,7 +38,7 @@ export const DomainSelectionPage: React.FC<DomainSelectionPageProps> = ({
   }, []);
 
   const handleDomainClick = (domain: DomainResponse) => {
-    onSelectDomain(domain.Key);
+    onSelectDomain(domain.Key, domains);
     navigate('/dashboard');
   };
 

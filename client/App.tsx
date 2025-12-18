@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth, useContainer } from './hooks';
 import { AuthPage } from './app/auth/AuthPage';
@@ -12,6 +12,8 @@ import { DomainSelectionPage } from './app/domain-selection/DomainSelectionPage'
 import { OnboardingPage } from './app/onboarding/OnboardingPage';
 import { MainLayout } from './components/layout/MainLayout';
 import { DataCacheProvider } from './contexts/DataCacheContext';
+import type { DomainResponse } from './lib/api/types';
+import type { Container, DomainType } from './types';
 
 function AppContent() {
   const { user, loading, signin, signout } = useAuth();
@@ -19,12 +21,47 @@ function AppContent() {
   const [selectedDomainKey, setSelectedDomainKey] = useState<string | null>(
     localStorage.getItem('selectedDomainKey')
   );
+  const [domains, setDomains] = useState<DomainResponse[]>([]);
   
   const isAuthenticated = user !== null;
 
-  const handleSelectDomain = (domainKey: string) => {
+  // Map DomainResponse to Container type
+  const mapDomainToContainer = (domain: DomainResponse): Container => {
+    const domainTypeMap: Record<number, DomainType> = {
+      1: 'music',
+      2: 'movie',
+      3: 'news',
+      4: 'ecommerce',
+      5: 'general',
+    };
+
+    return {
+      id: domain.Id.toString(),
+      uuid: domain.Key,
+      name: new URL(domain.Url).hostname,
+      url: domain.Url,
+      domainType: domainTypeMap[domain.Type] || 'general',
+      rules: [],
+      outputConfig: {
+        displayMethods: [],
+      },
+    };
+  };
+
+  // Update container when selectedDomainKey or domains change
+  useEffect(() => {
+    if (selectedDomainKey && domains.length > 0) {
+      const selectedDomain = domains.find(d => d.Key === selectedDomainKey);
+      if (selectedDomain) {
+        setContainer(mapDomainToContainer(selectedDomain));
+      }
+    }
+  }, [selectedDomainKey, domains]);
+
+  const handleSelectDomain = (domainKey: string, domainsList: DomainResponse[]) => {
     setSelectedDomainKey(domainKey);
     localStorage.setItem('selectedDomainKey', domainKey);
+    setDomains(domainsList);
   };
 
   if (loading) {
