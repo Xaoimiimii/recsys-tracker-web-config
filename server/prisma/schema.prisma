@@ -66,6 +66,8 @@ model DomainReturn {
 
   Value             String
   ConfigurationName String
+
+  @@unique([DomainID, ConfigurationName, ReturnMethodID])
 }
 
 model ReturnMethod {
