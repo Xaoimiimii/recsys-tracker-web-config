@@ -28,10 +28,10 @@ export class ReturnMethodController {
     async createReturnMethods(@Body() dto: CreateReturnMethodsDto) {
         const result = await this.returnMethodService.createReturnMethods(
             dto.key,
-            dto.slotName,
+            dto.configurationName,
             dto.returnMethodId,
             dto.value,
-            dto.targetUrl,
+            dto.operatorId,
         );
 
         if (!result) {
