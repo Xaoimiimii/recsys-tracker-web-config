@@ -63,9 +63,9 @@ export const DomainSelectionPage: React.FC<DomainSelectionPageProps> = ({
           </p>
         </div>
 
-        {error && (
-          <div className={styles.error}>{error}</div>
-        )}
+        {/* {(domains.length === 0 && !error) && (
+          <div className={styles.spaceholder}></div>
+        )} */}
 
         <div className={styles.grid}>
           {/* Add New Domain Card */}
@@ -113,6 +113,12 @@ export const DomainSelectionPage: React.FC<DomainSelectionPageProps> = ({
             );
           })}
         </div>
+
+        {(domains.length === 0 && !error) && (
+          <div className={styles.spaceholder}></div>
+        )}
+
+
       </div>
     </OnboardingLayout>
   );
