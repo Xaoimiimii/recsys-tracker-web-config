@@ -4,18 +4,29 @@ const SERVER_API_BASE_URL = import.meta.env.SERVER_API_BASE_URL || 'http://local
 export async function apiFetch<T>(
     endpoint: string,
     options?: RequestInit,
-    useServerUrl: boolean = false
+    useServerUrl: boolean = false,
+    useAuthHeader: boolean = false
 ): Promise<T> {
     const baseUrl = useServerUrl ? SERVER_API_BASE_URL : VITE_API_BASE_URL;
     const url = `${baseUrl}${endpoint}`;
   
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...options?.headers as Record<string, string>,
+    };
+
+    // Add Authorization header if needed
+    if (useAuthHeader) {
+        const accessToken = localStorage.getItem('accessToken');
+        if (accessToken) {
+            headers['Authorization'] = `Bearer ${accessToken}`;
+        }
+    }
+  
     try {
         const response = await fetch(url, {
             ...options,
-            headers: {
-            'Content-Type': 'application/json',
-            ...options?.headers,
-            },
+            headers,
             credentials: 'include', // Include cookies for JWT auth
         });
 

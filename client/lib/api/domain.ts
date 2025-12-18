@@ -12,4 +12,9 @@ export const domainApi = {
         apiFetch<DomainResponse>(`/domain/${key}`, {
             method: 'GET',
         }, true),
+    
+    getByTernantId: () =>
+        apiFetch<DomainResponse[]>('/domain/ternant', {
+            method: 'GET',
+        }, false, true),
 };

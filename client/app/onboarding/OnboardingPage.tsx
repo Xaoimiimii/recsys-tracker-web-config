@@ -1,28 +1,20 @@
 import React from 'react';
-import { User } from 'lucide-react';
 import { DomainType } from '../../types';
 import { DOMAIN_OPTIONS } from '../../lib/constants';
+import { OnboardingLayout } from '../../components/layout/OnboardingLayout';
 import styles from './OnboardingPage.module.css';
 
 interface OnboardingPageProps {
   step: number;
   onCreateContainer: (url: string) => void;
   onSelectDomain: (type: DomainType) => void;
+  onLogout?: () => void;
 }
 
-export const OnboardingPage: React.FC<OnboardingPageProps> = ({ step, onCreateContainer, onSelectDomain }) => {
+export const OnboardingPage: React.FC<OnboardingPageProps> = ({ step, onCreateContainer, onSelectDomain, onLogout }) => {
   if (step === 1) {
     return (
-      <div className={styles.container}>
-        <header className={styles.headerBar}>
-          <div className={styles.logo}>
-            <span className={styles.logoReco}>Reco</span>
-            <span className={styles.logoTrack}>Track</span>
-          </div>
-          <div className={styles.userAvatar}>
-            <User size={20} />
-          </div>
-        </header>
+      <OnboardingLayout onLogout={onLogout}>
         <div className={styles.stepOneContainer}>
             <div className={styles.textCenter}>
                 <h2 className={styles.title}>Let's set up your tracker</h2>
@@ -45,22 +37,13 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ step, onCreateCo
               <p className={styles.progressText}>Step 1 of 2</p>
             </div>
         </div>
-      </div>
+      </OnboardingLayout>
     );
   }
 
   if (step === 2) {
     return (
-      <div className={styles.container}>
-        <header className={styles.headerBar}>
-          <div className={styles.logo}>
-            <span className={styles.logoReco}>Reco</span>
-            <span className={styles.logoTrack}>Track</span>
-          </div>
-          <div className={styles.userAvatar}>
-            <User size={20} />
-          </div>
-        </header>
+      <OnboardingLayout onLogout={onLogout}>
         <div className={styles.stepTwoContainer}>
             <div className={styles.header}>
                 <h2 className={styles.title}>What is your website about?</h2>
@@ -93,7 +76,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ step, onCreateCo
               <p className={styles.progressText}>Step 2 of 2</p>
             </div>
         </div>
-      </div>
+      </OnboardingLayout>
     );
   }
 
