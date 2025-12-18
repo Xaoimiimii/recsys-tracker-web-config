@@ -5,6 +5,11 @@ import { ruleApi, EventPattern, PayloadPattern, Operator } from '../../lib/api/'
 import { useDataCache } from '../../contexts/DataCacheContext';
 import styles from './RuleBuilder.module.css';
 
+// Helper function to normalize trigger names (e.g., "Page View" -> "page_view")
+const normalizeTriggerName = (name: string): TriggerType => {
+  return name.toLowerCase().replace(/\s+/g, '_') as TriggerType;
+};
+
 interface RuleBuilderProps {
   initialRule?: any; // For future edit functionality
   ruleDetails?: any; // RuleDetailResponse from API
@@ -169,7 +174,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
 
     try {
       // Find trigger event ID from cached triggerEvents
-      const triggerEventId = triggerEvents.find(te => te.Name.toLowerCase() === trigger)?.Id || 1;
+      const triggerEventId = triggerEvents.find(te => normalizeTriggerName(te.Name) === trigger)?.Id || 1;
       
       // Construct CreateRuleDto matching backend
       const createRuleDto = {
@@ -274,12 +279,12 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                 <select 
                 className={styles.select}
                 value={trigger}
-                onChange={e => setTrigger(e.target.value as TriggerType)}
+                onChange={e => setTrigger(normalizeTriggerName(e.target.value))}
                 disabled={isViewMode}
                 >
                   {triggerEvents.length > 0 ? (
                     triggerEvents.map(te => (
-                      <option key={te.Id} value={te.Name.toLowerCase()}>
+                      <option key={te.Id} value={normalizeTriggerName(te.Name)}>
                         {te.Name}
                       </option>
                     ))
@@ -287,13 +292,13 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                     <>
                       <option value="click">Click</option>
                       <option value="rate">Rate</option>
-                      <option value="page_view">Page view</option>
+                      <option value="page_view">Page View</option>
                       <option value="scroll">Scroll</option>
                     </>
                   )}
                 </select>
                 <div className={styles.selectIcon}>
-                    {React.createElement(TRIGGER_ICONS[trigger], { size: 18 })}
+                    {TRIGGER_ICONS[trigger] && React.createElement(TRIGGER_ICONS[trigger], { size: 18 })}
                 </div>
             </div>
           </div>
@@ -349,8 +354,6 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                   <option value="4">Ends with</option>
                   <option value="5">Equals</option>
                   <option value="6">Not equals</option>
-                  <option value="7">Exists</option>
-                  <option value="8">Not exists</option>
                 </>
               )}
             </select>
@@ -442,8 +445,6 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                           <option value="4">Ends with</option>
                           <option value="5">Equals</option>
                           <option value="6">Not equals</option>
-                          <option value="7">Exists</option>
-                          <option value="8">Not exists</option>
                         </>
                       )}
                     </select>
@@ -531,8 +532,6 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                       <option value="4">Ends with</option>
                       <option value="5">Equals</option>
                       <option value="6">Not equals</option>
-                      <option value="7">Exists</option>
-                      <option value="8">Not exists</option>
                     </>
                   )}
                 </select>
@@ -598,8 +597,6 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                       <option value="4">Ends with</option>
                       <option value="5">Equals</option>
                       <option value="6">Not equals</option>
-                      <option value="7">Exists</option>
-                      <option value="8">Not exists</option>
                     </>
                   )}
                 </select>

@@ -131,6 +131,7 @@ function AppContent() {
                 container={container} 
                 setContainer={setContainer} 
                 onLogout={signout} 
+                domains={domains}
               />
             } 
           />
