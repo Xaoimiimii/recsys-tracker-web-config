@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, UserState } from '../../types';
 import { Activity, X, Copy } from 'lucide-react';
 import styles from './DashboardPage.module.css';
 import { MOCK_SCRIPT_TEMPLATE } from '../../lib/constants';
+import { useDataCache } from '../../contexts/DataCacheContext';
+import { domainApi, ruleApi } from '../../lib/api';
 
 interface DashboardPageProps {
     user: UserState;
@@ -13,6 +15,28 @@ interface DashboardPageProps {
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, setContainer, onLogout }) => {
     const [showModal, setShowModal] = useState(false);
+    const { setTriggerEvents, setEventPatterns, setOperators } = useDataCache();
+
+    // Fetch master data when dashboard loads
+    useEffect(() => {
+        const fetchMasterData = async () => {
+            try {
+                const [triggerEvents, eventPatterns, operators] = await Promise.all([
+                    domainApi.getTriggerEvents(),
+                    ruleApi.getEventPatterns(),
+                    ruleApi.getOperators(),
+                ]);
+
+                setTriggerEvents(triggerEvents);
+                setEventPatterns(eventPatterns);
+                setOperators(operators);
+            } catch (error) {
+                console.error('Failed to fetch master data:', error);
+            }
+        };
+
+        fetchMasterData();
+    }, [setTriggerEvents, setEventPatterns, setOperators]);
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);

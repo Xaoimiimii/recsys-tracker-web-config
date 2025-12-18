@@ -4,6 +4,8 @@ import { Container } from '../../types';
 import { Plus, Eye, Edit2, Trash2 } from 'lucide-react';
 import styles from './returnMethodPage.module.css';
 import { DisplayConfiguration, DisplayType } from './types';
+import { returnMethodApi } from '../../lib/api/return-method';
+import type { ReturnMethodResponse } from '../../lib/api/types';
 
 interface ReturnMethodPageProps {
     container: Container | null;
@@ -16,61 +18,72 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
     const [configurations, setConfigurations] = useState<DisplayConfiguration[]>([]);
     const [filterType, setFilterType] = useState<DisplayType | 'all'>('all');
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    // Mock data for development
+    // Fetch return methods from API
     useEffect(() => {
-        const mockConfigs: DisplayConfiguration[] = [
-            {
-                id: '1',
-                name: 'Product Page Widget',
-                displayType: 'custom-widget',
-                targetSelector: {
-                    type: 'class',
-                    operator: 'contains',
-                    value: 'product-detail'
-                },
-                widgetDesign: {
-                    layout: 'grid',
-                    theme: 'light',
-                    spacing: 'medium',
-                    size: 'large'
-                },
-                createdAt: '2025-12-15T10:00:00Z',
-                updatedAt: '2025-12-15T10:00:00Z'
-            },
-            {
-                id: '2',
-                name: 'Homepage Popup',
-                displayType: 'popup',
-                urlTrigger: {
-                    operator: 'contains',
-                    value: '/product'
-                },
-                slotName: 'homepage-slot',
-                createdAt: '2025-12-14T08:30:00Z',
-                updatedAt: '2025-12-14T08:30:00Z'
-            },
-            {
-                id: '3',
-                name: 'Cart Widget',
-                displayType: 'custom-widget',
-                targetSelector: {
-                    type: 'id',
-                    operator: 'equals',
-                    value: 'shopping-cart'
-                },
-                widgetDesign: {
-                    layout: 'list',
-                    theme: 'dark',
-                    spacing: 'small',
-                    size: 'medium'
-                },
-                createdAt: '2025-12-13T14:20:00Z',
-                updatedAt: '2025-12-13T14:20:00Z'
+        const fetchReturnMethods = async () => {
+            if (!container?.uuid) {
+                setError('No domain selected');
+                return;
             }
-        ];
-        setConfigurations(mockConfigs);
-    }, []);
+
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                const response = await returnMethodApi.getByDomainKey(container.uuid);
+                
+                // Transform API response to DisplayConfiguration format
+                const transformedConfigs: DisplayConfiguration[] = response.map((item, index) => {
+                    // Determine display type based on ReturnMethodID or Value
+                    const displayType: DisplayType = item.Value === 'popup' ? 'popup' : 'custom-widget';
+                    
+                    const config: DisplayConfiguration = {
+                        id: `${item.DomainID}-${index}`,
+                        name: item.SlotName,
+                        displayType,
+                        slotName: item.SlotName,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString(),
+                    };
+
+                    if (displayType === 'popup') {
+                        config.urlTrigger = {
+                            operator: 'contains',
+                            value: item.TargetUrl || ''
+                        };
+                    } else {
+                        // For custom-widget, parse the targetSelector if exists
+                        if (item.Value) {
+                            config.targetSelector = {
+                                type: 'custom',
+                                operator: 'equals',
+                                value: item.Value
+                            };
+                        }
+                        config.widgetDesign = {
+                            layout: 'grid',
+                            theme: 'light',
+                            spacing: 'medium',
+                            size: 'medium'
+                        };
+                    }
+
+                    return config;
+                });
+
+                setConfigurations(transformedConfigs);
+            } catch (err) {
+                console.error('Failed to fetch return methods:', err);
+                setError('Failed to load return methods. Please try again.');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchReturnMethods();
+    }, [container?.uuid]);
 
     const filteredConfigurations = configurations.filter(config => {
         const typeMatch = filterType === 'all' || config.displayType === filterType;
@@ -133,7 +146,19 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
                     </div>
                 </div>
 
-                {filteredConfigurations.length === 0 ? (
+                {isLoading ? (
+                    <div className={styles.emptyState}>
+                        <p className={styles.emptyTitle}>Loading...</p>
+                        <p className={styles.emptyDescription}>
+                            Fetching return method configurations...
+                        </p>
+                    </div>
+                ) : error ? (
+                    <div className={styles.emptyState}>
+                        <p className={styles.emptyTitle}>Error</p>
+                        <p className={styles.emptyDescription}>{error}</p>
+                    </div>
+                ) : filteredConfigurations.length === 0 ? (
                     <div className={styles.emptyState}>
                         <p className={styles.emptyTitle}>No display configurations yet</p>
                         <p className={styles.emptyDescription}>

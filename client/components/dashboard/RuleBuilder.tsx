@@ -2,16 +2,26 @@ import React, { useState, useEffect } from 'react';
 import { TriggerType } from '../../types';
 import { TRIGGER_ICONS } from '../../lib/constants';
 import { ruleApi, EventPattern, PayloadPattern, Operator } from '../../lib/api/';
+import { useDataCache } from '../../contexts/DataCacheContext';
 import styles from './RuleBuilder.module.css';
 
 interface RuleBuilderProps {
   initialRule?: any; // For future edit functionality
+  ruleDetails?: any; // RuleDetailResponse from API
+  isViewMode?: boolean; // true for view mode, false for edit mode
   onSave: (response: { statusCode: number; message: string }) => void;
   onCancel: () => void;
   domainKey: string;
 }
 
-export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, onCancel, domainKey }) => {
+export const RuleBuilder: React.FC<RuleBuilderProps> = ({ 
+  initialRule, 
+  ruleDetails, 
+  isViewMode = false, 
+  onSave, 
+  onCancel, 
+  domainKey 
+}) => {
   const [name, setName] = useState(initialRule?.name || '');
   const [trigger, setTrigger] = useState<TriggerType>(initialRule?.trigger || 'click');
   
@@ -43,47 +53,87 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   
-  // API data states
-  const [eventPatterns, setEventPatterns] = useState<EventPattern[]>([]);
+  // Get cached data from context
+  const { triggerEvents, eventPatterns, operators } = useDataCache();
   const [payloadPatterns, setPayloadPatterns] = useState<PayloadPattern[]>([]);
-  const [operators, setOperators] = useState<Operator[]>([]);
   const [isLoadingOptions, setIsLoadingOptions] = useState(true);
 
-  // Fetch dropdown options from API
+  // Fetch only payload patterns (as they are not in cache)
   useEffect(() => {
-    const fetchOptions = async () => {
+    const fetchPayloadPatterns = async () => {
       setIsLoadingOptions(true);
       try {
-        const [events, payloads, ops] = await Promise.all([
-          ruleApi.getEventPatterns(),
-          ruleApi.getPayloadPatterns(),
-          ruleApi.getOperators(),
-        ]);
-        
-        setEventPatterns(events);
+        const payloads = await ruleApi.getPayloadPatterns();
         setPayloadPatterns(payloads);
-        setOperators(ops);
         
         // Set default pattern IDs after loading
-        if (events.length > 0 && targetPattern === null) {
-          // Default to first event pattern (CSS Selector)
-          setTargetPattern(events[0].Id);
+        if (eventPatterns.length > 0 && targetPattern === null) {
+          setTargetPattern(eventPatterns[0].Id);
         }
         
         if (payloads.length > 0 && itemPattern === null) {
-          // Default to first payload pattern for item
           setItemPattern(payloads[0].Id);
           setUserPattern(payloads[0].Id);
         }
       } catch (error) {
-        console.error('Failed to fetch rule options:', error);
+        console.error('Failed to fetch payload patterns:', error);
       } finally {
         setIsLoadingOptions(false);
       }
     };
 
-    fetchOptions();
-  }, []);
+    if (eventPatterns.length > 0 && operators.length > 0) {
+      fetchPayloadPatterns();
+    }
+  }, [eventPatterns, operators]);
+
+  // Load data from ruleDetails when available
+  useEffect(() => {
+    if (ruleDetails) {
+      // Set name
+      setName(ruleDetails.Name || '');
+      
+      // Set trigger based on TriggerEventID
+      const triggerMap: { [key: number]: TriggerType } = {
+        1: 'click',
+        2: 'rate',
+        3: 'page_view',
+        4: 'scroll'
+      };
+      setTrigger(triggerMap[ruleDetails.TriggerEventID] || 'click');
+      
+      // Set target element
+      if (ruleDetails.TargetElement) {
+        setTargetPattern(ruleDetails.TargetElement.EventPatternID || null);
+        setTargetMatchOperator(ruleDetails.TargetElement.OperatorID || 1);
+        setTargetValue(ruleDetails.TargetElement.Value || '');
+      }
+      
+      // Set conditions
+      if (ruleDetails.Conditions && ruleDetails.Conditions.length > 0) {
+        setConditions(ruleDetails.Conditions.map((cond: any) => ({
+          pattern: cond.EventPatternID || null,
+          operator: cond.OperatorID || 1,
+          value: cond.Value || ''
+        })));
+      }
+      
+      // Set payload configs
+      if (ruleDetails.PayloadConfigs && ruleDetails.PayloadConfigs.length > 0) {
+        ruleDetails.PayloadConfigs.forEach((config: any) => {
+          if (config.Type === 'itemId') {
+            setItemPattern(config.PayloadPatternID || null);
+            setItemMatchOperator(config.OperatorID || 1);
+            setItemValue(config.Value || '');
+          } else if (config.Type === 'userId') {
+            setUserPattern(config.PayloadPatternID || null);
+            setUserMatchOperator(config.OperatorID || 1);
+            setUserValue(config.Value || 'window.USER_ID');
+          }
+        });
+      }
+    }
+  }, [ruleDetails]);
 
   // Add a new condition
   const addCondition = () => {
@@ -118,8 +168,8 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
     setSubmitError(null);
 
     try {
-      // Find trigger event ID from eventPatterns
-      const triggerEventId = eventPatterns.find(ep => ep.Name.toLowerCase() === trigger)?.Id || 1;
+      // Find trigger event ID from cached triggerEvents
+      const triggerEventId = triggerEvents.find(te => te.Name.toLowerCase() === trigger)?.Id || 1;
       
       // Construct CreateRuleDto matching backend
       const createRuleDto = {
@@ -184,7 +234,9 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h3 className={styles.title}>{initialRule ? 'Edit Rule' : 'New Tracking Rule'}</h3>
+        <h3 className={styles.title}>
+          {isViewMode ? 'View Rule' : initialRule ? 'Edit Rule' : 'New Tracking Rule'}
+        </h3>
         <button onClick={onCancel} className={styles.closeButton}>
             <span className="sr-only">Close</span>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -213,6 +265,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
               placeholder="e.g., Track Play Button"
               value={name}
               onChange={e => setName(e.target.value)}
+              disabled={isViewMode}
             />
           </div>
           <div className={styles.formGroup}>
@@ -222,11 +275,22 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
                 className={styles.select}
                 value={trigger}
                 onChange={e => setTrigger(e.target.value as TriggerType)}
+                disabled={isViewMode}
                 >
-                  <option value="click">Click</option>
-                  <option value="form_submit">Form Submission</option>
-                  <option value="scroll">Scroll</option>
-                  <option value="view">Page view</option>
+                  {triggerEvents.length > 0 ? (
+                    triggerEvents.map(te => (
+                      <option key={te.Id} value={te.Name.toLowerCase()}>
+                        {te.Name}
+                      </option>
+                    ))
+                  ) : (
+                    <>
+                      <option value="click">Click</option>
+                      <option value="rate">Rate</option>
+                      <option value="page_view">Page view</option>
+                      <option value="scroll">Scroll</option>
+                    </>
+                  )}
                 </select>
                 <div className={styles.selectIcon}>
                     {React.createElement(TRIGGER_ICONS[trigger], { size: 18 })}
@@ -245,7 +309,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
               className={styles.selectorMethodSelect}
               value={targetPattern || ''}
               onChange={e => setTargetPattern(Number(e.target.value))}
-              disabled={isLoadingOptions}
+              disabled={isLoadingOptions || isViewMode}
             >
               {isLoadingOptions ? (
                 <option>Loading...</option>
@@ -257,8 +321,9 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
                 ))
               ) : (
                 <>
-                  <option value="css">CSS Selector</option>
-                  <option value="regex">Regex Selector</option>
+                  <option value="1">CSS Selector</option>
+                  <option value="2">DOM attribute</option>
+                  <option value="3">Data attribute</option>
                 </>
               )}
             </select>
@@ -266,7 +331,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
               className={styles.selectorMethodSelect}
               value={targetMatchOperator}
               onChange={e => setTargetMatchOperator(Number(e.target.value))}
-              disabled={isLoadingOptions}
+              disabled={isLoadingOptions || isViewMode}
             >
               {isLoadingOptions ? (
                 <option>Loading operators...</option>
@@ -279,12 +344,13 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
               ) : (
                 <>
                   <option value="1">Contains</option>
-                  <option value="2">Does Not Contain</option>
-                  <option value="3">Equals</option>
-                  <option value="4">Does Not Equal</option>
-                  <option value="5">Starts With</option>
-                  <option value="6">Ends With</option>
-                  <option value="7">Match Regex</option>
+                  <option value="2">Not contains</option>
+                  <option value="3">Starts with</option>
+                  <option value="4">Ends with</option>
+                  <option value="5">Equals</option>
+                  <option value="6">Not equals</option>
+                  <option value="7">Exists</option>
+                  <option value="8">Not exists</option>
                 </>
               )}
             </select>
@@ -299,6 +365,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
               }
               value={targetValue}
               onChange={e => setTargetValue(e.target.value)}
+              disabled={isViewMode}
             />
           </div>
         </div>
@@ -309,14 +376,16 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
             <label className={styles.selectorLabel}>
               Track When
             </label>
-            <button 
-              type="button" 
-              onClick={addCondition}
-              className={styles.addButton}
-            >
-              <span>+</span>
-              Add Condition
-            </button>
+            {!isViewMode && (
+              <button 
+                type="button" 
+                onClick={addCondition}
+                className={styles.addButton}
+              >
+                <span>+</span>
+                Add Condition
+              </button>
+            )}
           </div>
           
           {conditions.length === 0 ? (
@@ -332,7 +401,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
                       className={styles.selectorMethodSelect}
                       value={condition.pattern || ''}
                       onChange={e => updateCondition(index, 'pattern', Number(e.target.value))}
-                      disabled={isLoadingOptions}
+                      disabled={isLoadingOptions || isViewMode}
                     >
                       {isLoadingOptions ? (
                         <option>Loading...</option>
@@ -343,14 +412,19 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
                           </option>
                         ))
                       ) : (
-                        <option value="">No patterns available</option>
+                        <>
+                          <option value="1">CSS Selector</option>
+                          <option value="2">URL Param</option>
+                          <option value="3">DOM attribute</option>
+                          <option value="4">Data attribute</option>
+                        </>
                       )}
                     </select>
                     <select 
                       className={styles.selectorMethodSelect}
                       value={condition.operator}
                       onChange={e => updateCondition(index, 'operator', Number(e.target.value))}
-                      disabled={isLoadingOptions}
+                      disabled={isLoadingOptions || isViewMode}
                     >
                       {isLoadingOptions ? (
                         <option>Loading operators...</option>
@@ -379,16 +453,19 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
                       placeholder="URL pattern, CSS selector, or value..."
                       value={condition.value}
                       onChange={e => updateCondition(index, 'value', e.target.value)}
+                      disabled={isViewMode}
                     />
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => removeCondition(index)}
-                    className={styles.removeButton}
-                    title="Remove condition"
-                  >
-                    ×
-                  </button>
+                  {!isViewMode && (
+                    <button
+                      type="button"
+                      onClick={() => removeCondition(index)}
+                      className={styles.removeButton}
+                      title="Remove condition"
+                    >
+                      ×
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -411,7 +488,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
                   className={styles.selectorMethodSelect}
                   value={itemPattern}
                   onChange={e => setItemPattern(Number(e.target.value))}
-                  disabled={isLoadingOptions}
+                  disabled={isLoadingOptions || isViewMode}
                 >
                   {isLoadingOptions ? (
                     <option>Loading patterns...</option>
@@ -436,7 +513,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
                   className={styles.selectorMethodSelect}
                   value={itemMatchOperator}
                   onChange={e => setItemMatchOperator(Number(e.target.value))}
-                  disabled={isLoadingOptions}
+                  disabled={isLoadingOptions || isViewMode}
                 >
                   {isLoadingOptions ? (
                     <option>Loading operators...</option>
@@ -465,6 +542,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
                   placeholder={itemPattern === 'static' ? 'Value...' : itemPattern === 'js_variable' ? 'window.ITEM_ID' : 'Attribute/Selector/Var Name...'}
                   value={itemValue}
                   onChange={e => setItemValue(e.target.value)}
+                  disabled={isViewMode}
                 />
               </div>
             </div>
@@ -477,7 +555,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
                   className={styles.selectorMethodSelect}
                   value={userPattern}
                   onChange={e => setUserPattern(Number(e.target.value))}
-                  disabled={isLoadingOptions}
+                  disabled={isLoadingOptions || isViewMode}
                 >
                   {isLoadingOptions ? (
                     <option>Loading patterns...</option>
@@ -502,7 +580,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
                   className={styles.selectorMethodSelect}
                   value={userMatchOperator}
                   onChange={e => setUserMatchOperator(Number(e.target.value))}
-                  disabled={isLoadingOptions}
+                  disabled={isLoadingOptions || isViewMode}
                 >
                   {isLoadingOptions ? (
                     <option>Loading operators...</option>
@@ -531,6 +609,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
                   placeholder={userPattern === 'static' ? 'Value...' : userPattern === 'js_variable' ? 'window.USER_ID' : 'Attribute/Selector/Var Name...'}
                   value={userValue}
                   onChange={e => setUserValue(e.target.value)}
+                  disabled={isViewMode}
                 />
               </div>
             </div>
@@ -544,15 +623,17 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({ initialRule, onSave, o
                 className={styles.cancelButton}
                 disabled={isSubmitting}
             >
-                Cancel
+                {isViewMode ? 'Close' : 'Cancel'}
             </button>
-            <button
-                type="submit"
-                className={styles.saveButton}
-                disabled={isSubmitting}
-            >
-                {isSubmitting ? 'Saving...' : 'Save Configuration'}
-            </button>
+            {!isViewMode && (
+              <button
+                  type="submit"
+                  className={styles.saveButton}
+                  disabled={isSubmitting}
+              >
+                  {isSubmitting ? 'Saving...' : 'Save Configuration'}
+              </button>
+            )}
         </div>
       </form>
     </div>

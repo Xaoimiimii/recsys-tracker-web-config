@@ -4,6 +4,7 @@ import { Container } from '../../types';
 import { Save, Copy } from 'lucide-react';
 import styles from './returnMethodPage.module.css';
 import { DisplayConfiguration, DisplayType, SelectorType, MatchOperator } from './types';
+import { useDataCache } from '../../contexts/DataCacheContext';
 
 interface ReturnMethodFormPageProps {
     container: Container | null;
@@ -20,7 +21,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
     
     // Custom Widget fields
     const [selectorType, setSelectorType] = useState<SelectorType>('class');
-    const [matchOperator, setMatchOperator] = useState<MatchOperator>('contains');
+    const [matchOperatorId, setMatchOperatorId] = useState<number>(1);
     const [selectorValue, setSelectorValue] = useState('');
     const [layoutStyle, setLayoutStyle] = useState('grid');
     const [theme, setTheme] = useState('light');
@@ -28,12 +29,15 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
     const [size, setSize] = useState('large');
     
     // Popup fields
-    const [urlOperator, setUrlOperator] = useState<MatchOperator>('contains');
+    const [urlOperatorId, setUrlOperatorId] = useState<number>(1);
     const [urlValue, setUrlValue] = useState('');
     const [slotName, setSlotName] = useState('');
 
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    
+    // Get cached operators from context
+    const { operators } = useDataCache();
 
     useEffect(() => {
         if (mode !== 'create' && id) {
@@ -62,7 +66,10 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
 
             if (mockConfig.displayType === 'custom-widget' && mockConfig.targetSelector) {
                 setSelectorType(mockConfig.targetSelector.type);
-                setMatchOperator(mockConfig.targetSelector.operator);
+                // Map operator string to ID (mock implementation - should map from API)
+                const operatorId = mockConfig.targetSelector.operator === 'contains' ? 1 : 
+                                  mockConfig.targetSelector.operator === 'equals' ? 2 : 1;
+                setMatchOperatorId(operatorId);
                 setSelectorValue(mockConfig.targetSelector.value);
                 if (mockConfig.widgetDesign) {
                     setLayoutStyle(mockConfig.widgetDesign.layout);
@@ -71,7 +78,10 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                     setSize(mockConfig.widgetDesign.size);
                 }
             } else if (mockConfig.displayType === 'popup' && mockConfig.urlTrigger) {
-                setUrlOperator(mockConfig.urlTrigger.operator);
+                // Map operator string to ID (mock implementation - should map from API)
+                const operatorId = mockConfig.urlTrigger.operator === 'contains' ? 1 : 
+                                  mockConfig.urlTrigger.operator === 'equals' ? 2 : 1;
+                setUrlOperatorId(operatorId);
                 setUrlValue(mockConfig.urlTrigger.value);
                 setSlotName(mockConfig.slotName || '');
             }
@@ -132,9 +142,11 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
 
     const getHelperText = () => {
         if (displayType === 'custom-widget') {
-            return `The widget will be rendered inside the element matching: ${selectorValue} (${matchOperator})`;
+            const operatorName = operators.find(op => op.Id === matchOperatorId)?.Name || 'contains';
+            return `The widget will be rendered inside the element matching: ${selectorValue} (${operatorName})`;
         } else {
-            return `The popup will appear when URL ${urlOperator}: ${urlValue || '[enter value]'}`;
+            const operatorName = operators.find(op => op.Id === urlOperatorId)?.Name || 'contains';
+            return `The popup will appear when URL ${operatorName}: ${urlValue || '[enter value]'}`;
         }
     };
 
@@ -222,13 +234,23 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                         <label className={styles.fieldLabel}>Match Operator</label>
                                         <select 
                                             className={styles.selectInput}
-                                            value={matchOperator}
-                                            onChange={(e) => setMatchOperator(e.target.value as MatchOperator)}
+                                            value={matchOperatorId}
+                                            onChange={(e) => setMatchOperatorId(Number(e.target.value))}
                                             disabled={isReadOnly}
                                         >
-                                            <option value="equals">Equals</option>
-                                            <option value="contains">Contains</option>
-                                            <option value="starts-with">Starts With</option>
+                                            {operators.length > 0 ? (
+                                                operators.map(op => (
+                                                    <option key={op.Id} value={op.Id}>
+                                                        {op.Name}
+                                                    </option>
+                                                ))
+                                            ) : (
+                                                <>
+                                                    <option value="1">Equals</option>
+                                                    <option value="2">Contains</option>
+                                                    <option value="3">Starts With</option>
+                                                </>
+                                            )}
                                         </select>
                                     </div>
                                     <div className={styles.formCol}>
@@ -357,13 +379,23 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                         <label className={styles.fieldLabel}>Match Operator</label>
                                         <select 
                                             className={styles.selectInput}
-                                            value={urlOperator}
-                                            onChange={(e) => setUrlOperator(e.target.value as MatchOperator)}
+                                            value={urlOperatorId}
+                                            onChange={(e) => setUrlOperatorId(Number(e.target.value))}
                                             disabled={isReadOnly}
                                         >
-                                            <option value="equals">Equals</option>
-                                            <option value="contains">Contains</option>
-                                            <option value="regex">Regex</option>
+                                            {operators.length > 0 ? (
+                                                operators.map(op => (
+                                                    <option key={op.Id} value={op.Id}>
+                                                        {op.Name}
+                                                    </option>
+                                                ))
+                                            ) : (
+                                                <>
+                                                    <option value="1">Equals</option>
+                                                    <option value="2">Contains</option>
+                                                    <option value="3">Regex</option>
+                                                </>
+                                            )}
                                         </select>
                                     </div>
                                     <div className={styles.formCol} style={{ flex: 2 }}>

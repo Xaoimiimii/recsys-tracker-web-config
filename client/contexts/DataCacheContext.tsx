@@ -1,14 +1,36 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useState } from 'react';
+import { EventPattern, Operator } from '../lib/api/types';
+
+export interface TriggerEvent {
+    Id: number;
+    Name: string;
+}
 
 interface DataCacheContextType {
-    // Empty for now - will implement caching logic when needed
+    triggerEvents: TriggerEvent[];
+    eventPatterns: EventPattern[];
+    operators: Operator[];
+    setTriggerEvents: (data: TriggerEvent[]) => void;
+    setEventPatterns: (data: EventPattern[]) => void;
+    setOperators: (data: Operator[]) => void;
 }
 
 export const DataCacheContext = createContext<DataCacheContextType | undefined>(undefined);
 
 export const DataCacheProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const [triggerEvents, setTriggerEvents] = useState<TriggerEvent[]>([]);
+    const [eventPatterns, setEventPatterns] = useState<EventPattern[]>([]);
+    const [operators, setOperators] = useState<Operator[]>([]);
+
     return (
-        <DataCacheContext.Provider value={{}}>
+        <DataCacheContext.Provider value={{
+            triggerEvents,
+            eventPatterns,
+            operators,
+            setTriggerEvents,
+            setEventPatterns,
+            setOperators
+        }}>
             {children}
         </DataCacheContext.Provider>
     );

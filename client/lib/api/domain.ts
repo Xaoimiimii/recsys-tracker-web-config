@@ -1,5 +1,6 @@
 import { apiFetch } from './client';
 import type { CreateDomainDto, DomainResponse } from './types';
+import type { TriggerEvent } from '../../contexts/DataCacheContext';
 
 export const domainApi = {
     create: (data: CreateDomainDto) => 
@@ -17,4 +18,9 @@ export const domainApi = {
         apiFetch<DomainResponse[]>('/domain/ternant', {
             method: 'GET',
         }, false, true),
+    
+    getTriggerEvents: () =>
+        apiFetch<TriggerEvent[]>('/domain/trigger-event/all', {
+            method: 'GET',
+        }, true),
 };
