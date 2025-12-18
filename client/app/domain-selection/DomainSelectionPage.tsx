@@ -76,10 +76,13 @@ export const DomainSelectionPage: React.FC<DomainSelectionPageProps> = ({
             <div className={styles.createCardIcon}>
               <Plus size={48} />
             </div>
-            <h3 className={styles.cardTitle}>Thêm Domain Mới</h3>
-            <p className={styles.cardDescription}>
-              Tạo và cấu hình domain mới cho website của bạn
-            </p>
+            <div className={styles.createCardContent}>
+              <h3 className={styles.cardTitle}>Create New Domain</h3>
+              <p className={styles.cardDescription}>
+                Create and configure a new domain for your website
+              </p>
+            </div>
+
           </button>
 
           {/* Existing Domain Cards */}
@@ -93,29 +96,23 @@ export const DomainSelectionPage: React.FC<DomainSelectionPageProps> = ({
                 onClick={() => handleDomainClick(domain)}
                 className={styles.card}
               >
-                <div className={styles.cardHeader}>
-                  <div className={styles.domainIcon}>
-                    {hostname.charAt(0).toUpperCase()}
-                  </div>
+                <div className={styles.domainIcon}>
+                  {hostname.charAt(0).toUpperCase()}
                 </div>
-                <h3 className={styles.cardTitle}>{hostname}</h3>
-                <p className={styles.cardUrl}>{domain.Url}</p>
-                <div className={styles.cardFooter}>
-                  <span className={styles.cardKey}>Key: {domain.Key.substring(0, 8)}...</span>
-                  <span className={styles.cardDate}>
-                    {new Date(domain.CreatedAt).toLocaleDateString()}
-                  </span>
+                <div className={styles.cardContent}>
+                  <h3 className={styles.cardTitle}>{hostname}</h3>
+                  <p className={styles.cardUrl}>{domain.Url}</p>
+                  <div className={styles.cardFooter}>
+                    <span className={styles.cardKey}>Key: {domain.Key.substring(0, 8)}...</span>
+                    <span className={styles.cardDate}>
+                      {new Date(domain.CreatedAt).toLocaleDateString()}
+                    </span>
+                  </div>
                 </div>
               </button>
             );
           })}
         </div>
-
-        {domains.length === 0 && !error && (
-          <div className={styles.emptyState}>
-            <p>Bạn chưa có domain nào. Hãy tạo domain đầu tiên!</p>
-          </div>
-        )}
       </div>
     </OnboardingLayout>
   );
