@@ -56,7 +56,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                 const trackingRules: TrackingRule[] = rulesData.map(rule => ({
                     id: rule.id.toString(),
                     name: rule.name,
-                    trigger: (rule.TriggerTypeName?.toLowerCase() || 'click') as any,
+                    trigger: 'click',
                     selector: rule.details?.TargetElement?.Value || '',
                     extraction: rule.details?.PayloadConfigs?.map(p => ({
                         field: 'itemId',
@@ -86,23 +86,6 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
         fetchRules();
     }, [container?.uuid]); // Only depend on UUID to avoid infinite loop
 
-    const getTriggerLabel = (trigger: string) => {
-        switch(trigger) {
-            case 'click':
-                return 'Click';
-            case 'form_submit':
-                return 'Form Submit';
-            case 'scroll':
-                return 'Scroll';
-            case 'timer':
-                return 'Timer';
-            case 'view':
-                return 'View';
-            default:
-                return trigger;
-        }
-    };
-
     const getTriggerTypeFromId = (triggerEventId: number | undefined) => {
         switch(triggerEventId) {
             case 1:
@@ -112,40 +95,33 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
             case 3:
                 return { label: 'View', icon: Eye };
             default:
-                return { label: 'Unknown', icon: Box };
+                return { label: 'Click', icon: Box };
         }
     };
 
-    const saveRule = async (rule: TrackingRule) => {
+    const saveRule = async (response: any) => {
         if (!container) return;
         
         setIsLoading(true);
         try {
-            // For now, we only support creating new rules
-            // TODO: Implement PUT /rule/:id for updates
-            
-            // Call API to create rule
-            // Note: This is a simplified mapping. You may need to adjust based on actual API requirements
-            const response = await ruleApi.create({
-                name: rule.name,
-                domainKey: container.uuid,
-                eventPatternId: rule.trigger, // This should be the actual event pattern ID from the API
-                // Add other required fields based on your API
-            });
+            // API call already done in RuleBuilder component
+            // Just update local state with the response
+            const newId = response.id || response.Id || Date.now().toString();
+            const newRule: TrackingRule = {
+                id: newId.toString(),
+                name: response.name || response.Name || 'New Rule',
+                trigger: 'click', // Default, can be enhanced with response data
+                selector: '',
+                extraction: []
+            };
 
-            // Update local state with the new rule
             let newRules = [...container.rules];
-            const existingIndex = newRules.findIndex(r => r.id === rule.id);
+            const existingIndex = newRules.findIndex(r => r.id === newId.toString());
         
             if (existingIndex >= 0) {
-                newRules[existingIndex] = rule;
+                newRules[existingIndex] = newRule;
             } else {
-                // Use a generated ID for new rules if not returned from API
-                const newId = ('id' in response && response.id) ? response.id : Date.now().toString();
-                newRules.push({
-                    ...rule,
-                    id: newId.toString()
-                });
+                newRules.push(newRule);
             }
             
             setContainer({ ...container, rules: newRules });

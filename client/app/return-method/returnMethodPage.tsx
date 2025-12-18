@@ -1,0 +1,204 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Container } from '../../types';
+import { Plus, Eye, Edit2, Trash2 } from 'lucide-react';
+import styles from './returnMethodPage.module.css';
+import { DisplayConfiguration, DisplayType } from './types';
+
+interface ReturnMethodPageProps {
+    container: Container | null;
+    setContainer: (c: Container) => void;
+}
+
+export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container }) => {
+    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const [configurations, setConfigurations] = useState<DisplayConfiguration[]>([]);
+    const [filterType, setFilterType] = useState<DisplayType | 'all'>('all');
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Mock data for development
+    useEffect(() => {
+        const mockConfigs: DisplayConfiguration[] = [
+            {
+                id: '1',
+                name: 'Product Page Widget',
+                displayType: 'custom-widget',
+                targetSelector: {
+                    type: 'class',
+                    operator: 'contains',
+                    value: 'product-detail'
+                },
+                widgetDesign: {
+                    layout: 'grid',
+                    theme: 'light',
+                    spacing: 'medium',
+                    size: 'large'
+                },
+                createdAt: '2025-12-15T10:00:00Z',
+                updatedAt: '2025-12-15T10:00:00Z'
+            },
+            {
+                id: '2',
+                name: 'Homepage Popup',
+                displayType: 'popup',
+                urlTrigger: {
+                    operator: 'contains',
+                    value: '/product'
+                },
+                slotName: 'homepage-slot',
+                createdAt: '2025-12-14T08:30:00Z',
+                updatedAt: '2025-12-14T08:30:00Z'
+            },
+            {
+                id: '3',
+                name: 'Cart Widget',
+                displayType: 'custom-widget',
+                targetSelector: {
+                    type: 'id',
+                    operator: 'equals',
+                    value: 'shopping-cart'
+                },
+                widgetDesign: {
+                    layout: 'list',
+                    theme: 'dark',
+                    spacing: 'small',
+                    size: 'medium'
+                },
+                createdAt: '2025-12-13T14:20:00Z',
+                updatedAt: '2025-12-13T14:20:00Z'
+            }
+        ];
+        setConfigurations(mockConfigs);
+    }, []);
+
+    const filteredConfigurations = configurations.filter(config => {
+        const typeMatch = filterType === 'all' || config.displayType === filterType;
+        return typeMatch;
+    });
+
+    const handleCreateNew = () => {
+        navigate('/dashboard/recommendation-display/create');
+    };
+
+    const handleView = (id: string) => {
+        navigate(`/dashboard/recommendation-display/view/${id}`);
+    };
+
+    const handleEdit = (id: string) => {
+        navigate(`/dashboard/recommendation-display/edit/${id}`);
+    };
+
+    const handleDelete = async (id: string) => {
+        if (confirm('Are you sure you want to delete this configuration?')) {
+            setConfigurations(prev => prev.filter(config => config.id !== id));
+        }
+    };
+
+    const getSummary = (config: DisplayConfiguration): string => {
+        if (config.displayType === 'custom-widget' && config.targetSelector) {
+            const prefix = config.targetSelector.type === 'id' ? '#' 
+                : config.targetSelector.type === 'class' ? '.' 
+                : '';
+            return `${prefix}${config.targetSelector.value} (${config.targetSelector.operator})`;
+        } else if (config.displayType === 'popup' && config.urlTrigger) {
+            return `URL ${config.urlTrigger.operator} ${config.urlTrigger.value}`;
+        }
+        return 'N/A';
+    };
+
+    return (
+        <div className={styles.container}>
+            <div className={styles.configCard}>
+                <div className={styles.cardHeader}>
+                    <h1 className={styles.pageTitle}>Recommendation Display Configurations</h1>
+                    <button className={styles.addButton} onClick={handleCreateNew}>
+                        <Plus size={18} />
+                        Create new configuration
+                    </button>
+                </div>
+
+                <div className={styles.filters}>
+                    <div className={styles.filterGroup}>
+                        <label className={styles.filterLabel}>Type:</label>
+                        <select 
+                            className={styles.filterSelect}
+                            value={filterType}
+                            onChange={(e) => setFilterType(e.target.value as DisplayType | 'all')}
+                        >
+                            <option value="all">All Types</option>
+                            <option value="popup">Popup</option>
+                            <option value="custom-widget">Custom Widget</option>
+                        </select>
+                    </div>
+                </div>
+
+                {filteredConfigurations.length === 0 ? (
+                    <div className={styles.emptyState}>
+                        <p className={styles.emptyTitle}>No display configurations yet</p>
+                        <p className={styles.emptyDescription}>
+                            Create your first recommendation display configuration to get started.
+                        </p>
+                        <button className={styles.emptyButton} onClick={handleCreateNew}>
+                            <Plus size={18} />
+                            Create your first configuration
+                        </button>
+                    </div>
+                ) : (
+                    <div className={styles.tableContainer}>
+                        <table className={styles.configTable}>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Target Condition</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredConfigurations.map((config, index) => (
+                                    <tr key={config.id}>
+                                        <td>#{index + 1}</td>
+                                        <td className={styles.nameCell}>{config.name}</td>
+                                        <td>
+                                            <span className={styles.typeTag}>
+                                                {config.displayType === 'popup' ? 'Popup' : 'Custom Widget'}
+                                            </span>
+                                        </td>
+                                        <td className={styles.summaryCell}>
+                                            {getSummary(config)}
+                                        </td>
+                                        <td className={styles.actionsCell}>
+                                            <button 
+                                                className={styles.actionButton}
+                                                onClick={() => handleView(config.id)}
+                                                title="View details"
+                                            >
+                                                <Eye size={16} />
+                                            </button>
+                                            <button 
+                                                className={styles.actionButton}
+                                                onClick={() => handleEdit(config.id)}
+                                                title="Edit configuration"
+                                            >
+                                                <Edit2 size={16} />
+                                            </button>
+                                            <button 
+                                                className={styles.deleteButton}
+                                                onClick={() => handleDelete(config.id)}
+                                                title="Delete configuration"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
