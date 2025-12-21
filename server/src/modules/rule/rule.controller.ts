@@ -80,7 +80,7 @@ export class RuleController {
             );
         }
 
-        const result = rules.map(r => ({ id: r.Id, name: r.Name }));
+        const result = rules.map(r => ({ id: r.Id, name: r.Name, TargetElement: r.TargetElement }));
         return result;
     }
 }
