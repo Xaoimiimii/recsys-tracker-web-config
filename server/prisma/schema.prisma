@@ -21,9 +21,6 @@ model Ternant {
   Password          String
 
   Domains           Domain[]
-  Items             Item[]
-  Users             User[]
-  Ratings           Rating[]
 }
 
 model Domain {
@@ -37,20 +34,40 @@ model Domain {
   Ternant           Ternant  @relation(fields: [TernantID], references: [Id])
   Rules             Rule[]
   DomainReturns     DomainReturn[]
+  Interactions      Interaction[]
+  Items             Item[]
+  Users             User[]
+  Ratings           Rating[]
 }
 
-model DomainReturn {
-  DomainID          Int
-  SlotName          String
-  Value             String?
-  TargetUrl         String?
+// model DomainReturn {
+//   DomainID          Int
+//   SlotName          String
+//   Value             String?
+//   TargetUrl         String?
 
-  Domain            Domain       @relation(fields: [DomainID], references: [Id])
+//   Domain            Domain       @relation(fields: [DomainID], references: [Id])
   
+//   ReturnMethodID    Int
+//   ReturnMethod      ReturnMethod @relation(fields: [ReturnMethodID], references: [Id])
+
+//   @@id([DomainID, SlotName])
+// }
+
+model DomainReturn {
+  Id                Int     @id @default(autoincrement())
+
+  DomainID          Int
+  Domain            Domain       @relation(fields: [DomainID], references: [Id])
   ReturnMethodID    Int
   ReturnMethod      ReturnMethod @relation(fields: [ReturnMethodID], references: [Id])
+  OperatorID        Int
+  Operator          Operator @relation(fields: [OperatorID], references: [Id])
 
-  @@id([DomainID, SlotName])
+  Value             String
+  ConfigurationName String
+
+  @@unique([DomainID, ConfigurationName, ReturnMethodID])
 }
 
 model ReturnMethod {
@@ -81,7 +98,8 @@ model TriggerEvent {
   Id                Int    @id @default(autoincrement())
   Name              String
 
-  Rules Rule[]
+  Rules             Rule[]
+  Interactions      Interaction[]
 }
 
 model TargetElement {
@@ -112,6 +130,7 @@ model Condition {
 }
 
 model PayloadConfig {
+  Id                Int    @id @default(autoincrement())
   PayloadPatternID  Int
   RuleID            Int
   
@@ -123,8 +142,6 @@ model PayloadConfig {
 
   OperatorID        Int
   Operator          Operator @relation(fields: [OperatorID], references: [Id])
-
-  @@id([PayloadPatternID, RuleID])
 }
 
 model PayloadPattern {
@@ -151,6 +168,7 @@ model Operator {
   Conditions        Condition[]
   TargetElements    TargetElement[]
   PayloadConfigs    PayloadConfig[]
+  DomainReturns     DomainReturn[]
 }
 
 model Category {
@@ -170,9 +188,11 @@ model ItemCategory {
 
 model Item {
   Id                Int     @id @default(autoincrement())
-  TernantId         Int
-  Ternant           Ternant @relation(fields: [TernantId], references: [Id])
-  Title             String
+  DomainItemId      String? @unique
+  Title             String?
+  DomainId          Int
+  Domain            Domain @relation(fields: [DomainId], references: [Id])
+  Description       String
   EmbeddingVector   Float[]
   ModifiedAt        DateTime
 
@@ -208,8 +228,9 @@ model ItemFactor {
 
 model User {
   Id                Int     @id @default(autoincrement())
-  TernantId         Int
-  Ternant           Ternant @relation(fields: [TernantId], references: [Id])
+  Username          String?
+  DomainId          Int
+  Domain            Domain @relation(fields: [DomainId], references: [Id])
   UserEmbeddingVector Float[]
   CreatedAt         DateTime @default(now())
   ModifiedAt        DateTime @updatedAt
@@ -218,6 +239,7 @@ model User {
   Predicts          Predict[]
   Ratings           Rating[]
   Interactions      Interaction[]
+  @@unique([Username, DomainId])
 }
 
 model UserFactor {
@@ -243,29 +265,32 @@ model Predict {
 
 model Rating {
   Id                Int     @id @default(autoincrement())
-  UserId            Int
-  User              User    @relation(fields: [UserId], references: [Id])
+  Username          String?
+  User              User?    @relation(fields: [Username, DomainId], references: [Username, DomainId])
   ItemId            Int
   Item              Item    @relation(fields: [ItemId], references: [Id])
-  TernantId         Int
-  Ternant           Ternant @relation(fields: [TernantId], references: [Id])
+  DomainId          Int
+  Domain            Domain @relation(fields: [DomainId], references: [Id])
   Value             Float
   ReviewText        String?
   ConvertedScore    Float    @default(3)
   CreatedAt         DateTime @default(now())
 
-  @@unique([UserId, ItemId])
+  @@unique([Username, ItemId])
 }
 
 model Interaction {
   Id                Int     @id @default(autoincrement())
-  UserId            Int
-  User              User    @relation(fields: [UserId], references: [Id])
+  Username          String?
+  User              User?    @relation(fields: [Username, DomainId], references: [Username, DomainId])
   ItemId            Int
   Item              Item    @relation(fields: [ItemId], references: [Id])
-  InteractionType   String
+  InteractionTypeId Int
+  InteractionType   TriggerEvent @relation(fields: [InteractionTypeId], references: [Id])
+  DomainId          Int
+  Domain            Domain  @relation(fields: [DomainId], references: [Id])
   CreatedAt         DateTime @default(now())
 
-  @@index([UserId])
+  @@index([Username, DomainId])
   @@index([ItemId])
 }

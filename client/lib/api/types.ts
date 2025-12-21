@@ -41,7 +41,6 @@ export interface UserState {
 // ==================== DOMAIN TYPES ====================
 
 export interface CreateDomainDto {
-  ternantId: number;
   url: string;
   type: number;
 }
@@ -168,4 +167,13 @@ export interface UserResponse {
   email: string;
   name: string;
   createdAt: string;
+}
+
+// ==================== ITEM TYPES ====================
+export interface CreateItemDto {
+  ternantItemId: string;
+  title: string;
+  description?: string;
+  categories?: string[];
+  domainId: number;
 }

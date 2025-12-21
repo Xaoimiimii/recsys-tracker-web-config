@@ -1,5 +1,14 @@
 import { DomainType, TriggerType, TrackingRule } from '../types/index';
-import { LayoutDashboard, ShoppingCart, Music, Film, Newspaper, MousePointer, Timer, Eye, ScanLine, ArrowDownCircle } from 'lucide-react';
+import { ShoppingCart, Music, Film, Newspaper, MousePointer, Star, Eye, ArrowDownCircle } from 'lucide-react';
+
+// Mapping DomainType to API type number
+export const DOMAIN_TYPE_TO_NUMBER: Record<DomainType, number> = {
+  music: 1,
+  movie: 2,
+  ecommerce: 3,
+  news: 4,
+  general: 0,
+};
 
 export const DOMAIN_OPTIONS: { type: DomainType; label: string; icon: any; description: string }[] = [
   { type: 'music', label: 'Music Streaming', icon: Music, description: 'Track plays, duration, playlists.' },
@@ -10,10 +19,9 @@ export const DOMAIN_OPTIONS: { type: DomainType; label: string; icon: any; descr
 
 export const TRIGGER_ICONS: Record<TriggerType, any> = {
   click: MousePointer,
-  form_submit: ScanLine,
+  rate: Star,
+  page_view: Eye,
   scroll: ArrowDownCircle,
-  timer: Timer,
-  view: Eye,
 };
 
 // Suggestions based on domain

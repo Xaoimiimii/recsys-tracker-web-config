@@ -1,6 +1,6 @@
 export type DomainType = 'music' | 'movie' | 'news' | 'ecommerce' | 'general';
 
-export type TriggerType = 'click' | 'form_submit' | 'scroll' | 'timer' | 'view';
+export type TriggerType = 'click' | 'rate' | 'page_view' | 'scroll';
 
 export type ExtractionMethod = 'static' | 'css_attribute' | 'inner_text' | 'url_param' | 'js_variable' | 'cookie';
 
@@ -16,7 +16,7 @@ export interface DataExtractionRule {
 export interface TrackingRule {
   id: string;
   name: string;
-  trigger: TriggerType;
+  trigger: string;
   selector: string; // CSS Selector for the element to watch (or empty for page-wide)
   extraction: DataExtractionRule[];
 }
