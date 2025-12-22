@@ -91,14 +91,14 @@ export interface Condition {
 }
 
 export interface PayloadConfig {
-  Field: string;
-  Source: string;
-  Value?: string;
-  RequestUrlPattern?: string;
-  RequestMethod?: string;
-  RequestBodyPath?: string;
-  UrlPart?: string;
-  UrlPartValue?: string;
+  field: string;
+  source: string;
+  value?: string;
+  requestUrlPattern?: string;
+  requestMethod?: string;
+  requestBodyPath?: string;
+  urlPart?: string;
+  urlPartValue?: string;
 }
 
 export interface CreateRule {

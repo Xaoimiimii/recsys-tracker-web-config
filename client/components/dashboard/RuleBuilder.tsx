@@ -660,7 +660,8 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
             Cancel
           </button>
           <button onClick={handleSave} disabled={isSaving} className={styles.btnPrimary}>
-            {isSaving ? <Loader2 size={16} className="animate-spin"  /> : 'Save'}
+            {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} style={{ marginRight: '4px' }} />}
+            Save
           </button>
         </div>
       </div>
