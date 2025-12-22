@@ -246,9 +246,10 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                                 ))
                                             ) : (
                                                 <>
-                                                    <option value="1">Equals</option>
-                                                    <option value="2">Contains</option>
-                                                    <option value="3">Starts With</option>
+                                                    <option value="1">Contains</option>
+                                                    <option value="2">Equals</option>
+                                                    <option value="3">Starts with</option>
+                                                    <option value="4">Ends with</option>
                                                 </>
                                             )}
                                         </select>
@@ -391,9 +392,10 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                                 ))
                                             ) : (
                                                 <>
-                                                    <option value="1">Equals</option>
-                                                    <option value="2">Contains</option>
-                                                    <option value="3">Regex</option>
+                                                    <option value="1">Contains</option>
+                                                    <option value="2">Equals</option>
+                                                    <option value="3">Starts with</option>
+                                                    <option value="4">Ends with</option>
                                                 </>
                                             )}
                                         </select>
