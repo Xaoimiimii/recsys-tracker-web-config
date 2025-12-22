@@ -12,7 +12,7 @@
 
 @media (min-width: 768px) {
   .statsGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 2fr 1fr;
   }
 }
 
@@ -781,4 +781,186 @@
 
 .copyButtonLarge:hover {
   background-color: var(--color-primary-hover);
+}
+
+.switchDomainButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 0rem;
+  background-color: var(--color-white);
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary);
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.switchDomainButton:hover {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.domainSwitcherModal {
+  background-color: var(--color-white);
+  border-radius: 0.75rem;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.domainSwitcherBody {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.loadingState {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem;
+  color: var(--color-text-secondary);
+  font-size: 1rem;
+}
+
+.domainGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .domainGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .domainGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.domainCard {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 1.5rem;
+  background-color: var(--color-white);
+  border-radius: 0.75rem;
+  border: 2px solid var(--color-border);
+  cursor: pointer;
+  transition: all 0.3s;
+  gap: 1.5rem;
+  text-align: left;
+  position: relative;
+}
+
+.domainCard:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  box-shadow: 0 8px 12px -4px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.domainCard:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.currentDomain {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-light);
+}
+
+.domainIconLarge {
+  width: 4rem;
+  height: 4rem;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: bold;
+  transition: all 0.3s;
+  flex-shrink: 0;
+}
+
+.domainCard:hover:not(:disabled) .domainIconLarge {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+.currentDomain .domainIconLarge {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+.domainCardContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.domainCardTitle {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: var(--color-text-main);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.domainCardUrl {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+  word-break: break-all;
+}
+
+.domainCardFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.25rem;
+}
+
+.domainCardKey {
+  font-size: 0.75rem;
+  font-family: monospace;
+  color: var(--color-text-tertiary);
+  background-color: var(--color-sidebar-bg);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.domainCardDate {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+}
+
+.currentBadge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background-color: var(--color-success);
+  color: var(--color-white);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
 }

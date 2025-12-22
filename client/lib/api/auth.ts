@@ -1,5 +1,5 @@
 import { apiFetch } from './client';
-import type { SignUpDto, AuthDto, AuthResponse, RefreshResponse } from './types';
+import type { SignUpDto, AuthDto, AuthResponse } from './types';
 
 export const authApi = {
     signup: (data: SignUpDto) => 
@@ -20,7 +20,7 @@ export const authApi = {
         }),
     
     refresh: () =>
-        apiFetch<RefreshResponse>("/auth/refresh", {
+        apiFetch<AuthResponse>("/auth/refresh", {
             method: "POST",
         }),
 };

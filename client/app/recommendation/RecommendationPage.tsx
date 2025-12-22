@@ -14,7 +14,8 @@ export const RecommendationPage: React.FC<RecommendationPageProps> = ({ containe
     const { getReturnMethods, clearReturnMethodsCache } = useDataCache();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingMethod, setEditingMethod] = useState<DisplayMethodConfig | null>(null);
-    const [selectedMethod, setSelectedMethod] = useState<OutputMethod>('custom_widget');
+    const [selectedMethod, setSelectedMethod] = useState<number>(3); // Default to custom_widget id
+    const [availableMethods, setAvailableMethods] = useState<Array<{id: number, name: string}>>([]);
     const [slot, setSlot] = useState('');
     const [targetUrl, setTargetUrl] = useState('');
     const [targetSelector, setTargetSelector] = useState('');
@@ -22,21 +23,22 @@ export const RecommendationPage: React.FC<RecommendationPageProps> = ({ containe
 
     const displayMethods = container?.outputConfig.displayMethods || [];
 
-    // Map ReturnMethodID to OutputMethod
-    const getMethodFromId = (returnMethodId: number): OutputMethod => {
-        switch(returnMethodId) {
-            case 1:
-                return 'popup';
-            case 2:
-                return 'inline_injection';
-            case 3:
-                return 'custom_widget';
-            case 4:
-                return 'sdk_callback';
-            default:
-                return 'custom_widget';
-        }
-    };
+    // Fetch available return method types from API
+    useEffect(() => {
+        const fetchAvailableMethods = async () => {
+            try {
+                const methods = await returnMethodApi.getAll();
+                setAvailableMethods(methods);
+                if (methods.length > 0 && !selectedMethod) {
+                    setSelectedMethod(methods[0].id);
+                }
+            } catch (error) {
+                console.error('Failed to fetch available return methods:', error);
+            }
+        };
+
+        fetchAvailableMethods();
+    }, []);
 
     // Fetch return methods when component mounts or container changes
     useEffect(() => {
@@ -52,8 +54,9 @@ export const RecommendationPage: React.FC<RecommendationPageProps> = ({ containe
                     id: m.DomainID?.toString() || '',
                     slot: m.SlotName || '',
                     targetUrl: m.TargetUrl || '',
-                    method: m.ReturnMethodID ? getMethodFromId(m.ReturnMethodID) : 'custom_widget',
+                    method: 'custom_widget', // Keep for backward compatibility
                     targetSelector: m.Value || '',
+                    returnMethodId: m.ReturnMethodID,
                 }));
 
                 setContainer({
@@ -73,39 +76,25 @@ export const RecommendationPage: React.FC<RecommendationPageProps> = ({ containe
         fetchReturnMethods();
     }, [container?.uuid]); // Only depend on uuid to avoid infinite loop
 
-    const getMethodDescription = (method: OutputMethod) => {
-        switch(method) {
-            case 'custom_widget':
-                return 'Provide designed div for partner to embed';
-            case 'popup':
-                return 'Display recommendations in a popup overlay.';
-            case 'inline_injection':
-                return 'Render into partner\'s existing div using ID/class/selector';
-            case 'sdk_callback':
-                return 'SDK calls API and returns data to partner\'s callback function';
-            default:
-                return '';
-        }
+    const getMethodDescription = (methodName: string) => {
+        // Map descriptions based on method name from API
+        const descriptions: Record<string, string> = {
+            'Custom Widget': 'Provide designed div for partner to embed',
+            'Popup Mode': 'Display recommendations in a popup overlay.',
+            'Inline Injection': 'Render into partner\'s existing div using ID/class/selector',
+            'SDK Callback': 'SDK calls API and returns data to partner\'s callback function',
+        };
+        return descriptions[methodName] || '';
     };
 
-    const getMethodLabel = (method: OutputMethod) => {
-        switch(method) {
-            case 'custom_widget':
-                return 'Custom Widget';
-            case 'popup':
-                return 'Popup Mode';
-            case 'inline_injection':
-                return 'Inline Injection';
-            case 'sdk_callback':
-                return 'SDK Callback';
-            default:
-                return method;
-        }
+    const getMethodLabel = (methodId: number) => {
+        const method = availableMethods.find(m => m.id === methodId);
+        return method ? method.name : 'Unknown Method';
     };
 
     const openAddModal = () => {
         setEditingMethod(null);
-        setSelectedMethod('custom_widget');
+        setSelectedMethod(availableMethods.length > 0 ? availableMethods[0].id : 1);
         setSlot('');
         setTargetUrl('');
         setTargetSelector('');
@@ -114,7 +103,9 @@ export const RecommendationPage: React.FC<RecommendationPageProps> = ({ containe
 
     const openEditModal = (method: DisplayMethodConfig) => {
         setEditingMethod(method);
-        setSelectedMethod(method.method);
+        // Use returnMethodId if available
+        const methodId = (method as any).returnMethodId || (availableMethods.length > 0 ? availableMethods[0].id : 1);
+        setSelectedMethod(methodId);
         setSlot(method.slot);
         setTargetUrl(method.targetUrl || '');
         setTargetSelector(method.targetSelector || '');
@@ -124,7 +115,7 @@ export const RecommendationPage: React.FC<RecommendationPageProps> = ({ containe
     const closeModal = () => {
         setIsModalOpen(false);
         setEditingMethod(null);
-        setSelectedMethod('custom_widget');
+        setSelectedMethod(availableMethods.length > 0 ? availableMethods[0].id : 1);
         setSlot('');
         setTargetUrl('');
         setTargetSelector('');
@@ -140,20 +131,21 @@ export const RecommendationPage: React.FC<RecommendationPageProps> = ({ containe
         try {
             // Call API to create return method
             const response = await returnMethodApi.create({
-                domainKey: container.uuid,
-                method: selectedMethod,
-                slot: slot.trim(),
+                key: container.uuid,
+                slotName: slot.trim(),
+                returnMethodId: selectedMethod,
                 targetUrl: targetUrl.trim(),
-                targetSelector: selectedMethod === 'inline_injection' ? targetSelector : undefined
+                targetSelector: targetSelector || undefined
             });
 
             const newMethod: DisplayMethodConfig = {
-                id: response.ReturnMethodID?.toString() || '',
+                id: response.DomainID?.toString() || '',
                 slot: response.SlotName || '',
                 targetUrl: response.TargetUrl || '',
-                method: response.ReturnMethodID ? getMethodFromId(response.ReturnMethodID) : 'custom_widget',
-                targetSelector: response.Value || ''
-            };
+                method: 'custom_widget', // Keep for backward compatibility
+                targetSelector: response.Value || '',
+                returnMethodId: response.ReturnMethodID,
+            } as any;
 
             let updatedMethods: DisplayMethodConfig[];
             if (editingMethod) {
@@ -236,7 +228,7 @@ export const RecommendationPage: React.FC<RecommendationPageProps> = ({ containe
                                     <td title={method.targetUrl}>
                                         {method.targetUrl.length > 40 ? `${method.targetUrl.substring(0, 40)}...` : method.targetUrl}
                                     </td>
-                                    <td>{getMethodLabel(method.method)}</td>
+                                    <td>{(method as any).returnMethodId ? getMethodLabel((method as any).returnMethodId) : 'Unknown'}</td>
                                     <td>
                                         <button 
                                             className={styles.editButton}
@@ -294,15 +286,15 @@ export const RecommendationPage: React.FC<RecommendationPageProps> = ({ containe
                             <div className={styles.formGroup}>
                                 <label className={styles.label}>Display Method</label>
                                 <div className={styles.methodCardsGrid}>
-                                    {(['custom_widget', 'popup', 'inline_injection', 'sdk_callback'] as OutputMethod[]).map((method) => (
+                                    {availableMethods.map((method) => (
                                         <button
-                                            key={method}
+                                            key={method.id}
                                             type="button"
-                                            className={`${styles.methodCard} ${selectedMethod === method ? styles.methodCardActive : ''}`}
-                                            onClick={() => setSelectedMethod(method)}
+                                            className={`${styles.methodCard} ${selectedMethod === method.id ? styles.methodCardActive : ''}`}
+                                            onClick={() => setSelectedMethod(method.id)}
                                         >
-                                            <div className={styles.methodCardTitle}>{getMethodLabel(method)}</div>
-                                            <div className={styles.methodCardDescription}>{getMethodDescription(method)}</div>
+                                            <div className={styles.methodCardTitle}>{method.name}</div>
+                                            <div className={styles.methodCardDescription}>{getMethodDescription(method.name)}</div>
                                         </button>
                                     ))}
                                 </div>
@@ -311,13 +303,10 @@ export const RecommendationPage: React.FC<RecommendationPageProps> = ({ containe
                             <div className={styles.methodDetails}>
                                 <h5 className={styles.label}>Method Description</h5>
                                 <div className={styles.methodDescription}>
-                                    {selectedMethod === 'popup' && 'Display recommendations in a popup overlay. The popup will automatically appear on your website. No additional configuration needed.'}
-                                    {selectedMethod === 'inline_injection' && 'Render into partner\'s existing div using ID/class/selector'}
-                                    {selectedMethod === 'custom_widget' && 'Provide designed div for partner to embed'}
-                                    {selectedMethod === 'sdk_callback' && 'SDK calls API and returns data to partner\'s callback function'}
+                                    {getMethodDescription(getMethodLabel(selectedMethod))}
                                 </div>
 
-                                {selectedMethod === 'inline_injection' && (
+                                {getMethodLabel(selectedMethod) === 'Inline Injection' && (
                                     <div className={styles.formGroup}>
                                         <label className={styles.label}>Target Selector (ID/Class/CSS Selector)</label>
                                         <input 
@@ -330,7 +319,7 @@ export const RecommendationPage: React.FC<RecommendationPageProps> = ({ containe
                                     </div>
                                 )}
 
-                                {selectedMethod === 'custom_widget' && (
+                                {getMethodLabel(selectedMethod) === 'Custom Widget' && (
                                     <div className={styles.guideBox}>
                                         <label className={styles.label}>Widget Code (Copy and paste this into your HTML)</label>
                                         <div className={styles.widgetCodeBlock}>
@@ -340,7 +329,7 @@ export const RecommendationPage: React.FC<RecommendationPageProps> = ({ containe
                                     </div>
                                 )}
 
-                                {selectedMethod === 'sdk_callback' && (
+                                {getMethodLabel(selectedMethod) === 'SDK Callback' && (
                                     <div className={styles.developerGuide}>
                                         <h4 className={styles.label}>Developer Guide - SDK Callback</h4>
                                         

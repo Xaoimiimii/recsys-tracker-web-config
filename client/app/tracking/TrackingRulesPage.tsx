@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, TrackingRule } from '../../types';
 import { RuleBuilder } from '../../components/dashboard/RuleBuilder';
 import { TRIGGER_ICONS } from '../../lib/constants';
-import { Box, Plus, Trash2, Edit2, MousePointer, Eye, Star } from 'lucide-react';
+import { Box, Plus, Trash2, Edit2, MousePointer, Eye, Star, ArrowDownCircle } from 'lucide-react';
 import { ruleApi, RuleListItem, RuleDetailResponse } from '../../lib/api/';
 import { useDataCache } from '../../contexts/DataCacheContext';
 import styles from './TrackingRulesPage.module.css';
@@ -17,10 +17,12 @@ interface RuleWithDetails extends RuleListItem {
 }
 
 export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container, setContainer }) => {
-    const { getRules, clearRulesCache } = useDataCache();
-    const [isEditingRule, setIsEditingRule] = useState(false);
-    const [currentRule, setCurrentRule] = useState<TrackingRule | undefined>(undefined);
     const [isLoading, setIsLoading] = useState(false);
+    const [isEditingRule, setIsEditingRule] = useState(false);
+    const [isViewMode, setIsViewMode] = useState(false);
+    const [currentRule, setCurrentRule] = useState<TrackingRule | undefined>(undefined);
+    const [currentRuleDetails, setCurrentRuleDetails] = useState<RuleDetailResponse | undefined>(undefined);
+    
     const [rulesWithDetails, setRulesWithDetails] = useState<RuleWithDetails[]>([]);
     const [fetchError, setFetchError] = useState(false);
 
@@ -51,24 +53,21 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                 
                 const rulesData: RuleWithDetails[] = await Promise.all(rulesWithDetailsPromises);
                 setRulesWithDetails(rulesData);
-                
-                // Convert API rules to TrackingRule format for display (legacy support)
-                const trackingRules: TrackingRule[] = rulesData.map(rule => ({
-                    id: rule.id.toString(),
-                    name: rule.name,
-                    trigger: (rule.TriggerTypeName?.toLowerCase() || 'click') as any,
-                    selector: rule.details?.TargetElement?.Value || '',
-                    extraction: rule.details?.PayloadConfigs?.map(p => ({
-                        field: 'itemId',
-                        method: 'attribute' as any,
-                        value: p.Value
-                    })) || []
-                }));
 
+                // Update container's rules based on fetched data
+                const updatedRules: TrackingRule[] = rulesData.map(r => ({
+                    id: r.id.toString(),
+                    name: r.name,
+                    trigger: r.TriggerTypeName,
+                    selector: r.details?.TargetElement?.Value || '',
+                    extraction: []
+                }));
                 setContainer({
                     ...container,
-                    rules: trackingRules
+                    rules: updatedRules
                 });
+                
+
             } catch (error) {
                 console.error('Failed to fetch rules:', error);
                 setFetchError(true);
@@ -86,23 +85,6 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
         fetchRules();
     }, [container?.uuid]); // Only depend on UUID to avoid infinite loop
 
-    const getTriggerLabel = (trigger: string) => {
-        switch(trigger) {
-            case 'click':
-                return 'Click';
-            case 'form_submit':
-                return 'Form Submit';
-            case 'scroll':
-                return 'Scroll';
-            case 'timer':
-                return 'Timer';
-            case 'view':
-                return 'View';
-            default:
-                return trigger;
-        }
-    };
-
     const getTriggerTypeFromId = (triggerEventId: number | undefined) => {
         switch(triggerEventId) {
             case 1:
@@ -110,50 +92,42 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
             case 2:
                 return { label: 'Rate', icon: Star };
             case 3:
-                return { label: 'View', icon: Eye };
+                return { label: 'Page View', icon: Eye };
+            case 4:
+                return { label: 'Scroll', icon: ArrowDownCircle };
             default:
-                return { label: 'Unknown', icon: Box };
+                return { label: 'Click', icon: Box };
         }
     };
 
-    const saveRule = async (rule: TrackingRule) => {
+    const saveRule = async (response: any) => {
         if (!container) return;
         
         setIsLoading(true);
         try {
-            // For now, we only support creating new rules
-            // TODO: Implement PUT /rule/:id for updates
-            
-            // Call API to create rule
-            // Note: This is a simplified mapping. You may need to adjust based on actual API requirements
-            const response = await ruleApi.create({
-                name: rule.name,
-                domainKey: container.uuid,
-                eventPatternId: rule.trigger, // This should be the actual event pattern ID from the API
-                // Add other required fields based on your API
-            });
+            // API call already done in RuleBuilder component
+            // Just update local state with the response
+            const newId = response.id || response.Id || Date.now().toString();
+            const newRule: TrackingRule = {
+                id: newId.toString(),
+                name: response.name || response.Name || 'New Rule',
+                trigger: 'click', // Default, can be enhanced with response data
+                selector: '',
+                extraction: []
+            };
 
-            // Update local state with the new rule
             let newRules = [...container.rules];
-            const existingIndex = newRules.findIndex(r => r.id === rule.id);
+            const existingIndex = newRules.findIndex(r => r.id === newId.toString());
         
             if (existingIndex >= 0) {
-                newRules[existingIndex] = rule;
+                newRules[existingIndex] = newRule;
             } else {
-                // Use a generated ID for new rules if not returned from API
-                const newId = ('id' in response && response.id) ? response.id : Date.now().toString();
-                newRules.push({
-                    ...rule,
-                    id: newId.toString()
-                });
+                newRules.push(newRule);
             }
             
             setContainer({ ...container, rules: newRules });
             setIsEditingRule(false);
             setCurrentRule(undefined);
-            
-            // Clear cache to force refresh on next load
-            clearRulesCache(container.uuid);
         } catch (error) {
             console.error('Failed to save rule:', error);
             alert('Failed to save tracking rule. Please try again.');
@@ -162,7 +136,44 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
         }
     };
 
-    const deleteRule = (id: string) => {
+    const handleView = (id: string | number) => {
+        const ruleToView = rulesWithDetails.find(r => r.id.toString() === id.toString());
+        console.log('Viewing rule:', ruleToView, 'from id:', id);
+        if (ruleToView && ruleToView.details) {
+            // Map RuleDetailResponse to TrackingRule format
+            const mappedRule: TrackingRule = {
+                id: ruleToView.id.toString(),
+                name: ruleToView.details.Name,
+                trigger: 'click', // Will be determined from TriggerEventID
+                selector: ruleToView.details.TargetElement?.Value || '',
+                extraction: []
+            };
+            setCurrentRule(mappedRule);
+            setCurrentRuleDetails(ruleToView.details);
+            setIsViewMode(true);
+            setIsEditingRule(true);
+        }
+    };
+
+    const handleEdit = (id: string | number) => {
+        const ruleToEdit = rulesWithDetails.find(r => r.id.toString() === id.toString());
+        if (ruleToEdit && ruleToEdit.details) {
+            // Map RuleDetailResponse to TrackingRule format
+            const mappedRule: TrackingRule = {
+                id: ruleToEdit.id.toString(),
+                name: ruleToEdit.details.Name,
+                trigger: 'click', // Will be determined from TriggerEventID
+                selector: ruleToEdit.details.TargetElement?.Value || '',
+                extraction: []
+            };
+            setCurrentRule(mappedRule);
+            setCurrentRuleDetails(ruleToEdit.details);
+            setIsViewMode(false);
+            setIsEditingRule(true);
+        }
+    };
+
+    const handleDelete = (id: string) => {
         if (!container) return;
         setContainer({ ...container, rules: container.rules.filter(r => r.id !== id) });
     };
@@ -174,7 +185,12 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                     <div className={styles.cardHeader}>
                         <h3 className={styles.rulesTitle}>Tracking Rules</h3>
                         <button 
-                            onClick={() => { setCurrentRule(undefined); setIsEditingRule(true); }}
+                            onClick={() => { 
+                                setCurrentRule(undefined); 
+                                setCurrentRuleDetails(undefined);
+                                setIsViewMode(false);
+                                setIsEditingRule(true); 
+                            }}
                             className={styles.addButton}
                         >
                             <Plus size={16} />
@@ -219,19 +235,21 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                                             <td>
                                             <button 
                                                 className={styles.editButton}
-                                                onClick={() => { 
-                                                    // Find the corresponding TrackingRule
-                                                    const trackingRule = container?.rules.find(r => r.id === rule.id.toString());
-                                                    setCurrentRule(trackingRule); 
-                                                    setIsEditingRule(true); 
-                                                }}
+                                                onClick={() => handleView(rule.id)}
+                                                title="View details"
+                                            >
+                                                <Eye size={16} />
+                                            </button>
+                                            <button 
+                                                className={styles.editButton}
+                                                onClick={() => handleEdit(rule.id)} 
                                                 title="Edit"
                                             >
                                                 <Edit2 size={16} />
                                             </button>
                                             <button 
                                                 className={styles.deleteButton}
-                                                onClick={() => deleteRule(rule.id.toString())}
+                                                onClick={() => handleDelete(rule.id.toString())}
                                                 title="Delete"
                                             >
                                                 <Trash2 size={16} />
@@ -247,9 +265,15 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
             ) : (
                 <RuleBuilder 
                     domainKey={container?.uuid || ''} 
-                    initialRule={currentRule} 
+                    initialRule={currentRule}
+                    ruleDetails={currentRuleDetails}
+                    isViewMode={isViewMode}
                     onSave={saveRule} 
-                    onCancel={() => setIsEditingRule(false)} 
+                    onCancel={() => {
+                        setIsEditingRule(false);
+                        setIsViewMode(false);
+                        setCurrentRuleDetails(undefined);
+                    }} 
                 />
             )}
         </div>

@@ -4,7 +4,6 @@ import type {
     PayloadPattern, 
     Operator, 
     CreateRuleDto, 
-    RuleResponse,
     RuleListItem,
     RuleDetailResponse
 } from './types';
@@ -20,7 +19,7 @@ export const ruleApi = {
         apiFetch<Operator[]>('/rule/operators', undefined, true),
 
     create: (data: CreateRuleDto) => 
-        apiFetch<RuleResponse>('/rule/create', {
+        apiFetch<{ statusCode: number; message: string }>('/rule/create', {
             method: 'POST',
             body: JSON.stringify(data),
         }, true),
@@ -32,8 +31,4 @@ export const ruleApi = {
     // Get detailed information for a specific rule
     getRuleById: (ruleId: number) => 
         apiFetch<RuleDetailResponse>(`/rule/${ruleId}`, undefined, true),
-
-    // Legacy method - keep for backwards compatibility
-    getByDomainId: (domainId: string) => 
-        apiFetch<RuleResponse[]>(`/rule/domain/${domainId}`, undefined, true),
 };

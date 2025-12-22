@@ -1,6 +1,6 @@
 export type DomainType = 'music' | 'movie' | 'news' | 'ecommerce' | 'general';
 
-export type TriggerType = 'click' | 'form_submit' | 'scroll' | 'timer' | 'view';
+export type TriggerType = 'click' | 'rate' | 'page_view' | 'scroll';
 
 export type ExtractionMethod = 'static' | 'css_attribute' | 'inner_text' | 'url_param' | 'js_variable' | 'cookie';
 
@@ -16,7 +16,7 @@ export interface DataExtractionRule {
 export interface TrackingRule {
   id: string;
   name: string;
-  trigger: TriggerType;
+  trigger: string;
   selector: string; // CSS Selector for the element to watch (or empty for page-wide)
   extraction: DataExtractionRule[];
 }
@@ -45,55 +45,3 @@ export interface UserState {
   isAuthenticated: boolean;
   currentUser: { name: string; email: string } | null;
 }
-
-// API Response Types (imported from lib/api.ts for reference)
-export interface ApiEventPattern {
-  id: string;
-  type: string;
-  description?: string;
-}
-
-export interface ApiPayloadPattern {
-  id: string;
-  pattern: string;
-  description?: string;
-}
-
-export interface ApiOperator {
-  id: string;
-  operator: string;
-  description?: string;
-}
-
-export interface ApiRuleResponse {
-  id: string;
-  name: string;
-  domainKey: string;
-  eventPattern: ApiEventPattern;
-  targetElement?: {
-    id: string;
-    selector: string;
-    selectorType: string;
-  };
-  conditions?: Array<{
-    id: string;
-    condition: {
-      id: string;
-      type: string;
-    };
-    operator: ApiOperator;
-    value: string;
-  }>;
-  payloads?: Array<{
-    id: string;
-    payloadPattern: ApiPayloadPattern;
-    payloadConfig: {
-      id: string;
-      extractionMethod: string;
-      extractionValue: string;
-    };
-  }>;
-  createdAt: string;
-  updatedAt: string;
-}
-

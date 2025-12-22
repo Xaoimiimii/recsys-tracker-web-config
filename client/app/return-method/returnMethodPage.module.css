@@ -1,0 +1,745 @@
+/* Container */
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Card Styles */
+.configCard {
+    background-color: var(--color-white);
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--color-border);
+    padding: 1.5rem;
+}
+
+/* Header Styles */
+.cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.pageTitle {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: var(--color-text-main);
+    margin: 0;
+}
+
+.addButton {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background-color: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.addButton:hover {
+    background-color: var(--color-primary-hover);
+}
+
+/* Filters */
+.filters {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.filterGroup {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filterLabel {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+
+.filterSelect {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    color: var(--color-text-main);
+    background-color: var(--color-white);
+    cursor: pointer;
+}
+
+.filterSelect:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+
+/* Empty State */
+.emptyState {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--color-text-secondary);
+}
+
+.emptyTitle {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-text-main);
+    margin: 0 0 0.5rem 0;
+}
+
+.emptyDescription {
+    margin: 0 0 1.5rem 0;
+}
+
+.emptyButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background-color: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.emptyButton:hover {
+    background-color: var(--color-primary-hover);
+}
+
+/* Table Styles */
+.tableContainer {
+    overflow-x: auto;
+    margin-top: 1rem;
+}
+
+.configTable {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+}
+
+.configTable thead {
+    background-color: #f9fafb;
+    border-bottom: 2px solid var(--color-border);
+}
+
+.configTable th {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+    letter-spacing: 0.05em;
+}
+
+.configTable td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 0.875rem;
+    color: var(--color-text-main);
+}
+
+.configTable tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+.nameCell {
+    font-weight: 600;
+    color: var(--color-text-main);
+}
+
+.typeTag {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background-color: var(--color-primary-light);
+    color: var(--color-primary);
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.summaryCell {
+    color: var(--color-text-secondary);
+    font-family: 'Courier New', monospace;
+    font-size: 0.8125rem;
+}
+
+/* Status Toggle */
+.statusToggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    position: relative;
+}
+
+.statusToggle input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggleSlider {
+    position: relative;
+    display: inline-block;
+    width: 2.5rem;
+    height: 1.25rem;
+    background-color: #ccc;
+    border-radius: 1rem;
+    transition: background-color 0.2s;
+}
+
+.toggleSlider::before {
+    content: '';
+    position: absolute;
+    height: 1rem;
+    width: 1rem;
+    left: 0.125rem;
+    bottom: 0.125rem;
+    background-color: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+}
+
+.statusToggle input:checked + .toggleSlider {
+    background-color: var(--color-success);
+}
+
+.statusToggle input:checked + .toggleSlider::before {
+    transform: translateX(1.25rem);
+}
+
+.toggleLabel {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-main);
+}
+
+/* Action Buttons */
+.actionsCell {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.actionButton,
+.deleteButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.25rem;
+    background-color: white;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.actionButton {
+    color: var(--color-primary);
+}
+
+.actionButton:hover {
+    background-color: var(--color-primary-light);
+    border-color: var(--color-primary);
+}
+
+.deleteButton {
+    color: #dc2626;
+}
+
+.deleteButton:hover {
+    background-color: #fef2f2;
+    border-color: #dc2626;
+}
+
+/* Form Styles */
+.formHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.closeButton {
+    color: var(--color-text-tertiary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.2s;
+}
+
+.closeButton:hover {
+    color: var(--color-text-secondary);
+}
+
+.closeButton svg {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.formTitle {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--color-text-main);
+    margin: 0;
+}
+
+.formContent {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.formSection {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.sectionLabel {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-text-main);
+    margin: 0;
+}
+
+.fieldLabel {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-main);
+    margin: 0;
+}
+
+.required {
+    color: #dc2626;
+}
+
+.helperText {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    margin: 0;
+}
+
+.helperBox {
+    padding: 0.75rem 1rem;
+    background-color: var(--color-primary-light);
+    border-left: 3px solid var(--color-primary);
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    color: var(--color-text-main);
+}
+
+/* Display Type Grid */
+.displayTypeGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.displayTypeCard {
+    padding: 1.5rem;
+    border: 2px solid var(--color-border);
+    border-radius: 0.5rem;
+    background-color: var(--color-white);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.displayTypeCard:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary-light);
+}
+
+.displayTypeCard:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.displayTypeCardActive {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary-light);
+}
+
+.displayTypeIcon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.displayTypeTitle {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-text-main);
+    margin-bottom: 0.5rem;
+}
+
+.displayTypeDescription {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+}
+
+/* Form Inputs */
+.textInput,
+.selectInput {
+    width: 100%;
+    padding: 0.625rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    color: var(--color-text-main);
+    background-color: var(--color-white);
+}
+
+.textInput:focus,
+.selectInput:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+
+.textInput:disabled,
+.selectInput:disabled {
+    background-color: #f9fafb;
+    cursor: not-allowed;
+}
+
+.formRow {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.formCol {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.statusToggleLarge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    position: relative;
+}
+
+.statusToggleLarge input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.statusToggleLarge .toggleSlider {
+    width: 3rem;
+    height: 1.5rem;
+}
+
+.statusToggleLarge .toggleSlider::before {
+    height: 1.25rem;
+    width: 1.25rem;
+}
+
+.statusToggleLarge input:checked + .toggleSlider::before {
+    transform: translateX(1.5rem);
+}
+
+/* Preview Styles */
+.previewBox {
+    padding: 1.5rem;
+    background-color: #f9fafb;
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+}
+
+.previewLabel {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    margin: 0 0 1rem 0;
+}
+
+.widgetPreview {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.previewItem {
+    padding: 1rem;
+    background-color: var(--color-white);
+    border: 1px solid var(--color-border);
+    border-radius: 0.375rem;
+    text-align: center;
+}
+
+.preview-dark {
+    background-color: #1A1D23;
+    color: var(--color-white);
+    border-color: #2A2D33;
+}
+
+.previewImage {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+.previewTitle {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.previewPrice {
+    font-size: 0.875rem;
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
+.preview-dark .previewPrice {
+    color: #4FDBC8;
+}
+
+/* Popup Preview */
+.popupPreview {
+    position: relative;
+    height: 300px;
+    background-color: var(--color-bg-light);
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.popupOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.popupContent {
+    background-color: var(--color-white);
+    border-radius: 0.5rem;
+    width: 80%;
+    max-width: 400px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.popupHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.popupHeader h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-text-main);
+}
+
+.popupClose {
+    font-size: 1.5rem;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+}
+
+.popupBody {
+    padding: 1rem;
+}
+
+.popupItem {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.popupImage {
+    font-size: 3rem;
+}
+
+.popupInfo {
+    flex: 1;
+}
+
+.popupTitle {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-main);
+}
+
+.popupPrice {
+    font-size: 0.875rem;
+    color: var(--color-primary);
+    font-weight: 700;
+}
+
+/* Guide Box */
+.guideBox {
+    padding: 1rem 1.5rem;
+    background-color: #f9fafb;
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+}
+
+.guideList {
+    padding: 0;
+}
+
+.guideList li {
+    font-size: 0.875rem;
+    color: var(--color-text-main);
+    margin-bottom: 0.5rem;
+}
+
+.guideList li:last-child {
+    margin-bottom: 0;
+}
+
+.guideWarning {
+    padding: 0.75rem;
+    background-color: var(--color-warning-light);
+    border-left: 3px solid var(--color-warning);
+    border-radius: 0.375rem;
+    font-size: 0.8125rem;
+    color: var(--color-text-main);
+    margin: 0;
+}
+
+/* Code Section */
+.codeSection {
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.codeHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background-color: #f9fafb;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.codeLabel {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-main);
+}
+
+.copyCodeButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background-color: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: 0.25rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.copyCodeButton:hover {
+    background-color: var(--color-primary-hover);
+}
+
+.codeBlock {
+    margin: 0;
+    padding: 1rem;
+    background-color: #1A1D23;
+    color: #D4D4D8;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    overflow-x: auto;
+}
+
+/* Form Actions */
+.formActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-border);
+}
+
+.cancelButton {
+    padding: 0.75rem 1.5rem;
+    background-color: transparent;
+    color: var(--color-text-main);
+    border: 1px solid var(--color-border);
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.cancelButton:hover {
+    color: var(--color-text-secondary);
+}
+
+.saveButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background-color: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.saveButton:hover:not(:disabled) {
+    background-color: var(--color-primary-hover);
+}
+
+.saveButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .widgetPreview {
+        grid-template-columns: 1fr;
+    }
+    
+    .formRow {
+        grid-template-columns: 1fr;
+    }
+    
+    .displayTypeGrid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -41,43 +41,40 @@ export interface UserState {
 // ==================== DOMAIN TYPES ====================
 
 export interface CreateDomainDto {
-  name: string;
   url: string;
-  userId: string;
+  type: number;
 }
 
 export interface DomainResponse {
-  id: string;
-  name: string;
-  url: string;
-  key: string;
-  userId: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface GetDomainResponse {
-  domainKey: string;
-  domainUrl: string | null;
-  domainType: string | null;
+  Id: number;
+  TernantID: number;
+  Key: string;
+  Url: string;
+  Type: number;
+  CreatedAt: string;
 }
 
 // ==================== RETURN METHOD TYPES ====================
 
+export interface ReturnMethodType {
+  id: number;
+  name: string;
+}
+
 export interface CreateReturnMethodDto {
-  domainKey: string;
-  method: 'custom_widget' | 'popup' | 'inline_injection' | 'sdk_callback';
-  slot: string;
-  targetUrl?: string;
+  key: string;
+  slotName: string;
+  returnMethodId: number;
+  targetUrl: string;
   targetSelector?: string;
 }
 
 export interface ReturnMethodResponse {
-  DomainID?: number;
-  SlotName?: string;
-  Value?: string;
-  TargetUrl?: string;
-  ReturnMethodID?: number;
+  DomainID: number;
+  SlotName: string;
+  Value: string;
+  TargetUrl: string;
+  ReturnMethodID: number;
 }
 
 // ==================== RULE TYPES ====================
@@ -98,27 +95,28 @@ export interface Operator {
   Name: string;
 }
 
+export interface ConditionDto {
+  eventPatternId: number;
+  operatorId: number;
+  value: string;
+}
+
+export interface PayloadConfigDto {
+  payloadPatternId: number;
+  operatorId: number;
+  value?: string;
+  type?: string;
+}
+
 export interface CreateRuleDto {
   name: string;
   domainKey: string;
-  eventPatternId: string;
-  targetElementId?: string;
-  conditions?: {
-    conditionId: string;
-    operatorId: string;
-    value: string;
-  }[];
-  payloads?: {
-    payloadPatternId: string;
-    payloadConfigId: string;
-  }[];
-}
-
-// Response from /rule/domain/:domainKey - list of rules
-export interface RuleListItem {
-  id: number;
-  name: string;
-  TriggerTypeName: string;
+  triggerEventId: number;
+  targetEventPatternId: number;
+  targetOperatorId: number;
+  targetElementValue: string;
+  conditions: ConditionDto[];
+  payloadConfigs: PayloadConfigDto[];
 }
 
 // Response from /rule/:id - detailed rule info
@@ -131,14 +129,13 @@ export interface PayloadConfig {
 }
 
 export interface RuleCondition {
-  Id: number;
-  Value: string;
-  RuleID: number;
   EventPatternID: number;
+  RuleID: number;
   OperatorID: number;
+  Value: string;
 }
 
-export interface RuleTargetElement {
+export interface TargetElement {
   Id: number;
   Value: string;
   EventPatternID: number;
@@ -148,44 +145,19 @@ export interface RuleTargetElement {
 export interface RuleDetailResponse {
   Id: number;
   Name: string;
+  DomainID: number;
   TriggerEventID: number;
   TargetElementID: number;
   PayloadConfigs: PayloadConfig[];
   Conditions: RuleCondition[];
-  TargetElement: RuleTargetElement;
+  TargetElement: TargetElement;
 }
 
-// Legacy type - keep for backwards compatibility
-export interface RuleResponse {
-  id?: number | string;
-  domainKey: string;
+// Response from /rule/domain/:domainKey - list of rules
+export interface RuleListItem {
+  id: number;
   name: string;
-  eventPattern: EventPattern;
-  targetElement?: {
-    id: string;
-    selector: string;
-    selectorType: string;
-  };
-  conditions?: Array<{
-    id: string;
-    condition: {
-      id: string;
-      type: string;
-    };
-    operator: Operator;
-    value: string;
-  }>;
-  payloads?: Array<{
-    id: string;
-    payloadPattern: PayloadPattern;
-    payloadConfig: {
-      id: string;
-      extractionMethod: string;
-      extractionValue: string;
-    };
-  }>;
-  createdAt: string;
-  updatedAt: string;
+  TriggerTypeName: string;
 }
 
 // ==================== USER TYPES ====================

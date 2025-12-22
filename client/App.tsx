@@ -1,41 +1,72 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth, useContainer } from './hooks';
 import { AuthPage } from './app/auth/AuthPage';
-import { OnboardingPage } from './app/onboarding/OnboardingPage';
 import { DashboardPage } from './app/dashboard/DashboardPage';
 import { TrackingRulesPage } from './app/tracking/TrackingRulesPage';
-import { RecommendationPage } from './app/recommendation/RecommendationPage';
 import { LoaderScriptPage } from './app/loader-script/LoaderScriptPage';
 import { ItemUploadPage } from './app/item-upload/ItemUploadPage';
+import { ReturnMethodPage } from './app/return-method/returnMethodPage';
+import { ReturnMethodFormPage } from './app/return-method/ReturnMethodFormPage';
+import { DomainSelectionPage } from './app/domain-selection/DomainSelectionPage';
+import { OnboardingPage } from './app/onboarding/OnboardingPage';
 import { MainLayout } from './components/layout/MainLayout';
 import { DataCacheProvider } from './contexts/DataCacheContext';
+import type { DomainResponse } from './lib/api/types';
+import type { Container, DomainType } from './types';
 
 function AppContent() {
   const { user, loading, signin, signout } = useAuth();
-  const {
-    container,
-    setContainer,
-    onboardingStep,
-    createContainer,
-    selectDomainType,
-    startOnboarding,
-    isLoadingDomain,
-  } = useContainer(
-    user ? { 
-      isAuthenticated: true, 
-      currentUser: { 
-        name: user.name, 
-        email: user.username 
-      } 
-    } : { 
-      isAuthenticated: false, 
-      currentUser: null 
-    }, user?.username // Sử dụng username làm domainKey tạm thời
+  const { container, setContainer } = useContainer();
+  const [selectedDomainKey, setSelectedDomainKey] = useState<string | null>(
+    localStorage.getItem('selectedDomainKey')
   );
+  const [domains, setDomains] = useState<DomainResponse[]>([]);
+  
   const isAuthenticated = user !== null;
 
-  if (loading || isLoadingDomain) return <div>Loading...</div>;
+  // Map DomainResponse to Container type
+  const mapDomainToContainer = (domain: DomainResponse): Container => {
+    const domainTypeMap: Record<number, DomainType> = {
+      1: 'music',
+      2: 'movie',
+      3: 'news',
+      4: 'ecommerce',
+      5: 'general',
+    };
+
+    return {
+      id: domain.Id.toString(),
+      uuid: domain.Key,
+      name: new URL(domain.Url).hostname,
+      url: domain.Url,
+      domainType: domainTypeMap[domain.Type] || 'general',
+      rules: [],
+      outputConfig: {
+        displayMethods: [],
+      },
+    };
+  };
+
+  // Update container when selectedDomainKey or domains change
+  useEffect(() => {
+    if (selectedDomainKey && domains.length > 0) {
+      const selectedDomain = domains.find(d => d.Key === selectedDomainKey);
+      if (selectedDomain) {
+        setContainer(mapDomainToContainer(selectedDomain));
+      }
+    }
+  }, [selectedDomainKey, domains]);
+
+  const handleSelectDomain = (domainKey: string, domainsList: DomainResponse[]) => {
+    setSelectedDomainKey(domainKey);
+    localStorage.setItem('selectedDomainKey', domainKey);
+    setDomains(domainsList);
+  };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
   
   return (
     <BrowserRouter>
@@ -44,9 +75,23 @@ function AppContent() {
           path="/login" 
           element={
             isAuthenticated ? (
-              <Navigate to="/dashboard" replace />
+              <Navigate to="/select-domain" replace />
             ) : (
               <AuthPage onLogin={signin} />
+            )
+          } 
+        />
+
+        <Route 
+          path="/select-domain" 
+          element={
+            !isAuthenticated ? (
+              <Navigate to="/login" replace />
+            ) : (
+              <DomainSelectionPage 
+                onSelectDomain={handleSelectDomain}
+                onLogout={signout}
+              />
             )
           } 
         />
@@ -56,14 +101,8 @@ function AppContent() {
           element={
             !isAuthenticated ? (
               <Navigate to="/login" replace />
-            ) : onboardingStep === 0 ? (
-              <Navigate to="/dashboard" replace />
             ) : (
-              <OnboardingPage 
-                step={onboardingStep} 
-                onCreateContainer={createContainer} 
-                onSelectDomain={selectDomainType} 
-              />
+              <OnboardingPage onLogout={signout} />
             )
           } 
         />
@@ -73,8 +112,8 @@ function AppContent() {
           element={
             !isAuthenticated ? (
               <Navigate to="/login" replace />
-            ) : onboardingStep > 0 ? (
-              <Navigate to="/onboarding" replace />
+            ) : !selectedDomainKey ? (
+              <Navigate to="/select-domain" replace />
             ) : (
               <MainLayout 
                 userEmail={user?.username}
@@ -92,6 +131,7 @@ function AppContent() {
                 container={container} 
                 setContainer={setContainer} 
                 onLogout={signout} 
+                domains={domains}
               />
             } 
           />
@@ -107,9 +147,36 @@ function AppContent() {
           <Route 
             path="recommendation-display" 
             element={
-              <RecommendationPage 
+              <ReturnMethodPage 
                 container={container} 
                 setContainer={setContainer} 
+              />
+            } 
+          />
+          <Route 
+            path="recommendation-display/create" 
+            element={
+              <ReturnMethodFormPage 
+                container={container} 
+                mode="create"
+              />
+            } 
+          />
+          <Route 
+            path="recommendation-display/edit/:id" 
+            element={
+              <ReturnMethodFormPage 
+                container={container} 
+                mode="edit"
+              />
+            } 
+          />
+          <Route 
+            path="recommendation-display/view/:id" 
+            element={
+              <ReturnMethodFormPage 
+                container={container} 
+                mode="view"
               />
             } 
           />
@@ -134,10 +201,10 @@ function AppContent() {
         <Route 
           path="*" 
           element={
-            <Navigate to={!isAuthenticated ? "/login" : onboardingStep > 0 ? "/onboarding" : "/dashboard"} replace />
+            <Navigate to={isAuthenticated ? "/select-domain" : "/login"} replace />
           } 
         />
-        </Routes>
+      </Routes>
     </BrowserRouter>
   );
 }

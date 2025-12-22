@@ -1,18 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, UserState } from '../../types';
-import { Check, Globe, Activity, X, Copy } from 'lucide-react';
+import { Activity, X, Copy, Plus, RefreshCw } from 'lucide-react';
 import styles from './DashboardPage.module.css';
 import { MOCK_SCRIPT_TEMPLATE } from '../../lib/constants';
+import { useDataCache } from '../../contexts/DataCacheContext';
+import { domainApi, ruleApi } from '../../lib/api';
+import type { DomainResponse } from '../../lib/api/types';
 
 interface DashboardPageProps {
     user: UserState;
     container: Container | null;
     setContainer: (c: Container) => void;
     onLogout: () => void;
+    domains: DomainResponse[];
 }
 
-export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, setContainer, onLogout }) => {
+export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, setContainer, onLogout, domains }) => {
     const [showModal, setShowModal] = useState(false);
+    const [showDomainSwitcher, setShowDomainSwitcher] = useState(false);
+    const { setTriggerEvents, setEventPatterns, setOperators } = useDataCache();
+
+    // Fetch master data when dashboard loads
+    useEffect(() => {
+        const fetchMasterData = async () => {
+            try {
+                const [triggerEvents, eventPatterns, operators] = await Promise.all([
+                    domainApi.getTriggerEvents(),
+                    ruleApi.getEventPatterns(),
+                    ruleApi.getOperators(),
+                ]);
+
+                setTriggerEvents(triggerEvents);
+                setEventPatterns(eventPatterns);
+                setOperators(operators);
+            } catch (error) {
+                console.error('Failed to fetch master data:', error);
+            }
+        };
+
+        fetchMasterData();
+    }, [setTriggerEvents, setEventPatterns, setOperators]);
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
@@ -20,6 +47,43 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
 
     const generateLoaderScript = () => {
         return MOCK_SCRIPT_TEMPLATE(container);
+    };
+
+    const mapDomainToContainer = (domain: DomainResponse): Container => {
+        const domainTypeMap: Record<number, any> = {
+            1: 'music',
+            2: 'movie',
+            3: 'news',
+            4: 'ecommerce',
+            5: 'general',
+        };
+
+        return {
+            id: domain.Id.toString(),
+            uuid: domain.Key,
+            name: new URL(domain.Url).hostname,
+            url: domain.Url,
+            domainType: domainTypeMap[domain.Type] || 'general',
+            rules: [],
+            outputConfig: {
+                displayMethods: [],
+            },
+        };
+    };
+
+    const handleDomainSwitch = async (domain: DomainResponse) => {
+        try {
+            const newContainer = mapDomainToContainer(domain);
+            setContainer(newContainer);
+            localStorage.setItem('selectedDomainKey', domain.Key);
+            setShowDomainSwitcher(false);
+        } catch (error) {
+            console.error('Failed to switch domain:', error);
+        }
+    };
+
+    const handleOpenDomainSwitcher = () => {
+        setShowDomainSwitcher(true);
     };
 
     // Mock data for behavior tracking chart
@@ -48,7 +112,60 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
                     {/* <code className={styles.domainKey}>{container?.uuid.substring(0, 40)}...</code> */}
                     <p className={styles.domainUrl}>{container?.url}</p>
                 </div>
+                <button className={styles.switchDomainButton} onClick={handleOpenDomainSwitcher}>
+                    <RefreshCw size={20} />
+                    <span>Switch Domain</span>
+                </button>
             </div>
+
+            {/* Domain Switcher Modal */}
+            {showDomainSwitcher && (
+                <div className={styles.modalOverlay} onClick={() => setShowDomainSwitcher(false)}>
+                    <div className={styles.domainSwitcherModal} onClick={(e) => e.stopPropagation()}>
+                        <div className={styles.modalHeader}>
+                            <h2>Switch Domain</h2>
+                            <button className={styles.closeButton} onClick={() => setShowDomainSwitcher(false)}>
+                                <X />
+                            </button>
+                        </div>
+                        <div className={styles.domainSwitcherBody}>
+                            <div className={styles.domainGrid}>
+                                    {domains.map((domain) => {
+                                        const domainUrl = new URL(domain.Url);
+                                        const hostname = domainUrl.hostname;
+                                        const isCurrentDomain = domain.Key === container?.uuid;
+                                        
+                                        return (
+                                            <button
+                                                key={domain.Id}
+                                                onClick={() => !isCurrentDomain && handleDomainSwitch(domain)}
+                                                className={`${styles.domainCard} ${isCurrentDomain ? styles.currentDomain : ''}`}
+                                                disabled={isCurrentDomain}
+                                            >
+                                                <div className={styles.domainIconLarge}>
+                                                    {hostname.charAt(0).toUpperCase()}
+                                                </div>
+                                                <div className={styles.domainCardContent}>
+                                                    <h3 className={styles.domainCardTitle}>{hostname}</h3>
+                                                    <p className={styles.domainCardUrl}>{domain.Url}</p>
+                                                    <div className={styles.domainCardFooter}>
+                                                        <span className={styles.domainCardKey}>Key: {domain.Key.substring(0, 8)}...</span>
+                                                        <span className={styles.domainCardDate}>
+                                                            {new Date(domain.CreatedAt).toLocaleDateString()}
+                                                        </span>
+                                                    </div>
+                                                    {isCurrentDomain && (
+                                                        <div className={styles.currentBadge}>Current</div>
+                                                    )}
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Modal for Domain Details */}
             {showModal && (

@@ -11,6 +11,11 @@ interface LoaderScriptPageProps {
 export const LoaderScriptPage: React.FC<LoaderScriptPageProps> = ({ container }) => {
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'manual' | 'wordpress' | 'shopify' | 'gtm' | 'tealium'>('manual');
+  const [gtmMethod, setGtmMethod] = useState('import'); 
+  const gtmManualScript = `
+    <script>window.__RECSYS_DOMAIN_KEY__ = "${container.uuid}";</script>
+    <script src="https://cdn.jsdelivr.net/gh/Xaoimiimii/recsys-tracker-module/packages/sdk/dist/loader.js"></script>
+    `;
 
   if (!container) {
     return (
@@ -339,60 +344,149 @@ ${loaderScript}`;
         {activeTab === 'gtm' && (
           <div className={styles.section}>
             <h2>Google Tag Manager Integration</h2>
-            <div className={styles.instructions}>
-              <h3>🏷️ Installation Steps:</h3>
-              <ol>
-                <li><strong>Step 1:</strong> Download the GTM container JSON file using the button below</li>
-                <li><strong>Step 2:</strong> Log in to your Google Tag Manager account</li>
-                <li><strong>Step 3:</strong> Select your container</li>
-                <li><strong>Step 4:</strong> Go to <strong>Admin → Import Container</strong></li>
-                <li><strong>Step 5:</strong> Click <strong>Choose container file</strong> and select the downloaded JSON file
-                </li>
-                <li><strong>Step 6:</strong> Choose import option:
-                  <ul>
-                    <li><strong>Merge</strong> - Recommended (adds new tag without affecting existing ones)</li>
-                    <li><strong>Overwrite</strong> - Only if you want to replace all existing tags</li>
-                  </ul>
-                </li>
-                <li><strong>Step 7:</strong> Click <strong>Confirm</strong></li>
-                <li><strong>Step 8:</strong> Review the imported tag and click <strong>Submit</strong></li>
-                <li><strong>Step 9:</strong> Add a version name and description, then click <strong>Publish</strong></li>
-              </ol>
+            <div className={styles.subTabs}>
+              <button
+                className={`${styles.subTab} ${gtmMethod === 'import' ? styles.active : ''}`}
+                onClick={() => setGtmMethod('import')}
+              >
+                📦 Import Container JSON
+              </button>
 
-              <div className={styles.alert}>
-                <strong>✅ Verification:</strong>
-                <p>After publishing, use GTM Preview mode to test if the RecSys Tracker tag fires correctly on all pages.</p>
-              </div>
+              <button
+                className={`${styles.subTab} ${gtmMethod === 'manual' ? styles.active : ''}`}
+                onClick={() => setGtmMethod('manual')}
+              >
+                🏷️ Create Tag Manually
+              </button>
             </div>
+            {gtmMethod === 'import' && (
+              <>
+                <div className={styles.instructions}>
+                  <h3>🏷️ Installation Steps:</h3>
+                  <ol>
+                    <li><strong>Step 1:</strong> Download the GTM container JSON file using the button below</li>
+                    <li><strong>Step 2:</strong> Log in to your Google Tag Manager account</li>
+                    <li><strong>Step 3:</strong> Select your container</li>
+                    <li><strong>Step 4:</strong> Go to <strong>Admin → Import Container</strong></li>
+                    <li><strong>Step 5:</strong> Click <strong>Choose container file</strong> and select the downloaded JSON file
+                    </li>
+                    <li><strong>Step 6:</strong> Choose import option:
+                      <ul>
+                        <li><strong>Merge</strong> - Recommended (adds new tag without affecting existing ones)</li>
+                        <li><strong>Overwrite</strong> - Only if you want to replace all existing tags</li>
+                      </ul>
+                    </li>
+                    <li><strong>Step 7:</strong> Click <strong>Confirm</strong></li>
+                    <li><strong>Step 8:</strong> Review the imported tag through <strong>Preview</strong> and click <strong>Submit</strong></li>
+                    <li><strong>Step 9:</strong> Add a version name and description, then click <strong>Publish</strong></li>
+                  </ol>
 
-            <div className={styles.codeBlock}>
-              <div className={styles.codeHeader}>
-                <span>GTM Container JSON</span>
-                <div className={styles.codeActions}>
-                  <button
-                    onClick={() => handleCopy(gtmContainerJSON, 'gtm')}
-                    className={styles.copyButton}
-                  >
-                    {copiedSection === 'gtm' ? (
-                      <>
-                        <Check size={16} /> Copied!
-                      </>
-                    ) : (
-                      <>
-                        <Copy size={16} /> Copy
-                      </>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => handleDownload(gtmContainerJSON, 'GTM-RecSysTracker-Import.json')}
-                    className={styles.downloadButton}
-                  >
-                    <Download size={16} /> Download GTM Import File
-                  </button>
+                  <div className={styles.alert}>
+                    <strong>✅ Verification:</strong>
+                    <p>After publishing, use GTM Preview mode to test if the RecSys Tracker tag fires correctly on all pages.</p>
+                  </div>
+                </div>
+
+                <div className={styles.codeBlock}>
+                  <div className={styles.codeHeader}>
+                    <span>GTM Container JSON</span>
+                    <div className={styles.codeActions}>
+                      <button
+                        onClick={() => handleCopy(gtmContainerJSON, 'gtm')}
+                        className={styles.copyButton}
+                      >
+                        {copiedSection === 'gtm' ? (
+                          <>
+                            <Check size={16} /> Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Copy size={16} /> Copy
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleDownload(gtmContainerJSON, 'GTM-RecSysTracker-Import.json')}
+                        className={styles.downloadButton}
+                      >
+                        <Download size={16} /> Download GTM Import File
+                      </button>
+                    </div>
+                  </div>
+                  <pre className={styles.code}>{gtmContainerJSON}</pre>
+                </div>
+              </>
+            )}
+
+            {gtmMethod === 'manual' && (
+              <div className={styles.section}>
+
+                <div className={styles.instructions}>
+                  <ol>
+                    <li>
+                      <strong>Step 1:</strong> Log in to your Google Tag Manager account
+                    </li>
+                    <li>
+                      <strong>Step 2:</strong> Select your container
+                    </li>
+                    <li>
+                      <strong>Step 3:</strong> Go to <strong>Tags → New</strong>
+                    </li>
+                    <li>
+                      <strong>Step 4:</strong> Tag Configuration → choose
+                      <strong> Custom HTML</strong>
+                    </li>
+                    <li>
+                      <strong>Step 5:</strong> Paste the following script into the HTML field
+                    </li>
+                    <li>
+                      <strong>Step 6:</strong> Triggering → select
+                      <strong> All Pages</strong> (or specific pages if needed)
+                    </li>
+                    <li>
+                      <strong>Step 7:</strong> Save → Preview → Submit → Publish
+                    </li>
+                  </ol>
+
+                  <div className={styles.alert}>
+                    <strong>ℹ️ Recommendation:</strong>
+                    <p>
+                      If you only want recommendations on specific pages,
+                      use <strong>Page View triggers</strong> with conditions
+                      like <code>Page Path contains /product</code>.
+                    </p>
+                  </div>
+                </div>
+
+                <div className={styles.codeBlock}>
+                  <div className={styles.codeHeader}>
+                    <span>Custom HTML Tag Script</span>
+                    <div className={styles.codeActions}>
+                      <button
+                        onClick={() => handleCopy(gtmManualScript, 'gtm-manual')}
+                        className={styles.copyButton}
+                      >
+                        {copiedSection === 'gtm-manual' ? (
+                          <>
+                            <Check size={16} /> Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Copy size={16} /> Copy
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <pre className={styles.code}>
+                    {gtmManualScript}
+                  </pre>
                 </div>
               </div>
-              <pre className={styles.code}>{gtmContainerJSON}</pre>
-            </div>
+            )}
+
+
           </div>
         )}
 
