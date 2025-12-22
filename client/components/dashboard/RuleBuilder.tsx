@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Lightbulb, X, Fingerprint, Target, Filter, Plus, Trash2, Database, AlertCircle, Loader2, Save } from 'lucide-react';
 import styles from './RuleBuilder.module.css';
 
 // ==================== TYPES ====================
@@ -315,21 +316,22 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     });
   };
 
-  const SectionHeader = ({ title, icon, sectionKey, required = false }: { title: string, icon: string, sectionKey?: string, required?: boolean }) => (
+  const SectionHeader = ({ title, icon, sectionKey, required = false }: { title: string, icon: React.ReactNode, sectionKey?: string, required?: boolean }) => (
     <div className={styles.sectionHeader}>
       <div className={styles.headerIcon}>
-        <i className={`fa-solid ${icon}`}></i>
+        {icon}
       </div>
       <h3 className={styles.sectionTitle}>
         {title}
         {required && <span className={styles.required}>*</span>}
       </h3>
       {sectionKey && (
-        <i 
-          className={`fa-solid fa-lightbulb ${styles.lightbulb}`}
+        <Lightbulb
+          className={styles.lightbulb}
+          size={18}
           title="View example configs" 
           onClick={() => openExamples(sectionKey)}
-        ></i>
+        />
       )}
     </div>
   );
@@ -340,9 +342,9 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
       {modalContent && (
         <div className={styles.modalOverlay} onClick={() => setModalContent(null)}>
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
-            <i className={`fa-solid fa-xmark ${styles.modalClose}`} onClick={() => setModalContent(null)}></i>
+            <X className={styles.modalClose} size={24} onClick={() => setModalContent(null)} />
             <h2 className={styles.modalTitle}>
-              <i className={`fa-solid fa-lightbulb ${styles.modalLightbulbIcon}`}></i>
+              <Lightbulb className={styles.modalLightbulbIcon} size={24} />
               {modalContent.title}
             </h2>
             {modalContent.examples.length === 0 ? (
@@ -380,7 +382,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
       <div className={styles.formSection}>
         {/* 1. Identification */}
         <div className={styles.card}>
-          <SectionHeader title="Event Identification" icon="fa-fingerprint" />
+          <SectionHeader title="Event Identification" icon={<Fingerprint size={14} />} />
           <div className={styles.grid2}>
             <div>
               <label className={styles.label}>Rule Name</label>
@@ -410,7 +412,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
         <div className={styles.card}>
           <SectionHeader 
             title="Target Element" 
-            icon="fa-bullseye" 
+            icon={<Target size={14} />} 
             sectionKey="target" 
             required 
           />
@@ -454,9 +456,9 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
         {/* 3. Conditions */}
         <div className={styles.card}>
           <div className={styles.conditionsHeader}>
-            <SectionHeader title="Conditions" icon="fa-filter" sectionKey="conditions" />
+            <SectionHeader title="Conditions" icon={<Filter size={14} />} sectionKey="conditions" />
             <button onClick={handleAddCondition} className={styles.btnAdd}>
-              <i className="fa-solid fa-plus"></i> Add Condition
+              <Plus size={16} /> Add Condition
             </button>
           </div>
           
@@ -491,7 +493,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                   onChange={e => handleUpdateCondition(cond.id, { value: e.target.value })}
                 />
                 <button onClick={() => handleRemoveCondition(cond.id)} className={styles.btnDelete}>
-                  <i className="fa-solid fa-trash-can"></i>
+                  <Trash2 size={16} />
                 </button>
               </div>
             ))}
@@ -500,7 +502,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
 
         {/* 4. Payload Mapping */}
         <div className={styles.card}>
-          <SectionHeader title="Payload Mapping" icon="fa-database" sectionKey="payload" />
+          <SectionHeader title="Payload Mapping" icon={<Database size={14} />} sectionKey="payload" />
           <div className={styles.tableWrapper}>
             <table className={styles.table}>
               <thead>
@@ -639,7 +641,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
         {/* Important Notes */}
         <div className={styles.warningCard}>
           <h4 className={styles.warningCardTitle}>
-            <i className="fa-solid fa-circle-exclamation"></i> Important Notes:
+            <AlertCircle size={18} /> Important Notes:
           </h4>
           <p className={styles.warningCardText}>
             <strong>1. Transparency Notice:</strong> <br></br>
@@ -658,8 +660,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
             Cancel
           </button>
           <button onClick={handleSave} disabled={isSaving} className={styles.btnPrimary}>
-            {isSaving ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-solid fa-save"></i>}
-            Save
+            {isSaving ? <Loader2 size={16} className="animate-spin"  /> : 'Save'}
           </button>
         </div>
       </div>
