@@ -5,7 +5,6 @@ import * as argon2 from 'argon2';
 import { JwtService } from "@nestjs/jwt/dist/jwt.service";
 import { ConfigService } from "@nestjs/config";
 import { Response } from "express";
-import { ref } from "process";
 
 @Injectable()
 export class AuthService {

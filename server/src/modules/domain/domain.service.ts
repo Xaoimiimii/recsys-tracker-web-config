@@ -20,15 +20,14 @@ export class DomainService {
         }
     }
 
-    async createDomain(ternantId: number, url: string, Type: number)
-    {
+    async createDomain(ternantId: number, url: string, Type: number) {
         if (!url.startsWith('http://') && !url.startsWith('https://')) return null;
 
         if (!this.prisma.ternant.findUnique({
             where: {
                 Id: ternantId
             }
-        })) return null;
+        })) throw new NotFoundException(`Ternant id '${ternantId}' does not exist.`);
 
         const apiKey = await this.generateApiKey();
 

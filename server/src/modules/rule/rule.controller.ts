@@ -4,6 +4,7 @@ import {
     Get,
     HttpException,
     HttpStatus,
+    NotFoundException,
     Param,
     ParseIntPipe,
     Post,
@@ -17,18 +18,18 @@ export class RuleController {
     constructor(private ruleService: RuleService) {}
 
     // @UseGuards(JwtAuthGuard)
-    @Get('event-patterns')
-    async getEventPatterns() {
-        const eventPatterns = await this.ruleService.getEventPatterns();
-        return eventPatterns;
+    @Get('pattern')
+    async getPatterns() {
+        const patterns = await this.ruleService.getPatterns();
+        return patterns;
     }
 
     // @UseGuards(JwtAuthGuard)
-    @Get('payload-patterns')
-    async getPayloadPatterns() {
-        const payloadPatterns = await this.ruleService.getPayloadPatterns();
-        return payloadPatterns;
-    }
+    // @Get('payload-patterns')
+    // async getPayloadPatterns() {
+    //     const payloadPatterns = await this.ruleService.getPayloadPatterns();
+    //     return payloadPatterns;
+    // }
 
     // @UseGuards(JwtAuthGuard)
     @Get('operators')
@@ -70,17 +71,13 @@ export class RuleController {
 
     // @UseGuards(JwtAuthGuard)
     @Get('/domain/:key')
-    async getRulesByDomainKey(@Param('key') key: string)
-    {
+    async getRulesByDomainKey(@Param('key') key: string) {
         const rules = await this.ruleService.getRulesByDomainKey(key);
         if (!rules) {
-            throw new HttpException(
-                { statusCode: 404, message: 'No rules found for this domain' },
-                HttpStatus.NOT_FOUND,
-            );
+            throw new NotFoundException(`No rules found for domain key '${key}'.`);
         }
 
-        const result = rules.map(r => ({ id: r.Id, name: r.Name, TargetElement: r.TargetElement }));
+        const result = rules.map(r => ({ id: r.Id, name: r.Name, EventTypeName: r.EventType.Name }));
         return result;
     }
 }
