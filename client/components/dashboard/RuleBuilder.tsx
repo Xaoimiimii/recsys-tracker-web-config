@@ -342,35 +342,35 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <i className={`fa-solid fa-xmark ${styles.modalClose}`} onClick={() => setModalContent(null)}></i>
             <h2 className={styles.modalTitle}>
-              <i className="fa-solid fa-lightbulb" style={{color: '#f59e0b'}}></i>
+              <i className={`fa-solid fa-lightbulb ${styles.modalLightbulbIcon}`}></i>
               {modalContent.title}
             </h2>
             {modalContent.examples.length === 0 ? (
-              <p style={{color: '#9ca3af', textAlign: 'center', padding: '3rem 0'}}>No specific examples available.</p>
+              <p className={styles.noExamplesText}>No specific examples available.</p>
             ) : (
               modalContent.examples.map((ex, i) => (
                 <div key={i} className={styles.exampleCard}>
                   <div className={styles.exampleLabel}>{ex.title}</div>
                   
                   {ex.htmlContext && (
-                    <div style={{marginTop: '0.75rem'}}>
-                      <p style={{fontSize: '0.75rem', fontWeight: 600, color: '#6b7280', marginBottom: '0.35rem'}}>Actual DIV / HTML example on website:</p>
+                    <div className={styles.exampleHtmlContext}>
+                      <p className={styles.exampleHtmlTitle}>Actual DIV / HTML example on website:</p>
                       <pre className={styles.examplePre}>
                         {ex.htmlContext}
                       </pre>
                     </div>
                   )}
 
-                  <div style={{height: '1px', background: '#e2e8f0', margin: '1rem 0', border: 'none'}}></div>
+                  <div className={styles.exampleDivider}></div>
                   
-                  <p style={{fontSize: '0.75rem', fontWeight: 600, color: '#2AA79B', marginBottom: '0.35rem'}}>Config sample:</p>
-                  <code className={styles.exampleCode} style={{marginTop: 0}}>
+                  <p className={styles.exampleConfigTitle}>Config sample:</p>
+                  <code className={`${styles.exampleCode} ${styles.exampleCodeNoMargin}`}>
                     {ex.config}
                   </code>
                 </div>
               ))
             )}
-            <button className={styles.btnPrimary} style={{width: '100%', justifyContent: 'center', marginTop: '1rem'}} onClick={() => setModalContent(null)}>
+            <button className={`${styles.btnPrimary} ${styles.modalCloseButton}`} onClick={() => setModalContent(null)}>
               Close
             </button>
           </div>
@@ -378,22 +378,6 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
       )}
 
       <div className={styles.formSection}>
-        <div className={styles.pageHeader}>
-          <div>
-            <h1 className={styles.pageTitle}>Config Tracking Rule</h1>
-            <p className={styles.pageSubtitle}>Build intelligent tracking rules for your system behaviors.</p>
-          </div>
-          <div style={{display: 'flex', gap: '0.75rem'}}>
-            <button onClick={onCancel} className={styles.btnSecondary}>
-              Cancel
-            </button>
-            <button onClick={handleSave} disabled={isSaving} className={styles.btnPrimary}>
-              {isSaving ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-solid fa-save"></i>}
-              Save Rule
-            </button>
-          </div>
-        </div>
-
         {/* 1. Identification */}
         <div className={styles.card}>
           <SectionHeader title="Event Identification" icon="fa-fingerprint" />
@@ -436,11 +420,9 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
               <input 
                 type="text"
                 disabled
-                className={styles.input}
-                style={{backgroundColor: '#e5e7eb', cursor: 'not-allowed', fontWeight: '700'}}
+                className={`${styles.input} ${styles.disabledInput}`}
                 value="CSS Selector"
               />
-              <p className={styles.suggestion}>{TARGET_SUGGESTIONS[rule.eventType]}</p>
             </div>
             <div>
               <label className={styles.label}>Match Operator</label>
@@ -460,35 +442,35 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
               <input 
                 type="text"
                 placeholder=".my-element"
-                className={styles.input}
-                style={{fontFamily: 'monospace'}}
+                className={`${styles.input} ${styles.monospaceInput}`}
                 value={rule.targetElement.selector}
                 onChange={e => setRule({...rule, targetElement: {...rule.targetElement, selector: e.target.value}})}
               />
             </div>
           </div>
+          <p className={styles.suggestion}>{TARGET_SUGGESTIONS[rule.eventType]}</p>
         </div>
 
         {/* 3. Conditions */}
         <div className={styles.card}>
-          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem'}}>
+          <div className={styles.conditionsHeader}>
             <SectionHeader title="Conditions" icon="fa-filter" sectionKey="conditions" />
             <button onClick={handleAddCondition} className={styles.btnAdd}>
               <i className="fa-solid fa-plus"></i> Add Condition
             </button>
           </div>
           
-          <div style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
+          <div className={styles.conditionsContainer}>
             {rule.conditions.length === 0 && (
               <div className={styles.emptyState}>
                 No conditions added. The rule will trigger for every occurrence.
-                <p className={styles.suggestion} style={{marginTop: '0.5rem'}}>{CONDITION_SUGGESTIONS[rule.eventType]}</p>
+                <p className={`${styles.suggestion} ${styles.suggestionInEmptyState}`}>{CONDITION_SUGGESTIONS[rule.eventType]}</p>
               </div>
             )}
             {rule.conditions.map((cond) => (
               <div key={cond.id} className={styles.conditionRow}>
                 <select 
-                  className={styles.input} style={{flex: 1, minWidth: '150px'}}
+                  className={`${styles.input} ${styles.conditionSelectFlex1}`}
                   value={cond.pattern}
                   onChange={e => handleUpdateCondition(cond.id, { pattern: e.target.value as any })}
                 >
@@ -497,14 +479,14 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                   <option>Data Attribute</option>
                 </select>
                 <select 
-                  className={styles.input} style={{width: 'auto'}}
+                  className={`${styles.input} ${styles.conditionSelectAuto}`}
                   value={cond.operator}
                   onChange={e => handleUpdateCondition(cond.id, { operator: e.target.value as any })}
                 >
                   {OPERATORS.map(op => <option key={op} value={op}>{op}</option>)}
                 </select>
                 <input 
-                  type="text" placeholder="Filter value..." className={styles.input} style={{flex: 2, minWidth: '200px'}}
+                  type="text" placeholder="Filter value..." className={`${styles.input} ${styles.conditionInputFlex2}`}
                   value={cond.value}
                   onChange={e => handleUpdateCondition(cond.id, { value: e.target.value })}
                 />
@@ -523,8 +505,8 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
             <table className={styles.table}>
               <thead>
                 <tr>
-                  <th className={styles.th} style={{width: '180px'}}>Data Field</th>
-                  <th className={styles.th} style={{width: '180px'}}>Source</th>
+                  <th className={`${styles.th} ${styles.thWidth180}`}>Data Field</th>
+                  <th className={`${styles.th} ${styles.thWidth180}`}>Source</th>
                   <th className={styles.th}>Details / Configuration</th>
                 </tr>
               </thead>
@@ -535,7 +517,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
 
                   return (
                     <tr key={idx}>
-                      <td className={styles.td} style={{verticalAlign: 'top'}}>
+                      <td className={`${styles.td} ${styles.tdVerticalTop}`}>
                         {isUserField ? (
                           <div className={styles.radioGroup}>
                             <label className={styles.radioLabel}>
@@ -544,7 +526,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                             </label>
                             <label className={styles.radioLabel}>
                               <input type="radio" name={`user-field-${idx}`} checked={mapping.field === 'username'} onChange={() => handleUpdateMapping(idx, { field: 'username' })} />
-                              User
+                              Username
                             </label>
                           </div>
                         ) : isItemField ? (
@@ -555,14 +537,14 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                             </label>
                             <label className={styles.radioLabel}>
                               <input type="radio" name={`item-field-${idx}`} checked={mapping.field === 'itemTitle'} onChange={() => handleUpdateMapping(idx, { field: 'itemTitle' })} />
-                              Title
+                              ItemTitle
                             </label>
                           </div>
                         ) : (
                           <span className={styles.fieldTag}>{mapping.field}</span>
                         )}
                       </td>
-                      <td className={styles.td} style={{verticalAlign: 'top'}}>
+                      <td className={`${styles.td} ${styles.tdVerticalTop}`}>
                         <select 
                           className={styles.input}
                           value={mapping.source}
@@ -574,15 +556,15 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                       <td className={styles.td}>
                         {/* SOURCE SPECIFIC INPUTS */}
                         {mapping.source === MappingSource.REQUEST_BODY && (
-                          <div style={{display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
-                            <div style={{display: 'flex', gap: '0.5rem'}}>
+                          <div className={styles.urlParsingContainer}>
+                            <div className={styles.urlParsingInputRow}>
                               <input 
-                                type="text" placeholder="URL Pattern (/api/...)" className={styles.input} style={{flex: 2}}
+                                type="text" placeholder="URL Pattern (/api/...)" className={`${styles.input} ${styles.urlParsingInputFlex2}`}
                                 value={mapping.url_pattern || ''}
                                 onChange={e => handleUpdateMapping(idx, { url_pattern: e.target.value })}
                               />
                               <select 
-                                className={styles.input} style={{flex: 1}}
+                                className={`${styles.input} ${styles.urlParsingInputFlex1}`}
                                 value={mapping.method || 'POST'}
                                 onChange={e => handleUpdateMapping(idx, { method: e.target.value as any })}
                               >
@@ -598,21 +580,21 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                         )}
 
                         {mapping.source === MappingSource.URL_PARAM && (
-                          <div style={{display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
+                          <div className={styles.urlParsingContainer}>
                             <input 
                               type="text" placeholder="Enter full URL to parse..." className={styles.input}
                               value={mapping.fullUrl || ''}
                               onChange={e => parseUrl(idx, e.target.value)}
                             />
                             {mapping.pathname && (
-                              <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem'}}>
-                                <input type="text" disabled className={styles.input} style={{opacity: 0.6}} value={`Path: ${mapping.pathname}`} />
-                                <input type="text" disabled className={styles.input} style={{opacity: 0.6}} value={`Query: ${mapping.query_string || 'None'}`} />
+                              <div className={styles.urlParsingResultsGrid}>
+                                <input type="text" disabled className={`${styles.input} ${styles.urlParsingDisabledInput}`} value={`Path: ${mapping.pathname}`} />
+                                <input type="text" disabled className={`${styles.input} ${styles.urlParsingDisabledInput}`} value={`Query: ${mapping.query_string || 'None'}`} />
                               </div>
                             )}
-                            <div style={{display: 'flex', gap: '0.5rem', alignItems: 'center'}}>
+                            <div className={styles.urlParsingControlRow}>
                               <select 
-                                className={styles.input} style={{width: '140px'}}
+                                className={`${styles.input} ${styles.urlParsingSelect}`}
                                 value={mapping.url_part || 'pathname'}
                                 onChange={e => handleUpdateMapping(idx, { url_part: e.target.value as any })}
                               >
@@ -621,13 +603,13 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                               </select>
                               {mapping.url_part === 'pathname' ? (
                                 <input 
-                                  type="number" placeholder="Segment Index" className={styles.input} style={{flex: 1}}
+                                  type="number" placeholder="Segment Index" className={`${styles.input} ${styles.urlParsingInputFlexAuto}`}
                                   value={mapping.segment_index || ''}
                                   onChange={e => handleUpdateMapping(idx, { segment_index: parseInt(e.target.value) })}
                                 />
                               ) : (
                                 <input 
-                                  type="text" placeholder="Param Key (e.g. itemId)" className={styles.input} style={{flex: 1}}
+                                  type="text" placeholder="Param Key (e.g. itemId)" className={`${styles.input} ${styles.urlParsingInputFlexAuto}`}
                                   value={mapping.key || ''}
                                   onChange={e => handleUpdateMapping(idx, { key: e.target.value })}
                                 />
@@ -654,58 +636,31 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
           </div>
         </div>
 
-        {/* Footer Note */}
-        <div className={styles.footerNote}>
-          <p style={{fontSize: '0.75rem', color: '#6b7280', lineHeight: '1.6'}}>
-            <strong>Transparency Notice:</strong> Our service operates based on user interaction data collected through the methods you select and configure. 
-            By continuing to use the service, you acknowledge that you understand and agree to the sharing of this data. We commit to strictly protecting the data 
-            and using it solely for improving recommendation quality.
-          </p>
-        </div>
-      </div>
-
-      {/* Sidebar */}
-      <div className={styles.sidebar}>
-        <div className={styles.previewCard}>
-          <h4 className={styles.previewTitle}>Live Preview</h4>
-          <div className={styles.previewItem}>
-            <span>Event Type</span>
-            <span className={styles.previewValue}>{rule.eventType}</span>
-          </div>
-          <div className={styles.previewItem}>
-            <span>Trigger</span>
-            <span className={styles.previewValue} style={{textTransform: 'uppercase', color: '#2AA79B'}}>{rule.triggerAction}</span>
-          </div>
-          {rule.targetElement.selector && (
-            <div className={styles.previewItem} style={{flexDirection: 'column', alignItems: 'flex-start', gap: '0.65rem'}}>
-              <span>"Target Selector"</span>
-              <code className={styles.previewCode}>
-                {rule.targetElement.selector}
-              </code>
-            </div>
-          )}
-          <div className={styles.previewItem}>
-            <span>Conditions</span>
-            <span className={styles.previewValue}>{rule.conditions.length} filters</span>
-          </div>
-          <div style={{marginTop: '1.25rem'}}>
-            <span style={{fontSize: '0.75rem', color: '#9ca3af', display: 'block', marginBottom: '0.5rem', fontWeight: '600'}}>Outgoing Payload:</span>
-            <div style={{display: 'flex', flexWrap: 'wrap', gap: '0.5rem'}}>
-              {rule.payloadMappings.map(m => (
-                <span key={m.field} className={styles.badge}>{m.field}</span>
-              ))}
-            </div>
-          </div>
-        </div>
-
+        {/* Important Notes */}
         <div className={styles.warningCard}>
-          <h4 style={{fontSize: '0.875rem', fontWeight: '700', color: '#f59e0b', marginBottom: '0.5rem'}}>
-            <i className="fa-solid fa-circle-exclamation"></i> Note:
+          <h4 className={styles.warningCardTitle}>
+            <i className="fa-solid fa-circle-exclamation"></i> Important Notes:
           </h4>
-          <p style={{fontSize: '0.75rem', color: '#92400e', lineHeight: '1.5'}}>
-            1. Ensure configurations are verified in the testing environment. Network request tracking requires the API endpoint to match the specified pattern.
-            2. Whitelist our tracking script domain in your Content Security Policy (CSP) to ensure proper functionality.
+          <p className={styles.warningCardText}>
+            <strong>1. Transparency Notice:</strong> <br></br>
+            Our service operates based on user interaction data collected through the methods you select and configure. <br></br>
+            By continuing to use the service, you acknowledge that you understand and agree to the sharing of this data. <br></br>
+            We commit to strictly protecting the data and using it solely for improving recommendation quality.<br /><br />
+            <strong>2. Testing Required:</strong> <br></br>
+            Ensure configurations are verified in the testing environment. Network request tracking requires the API endpoint to match the specified pattern.<br /><br />
+            <strong>3. Security Policy:</strong> <br></br>
+            Whitelist our tracking script domain in your Content Security Policy (CSP) to ensure proper functionality.
           </p>
+        </div>
+
+        <div className={styles.buttonActions}>
+          <button onClick={onCancel} className={styles.btnSecondary}>
+            Cancel
+          </button>
+          <button onClick={handleSave} disabled={isSaving} className={styles.btnPrimary}>
+            {isSaving ? <i className="fa-solid fa-spinner fa-spin"></i> : <i className="fa-solid fa-save"></i>}
+            Save
+          </button>
         </div>
       </div>
     </div>
