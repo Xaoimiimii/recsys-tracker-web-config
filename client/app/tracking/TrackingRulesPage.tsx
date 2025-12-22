@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Container, TrackingRule } from '../../types';
 import { RuleBuilder } from '../../components/dashboard/RuleBuilder';
-import { TRIGGER_ICONS } from '../../lib/constants';
 import { Box, Plus, Trash2, Edit2, MousePointer, Eye, Star, ArrowDownCircle } from 'lucide-react';
 import { ruleApi, RuleListItem, RuleDetailResponse } from '../../lib/api/';
-import { useDataCache } from '../../contexts/DataCacheContext';
 import styles from './TrackingRulesPage.module.css';
 
 interface TrackingRulesPageProps {

@@ -18,20 +18,18 @@ interface DashboardPageProps {
 export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, setContainer, onLogout, domains }) => {
     const [showModal, setShowModal] = useState(false);
     const [showDomainSwitcher, setShowDomainSwitcher] = useState(false);
-    const { setTriggerEvents, setEventPatterns, setOperators } = useDataCache();
+    const { setPatterns, setOperators } = useDataCache();
 
     // Fetch master data when dashboard loads
     useEffect(() => {
         const fetchMasterData = async () => {
             try {
-                const [triggerEvents, eventPatterns, operators] = await Promise.all([
-                    domainApi.getTriggerEvents(),
-                    ruleApi.getEventPatterns(),
+                const [eventPatterns, operators] = await Promise.all([
+                    ruleApi.getPatterns(),
                     ruleApi.getOperators(),
                 ]);
 
-                setTriggerEvents(triggerEvents);
-                setEventPatterns(eventPatterns);
+                setPatterns(eventPatterns);
                 setOperators(operators);
             } catch (error) {
                 console.error('Failed to fetch master data:', error);
@@ -39,7 +37,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
         };
 
         fetchMasterData();
-    }, [setTriggerEvents, setEventPatterns, setOperators]);
+    }, [setPatterns, setOperators]);
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
