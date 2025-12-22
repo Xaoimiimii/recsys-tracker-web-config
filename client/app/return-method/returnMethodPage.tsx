@@ -41,27 +41,15 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
                     
                     const config: DisplayConfiguration = {
                         id: `${item.DomainID}-${index}`,
-                        name: item.SlotName,
+                        configurationName: item.ConfigurationName,
                         displayType,
-                        slotName: item.SlotName,
+                        operator: item.Operator,
+                        value: item.Value,
                         createdAt: new Date().toISOString(),
                         updatedAt: new Date().toISOString(),
                     };
 
-                    if (displayType === 'popup') {
-                        config.urlTrigger = {
-                            operator: 'contains',
-                            value: item.TargetUrl || ''
-                        };
-                    } else {
-                        // For custom-widget, parse the targetSelector if exists
-                        if (item.Value) {
-                            config.targetSelector = {
-                                type: 'custom',
-                                operator: 'equals',
-                                value: item.Value
-                            };
-                        }
+                    if (displayType !== 'popup') {
                         config.widgetDesign = {
                             layout: 'grid',
                             theme: 'light',
@@ -109,13 +97,10 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
     };
 
     const getSummary = (config: DisplayConfiguration): string => {
-        if (config.displayType === 'custom-widget' && config.targetSelector) {
-            const prefix = config.targetSelector.type === 'id' ? '#' 
-                : config.targetSelector.type === 'class' ? '.' 
-                : '';
-            return `${prefix}${config.targetSelector.value} (${config.targetSelector.operator})`;
-        } else if (config.displayType === 'popup' && config.urlTrigger) {
-            return `URL ${config.urlTrigger.operator} ${config.urlTrigger.value}`;
+        if (config.displayType === 'custom-widget') {
+            return `${config.operator} ${config.value}`;
+        } else if (config.displayType === 'popup') {
+            return `URL ${config.operator} ${config.value}`;
         }
         return 'N/A';
     };

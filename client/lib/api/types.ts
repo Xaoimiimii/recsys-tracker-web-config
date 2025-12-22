@@ -58,17 +58,16 @@ export interface DomainResponse {
 
 export interface CreateReturnMethod {
   key: string;
-  slotName: string;
+  configurationName: string;
   returnMethodId: number;
-  targetUrl: string;
-  targetSelector?: string;
+  value: string;
 }
 
 export interface ReturnMethodResponse {
   DomainID: number;
-  SlotName: string;
+  ConfigurationName: string;
+  Operator: string;
   Value: string;
-  TargetUrl: string;
   ReturnMethodID: number;
 }
 
