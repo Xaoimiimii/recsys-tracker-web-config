@@ -4,7 +4,7 @@ import { CreateRuleDto } from './dto';
 
 @Injectable()
 export class RuleService {
-    constructor(private prisma: PrismaService) {}
+    constructor(private prisma: PrismaService) { }
 
     async getPatterns() {
         const patterns = await this.prisma.pattern.findMany();
@@ -142,5 +142,10 @@ export class RuleService {
             },
         });
         return rules;
+    }
+
+    async getAllEventTypes() {
+        const types = await this.prisma.eventType.findMany();
+        return types;
     }
 }

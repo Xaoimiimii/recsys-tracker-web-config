@@ -6,24 +6,26 @@ import {
     HttpStatus,
     Param,
     Post,
-    Req,
     UseGuards,
 } from '@nestjs/common';
 import { ReturnMethodService } from './return-method.service';
 import { JwtAuthGuard } from 'src/modules/auth/guard';
 import { CreateReturnMethodsDto } from './dto/create-return-method.dto';
+import { ApiOperation } from '@nestjs/swagger';
 
 @Controller('domain/return-method')
 export class ReturnMethodController {
-    constructor(private returnMethodService: ReturnMethodService) {}
+    constructor(private returnMethodService: ReturnMethodService) { }
 
-    // @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard)
+    @ApiOperation({ summary: 'Get all return methods by domain key' })
     @Get(':key')
-    async getReturnMethods(@Req() req, @Param('key') key: string) {
+    async getReturnMethods(@Param('key') key: string) {
         return this.returnMethodService.getReturnMethodsByDomainKey(key);
     }
 
-    // @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard)
+    @ApiOperation({ summary: 'Create a new return method' })
     @Post()
     async createReturnMethods(@Body() dto: CreateReturnMethodsDto) {
         const result = await this.returnMethodService.createReturnMethods(
