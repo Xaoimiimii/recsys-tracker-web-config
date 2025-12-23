@@ -10,7 +10,6 @@ export class RatingController {
     async createRatings(
         @Body(new ParseArrayPipe({ items: CreateRatingDto, whitelist: true })) dtos: CreateRatingDto[]
     ) {
-        console.log('Received ratings:', dtos);
         return this.ratingService.createBulk(dtos);
     }
 }
