@@ -5,11 +5,9 @@ import { randomBytes } from 'crypto';
 @Injectable()
 export class DomainService {
     constructor(private prisma: PrismaService) { }
-    
-    async generateApiKey() : Promise<string>
-    {
-        while (true)
-        {
+
+    async generateApiKey(): Promise<string> {
+        while (true) {
             const apiKey = randomBytes(32).toString('hex');
             const existing = await this.prisma.domain.findUnique({
                 where: {
@@ -20,15 +18,14 @@ export class DomainService {
         }
     }
 
-    async createDomain(ternantId: number, url: string, Type: number)
-    {
+    async createDomain(ternantId: number, url: string, Type: number) {
         if (!url.startsWith('http://') && !url.startsWith('https://')) return null;
 
         if (!this.prisma.ternant.findUnique({
             where: {
                 Id: ternantId
             }
-        })) return null;
+        })) throw new NotFoundException(`Ternant id '${ternantId}' does not exist.`);
 
         const apiKey = await this.generateApiKey();
 

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, ReactNode, useState } from 'react';
-import { EventPattern, Operator } from '../lib/api/types';
+import { Pattern, Operator } from '../lib/api/types';
 
 export interface TriggerEvent {
     Id: number;
@@ -8,10 +8,10 @@ export interface TriggerEvent {
 
 interface DataCacheContextType {
     triggerEvents: TriggerEvent[];
-    eventPatterns: EventPattern[];
+    patterns: Pattern[];
     operators: Operator[];
     setTriggerEvents: (data: TriggerEvent[]) => void;
-    setEventPatterns: (data: EventPattern[]) => void;
+    setPatterns: (data: Pattern[]) => void;
     setOperators: (data: Operator[]) => void;
 }
 
@@ -19,16 +19,16 @@ export const DataCacheContext = createContext<DataCacheContextType | undefined>(
 
 export const DataCacheProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [triggerEvents, setTriggerEvents] = useState<TriggerEvent[]>([]);
-    const [eventPatterns, setEventPatterns] = useState<EventPattern[]>([]);
+    const [patterns, setPatterns] = useState<Pattern[]>([]);
     const [operators, setOperators] = useState<Operator[]>([]);
 
     return (
         <DataCacheContext.Provider value={{
             triggerEvents,
-            eventPatterns,
+            patterns,
             operators,
             setTriggerEvents,
-            setEventPatterns,
+            setPatterns,
             setOperators
         }}>
             {children}

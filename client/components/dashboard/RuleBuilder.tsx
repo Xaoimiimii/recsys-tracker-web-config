@@ -1,19 +1,259 @@
-import React, { useState, useEffect } from 'react';
-import { TriggerType } from '../../types';
-import { TRIGGER_ICONS } from '../../lib/constants';
-import { ruleApi, EventPattern, PayloadPattern, Operator } from '../../lib/api/';
-import { useDataCache } from '../../contexts/DataCacheContext';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Lightbulb, X, Fingerprint, Target, Filter, Plus, Trash2, Database, AlertCircle, Loader2, Save } from 'lucide-react';
 import styles from './RuleBuilder.module.css';
+import { ruleApi } from '../../lib/api/rule';
 
-// Helper function to normalize trigger names (e.g., "Page View" -> "page_view")
-const normalizeTriggerName = (name: string): TriggerType => {
-  return name.toLowerCase().replace(/\s+/g, '_') as TriggerType;
+// ==================== TYPES ====================
+export enum EventType {
+  CLICK = 'Click',
+  RATING = 'Rating',
+  REVIEW = 'Review',
+  SCROLL = 'Scroll',
+  PAGE_VIEW = 'Page view'
+}
+
+export enum MappingSource {
+  REQUEST_BODY = 'request_body',
+  ELEMENT = 'element',
+  COOKIE = 'cookie',
+  LOCAL_STORAGE = 'local_storage',
+  SESSION_STORAGE = 'session_storage',
+  URL = 'url',
+}
+
+export interface Condition {
+  id: string;
+  pattern: 'CSS Selector' | 'URL' | 'Data Attribute';
+  operator: 'Contains' | 'Equals' | 'Starts with' | 'Ends with';
+  value: string;
+}
+
+export interface PayloadMapping {
+  field: string;
+  source: MappingSource;
+  value?: string;
+  requestUrlPattern?: string;
+  requestMethod?: 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'GET';
+  requestBodyPath?: string;
+  fullUrl?: string;
+  pathname?: string;
+  queryString?: string;
+  urlPart?: 'pathname' | 'query_param';
+  urlPartValue?: string;
+}
+
+export interface TrackingRule {
+  id: string;
+  name: string;
+  eventType: EventType;
+  targetElement?: {
+    operator: string;
+    value: string;
+  };
+  conditions: Condition[];
+  payloadMappings: PayloadMapping[];
+}
+
+// ==================== CONSTANTS ====================
+export const EVENT_TYPE_OPTIONS = Object.values(EventType);
+
+export const EVENT_DESCRIPTIONS: Record<EventType, string> = {
+  [EventType.CLICK]: "Tracks click behaviors on interface elements like Buttons, Links, or Icons.",
+  [EventType.RATING]: "Records user rating actions through score or star components.",
+  [EventType.REVIEW]: "Collects data when users submit text comments or detailed feedback.",
+  [EventType.SCROLL]: "Monitors page scroll depth to measure content engagement.",
+  [EventType.PAGE_VIEW]: "Measures page views or screen transitions within the application."
 };
 
+export const TARGET_SUGGESTIONS: Record<EventType, string> = {
+  [EventType.CLICK]: "Suggested: #add-to-cart, .add-to-cart, favorite-btn, .bookmark-icon, .buy-now, .purchase-button",
+  [EventType.RATING]: "Suggested: .rating, .rating-stars, .star, .star-rating, input[type=radio][name*=rating], [data-rating]",
+  [EventType.REVIEW]: "Suggested: #review, #review-box, .review-box, .review-textarea, textarea[name*=review], textarea[placeholder*=review], .submit-review, .btn-submit-review",
+  [EventType.SCROLL]: "",
+  [EventType.PAGE_VIEW]: ""
+};
+
+export const CONDITION_SUGGESTIONS: Record<EventType, string> = {
+  [EventType.CLICK]: "Suggested: Use 'URL Path' to target page clicks or 'CSS Selector' to check element presence.",
+  [EventType.RATING]: "Suggested: Use 'URL Path' to target page clicks or 'CSS Selector' to check element presence.",
+  [EventType.REVIEW]: "Suggested: Use 'URL Path' to target page clicks or 'CSS Selector' to check element presence.",
+  [EventType.SCROLL]: "Suggested: Use 'URL Path' to target page clicks or 'CSS Selector' to check element presence.",
+  [EventType.PAGE_VIEW]: "Suggested: Use 'URL Path' to target page clicks or 'CSS Selector' to check element presence."
+};
+
+export interface SectionExample {
+  title: string;
+  htmlContext?: string;
+  config: string;
+}
+
+const PAYLOAD_COMMON_EXAMPLES: SectionExample[] = [
+  {
+    title: "Request Body Mapping",
+    htmlContext: "// Request Sample (POST)\nURL: /api/v1/reviews/submit\nBody: { \"content\": \"Great!\", \"user_id\": 501 }\n\n// Response Body (Short)\n{ \"status\": \"ok\", \"id\": \"rev_99\" }",
+    config: "Source: request_body | URL Pattern: /api/v1/reviews/submit | Method: POST | Path: content"
+  },
+  {
+    title: "Element Mapping",
+    htmlContext: "// Target div containing review text\n<div class=\"review-card\">\n  <p class=\"review-text\">Best product ever!</p>\n  <span data-id=\"item_404\"></span>\n</div>",
+    config: "Source: element | Path: .review-card .review-text"
+  },
+  {
+    title: "Global JS Object Mapping",
+    htmlContext: "// Value stored in window object\nwindow.APP_CONFIG = {\n  currentUser: { id: \"u_789\", name: \"John\" }\n};",
+    config: "Source: global | Path: APP_CONFIG.currentUser.id"
+  },
+  {
+    title: "Cookie Mapping",
+    htmlContext: "// Value stored in browser cookies\ndocument.cookie: \"session_id=xyz123; user_type=vip\"",
+    config: "Source: cookie | Path: session_id"
+  },
+  {
+    title: "Local Storage Mapping",
+    htmlContext: "// Value stored in Local Storage\nlocalStorage.getItem(\"user_prefs\"): '{\"theme\": \"dark\", \"id\": \"123\"}'",
+    config: "Source: local_storage | Path: user_prefs.id"
+  },
+  {
+    title: "Session Storage Mapping",
+    htmlContext: "// Value stored in Session Storage\nsessionStorage.getItem(\"temp_token\"): \"tmp_abc_555\"",
+    config: "Source: session_storage | Path: temp_token"
+  },
+  {
+    title: "URL - Pathname Mapping",
+    htmlContext: "// Sample URL\nhttps://example.com/product/iphone-15/details\n\n// Parse Results\npathname: /product/iphone-15/details\nquery: (none)",
+    config: "Source: url | URL Part: pathname | Segment Index: 2 (gets 'iphone-15')"
+  },
+  {
+    title: "URL - Query Param Mapping",
+    htmlContext: "// Sample URL\nhttps://example.com/search?q=shoes&category=mens\n\n// Parse Results\npathname: /search\nquery: q=shoes&category=mens",
+    config: "Source: url | URL Part: query_param | Key: q (gets 'shoes')"
+  }
+];
+
+export const SECTION_EXAMPLES: Record<string, Record<EventType, SectionExample[]>> = {
+  target: {
+    [EventType.CLICK]: [
+      { 
+        title: "Buy Button Example", 
+        htmlContext: '<button class="btn-buy" id="cart-add">Add to Cart</button>',
+        config: "Pattern: 'CSS Selector' | Match: 'equals' | Value: '.btn-buy'\n or\n Pattern: 'CSS Selector' | Match: 'equals' | Value: '#cart-add'" 
+      }
+    ],
+    [EventType.RATING]: [
+      { 
+        title: "Star Rating Component", 
+        htmlContext: '<div class="rating-stars" data-value="5"></div>',
+        config: "Pattern: 'CSS Selector' | Match: 'contains' | Value: '.rating-stars'" 
+      }
+    ],
+    [EventType.REVIEW]: [
+      { 
+        title: "Submit Feedback Form", 
+        htmlContext: '<form id="review-form">\n  <textarea name="review" placeholder="Write your review..."></textarea>\n  <button type="submit">Submit</button>\n</form>',
+        config: "Pattern: 'CSS Selector' | Match: 'contains' | Value: '#review-form'\n or\n Pattern: 'CSS Selector' | Match: 'contains' | Value: 'textarea[name=review]\n'" 
+      }
+    ],
+    [EventType.SCROLL]: [],
+    [EventType.PAGE_VIEW]: []
+  },
+  conditions: {
+    [EventType.CLICK]: [
+      { 
+        title: "Shop Page Filter", 
+        config: "Pattern: URL Path | Operator: contains | Value: /shop" 
+      }
+    ],
+    [EventType.SCROLL]: [
+      { 
+        title: "Item Detail Page Filter", 
+        config: "Pattern: URL Path | Operator: contains | Value: /item/" 
+      }
+    ],
+    [EventType.RATING]: [
+      { 
+        title: "Product Rating Page Filter", 
+        config: "Pattern: URL Path | Operator: contains | Value: /product/" 
+      }
+    ],
+    [EventType.REVIEW]: [
+      { 
+        title: "Product Rating Page Filter", 
+        config: "Pattern: URL Path | Operator: contains | Value: /product/" 
+      }
+    ],
+    [EventType.PAGE_VIEW]: [
+      { 
+        title: "Item Detail Page Filter", 
+        config: "Pattern: URL Path | Operator: contains | Value: /item/" 
+      }
+    ]
+  },
+  payload: {
+    [EventType.CLICK]: PAYLOAD_COMMON_EXAMPLES,
+    [EventType.REVIEW]: PAYLOAD_COMMON_EXAMPLES,
+    [EventType.RATING]: PAYLOAD_COMMON_EXAMPLES,
+    [EventType.SCROLL]: PAYLOAD_COMMON_EXAMPLES,
+    [EventType.PAGE_VIEW]: PAYLOAD_COMMON_EXAMPLES
+  }
+};
+
+export const MAPPING_SOURCES = Object.values(MappingSource);
+
+export const OPERATORS = ['Contains', 'Equals', 'Starts with', 'Ends with'];
+
+// Mapping constants for API
+export const EVENT_TYPE_TO_ID: Record<EventType, number> = {
+  [EventType.CLICK]: 1,
+  [EventType.RATING]: 2,
+  [EventType.REVIEW]: 3,
+  [EventType.SCROLL]: 4,
+  [EventType.PAGE_VIEW]: 5
+};
+
+export const OPERATOR_TO_ID: Record<string, number> = {
+  'Contains': 1,
+  'Equals': 2,
+  'Starts with': 3,
+  'Ends with': 4
+};
+
+export const PATTERN_TO_ID: Record<string, number> = {
+  'CSS Selector': 1,
+  'URL': 2,
+  'Data Attribute': 3
+};
+
+export const SOURCE_TO_BACKEND: Record<MappingSource, string> = {
+  [MappingSource.REQUEST_BODY]: 'RequestBody',
+  [MappingSource.ELEMENT]: 'Element',
+  [MappingSource.COOKIE]: 'Cookie',
+  [MappingSource.LOCAL_STORAGE]: 'LocalStorage',
+  [MappingSource.SESSION_STORAGE]: 'SessionStorage',
+  [MappingSource.URL]: 'Url'
+};
+
+export const FIELD_TO_BACKEND: Record<string, string> = {
+  'userId': 'UserId',
+  'username': 'Username',
+  'itemId': 'ItemId',
+  'itemTitle': 'ItemTitle',
+  'rating_value': 'Value',
+  'review_text': 'Value'
+};
+
+export const INITIAL_MAPPINGS: Record<string, string[]> = {
+  [EventType.CLICK]: ['userId', 'itemId'],
+  [EventType.RATING]: ['userId', 'itemId', 'rating_value'],
+  [EventType.REVIEW]: ['userId', 'itemId', 'review_text'],
+  [EventType.SCROLL]: ['userId', 'itemId'],
+  [EventType.PAGE_VIEW]: ['userId', 'itemId'],
+};
+
+// ==================== COMPONENT ====================
 interface RuleBuilderProps {
-  initialRule?: any; // For future edit functionality
-  ruleDetails?: any; // RuleDetailResponse from API
-  isViewMode?: boolean; // true for view mode, false for edit mode
+  initialRule?: any;
+  ruleDetails?: any;
+  isViewMode?: boolean;
   onSave: (response: { statusCode: number; message: string }) => void;
   onCancel: () => void;
   domainKey: string;
@@ -27,612 +267,562 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
   onCancel, 
   domainKey 
 }) => {
-  const [name, setName] = useState(initialRule?.name || '');
-  const [trigger, setTrigger] = useState<TriggerType>(initialRule?.trigger || 'click');
-  
-  // Target Element configuration
-  const [targetPattern, setTargetPattern] = useState<number | null>(null);
-  const [targetMatchOperator, setTargetMatchOperator] = useState<number>(1);
-  const [targetValue, setTargetValue] = useState(initialRule?.selector || '');
-  
-  // Condition configuration
-  const [conditions, setConditions] = useState<Array<{
-    pattern: number | null;
-    operator: number;
-    value: string;
-  }>>([{
-    pattern: null,
-    operator: 1,
-    value: ''
-  }]);
-  
-  // Payload extraction configuration
-  const [itemPattern, setItemPattern] = useState<number | null>(null);
-  const [itemMatchOperator, setItemMatchOperator] = useState<number>(1);
-  const [itemValue, setItemValue] = useState<string>('');
-  
-  const [userPattern, setUserPattern] = useState<number | null>(null);
-  const [userMatchOperator, setUserMatchOperator] = useState<number>(1);
-  const [userValue, setUserValue] = useState<string>('window.USER_ID');
-  
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  
-  // Get cached data from context
-  const { triggerEvents, eventPatterns, operators } = useDataCache();
-  const [payloadPatterns, setPayloadPatterns] = useState<PayloadPattern[]>([]);
-  const [isLoadingOptions, setIsLoadingOptions] = useState(true);
+  const [rule, setRule] = useState<TrackingRule>({
+    id: 'new-rule-' + Date.now(),
+    name: '',
+    eventType: EventType.CLICK,
+    targetElement: { selector: '', operator: 'equals', value: '' },
+    conditions: [],
+    payloadMappings: [
+      { field: 'username', source: MappingSource.LOCAL_STORAGE, path: 'user.username', required: true },
+      { field: 'itemId', source: MappingSource.ELEMENT, path: '.product-id', required: true }
+    ],
+  });
 
-  // Fetch only payload patterns (as they are not in cache)
+  const [isSaving, setIsSaving] = useState(false);
+  const [modalContent, setModalContent] = useState<{title: string, examples: SectionExample[]} | null>(null);
+
   useEffect(() => {
-    const fetchPayloadPatterns = async () => {
-      setIsLoadingOptions(true);
-      try {
-        const payloads = await ruleApi.getPayloadPatterns();
-        setPayloadPatterns(payloads);
-        
-        // Set default pattern IDs after loading
-        if (eventPatterns.length > 0 && targetPattern === null) {
-          setTargetPattern(eventPatterns[0].Id);
-        }
-        
-        if (payloads.length > 0 && itemPattern === null) {
-          setItemPattern(payloads[0].Id);
-          setUserPattern(payloads[0].Id);
-        }
-      } catch (error) {
-        console.error('Failed to fetch payload patterns:', error);
-      } finally {
-        setIsLoadingOptions(false);
-      }
+    const initialFields = INITIAL_MAPPINGS[rule.eventType] || [];
+    
+    setRule(prev => ({
+      ...prev,
+      // Set targetElement to NULL for Scroll and Page view
+      targetElement: (rule.eventType === EventType.SCROLL || rule.eventType === EventType.PAGE_VIEW) 
+        ? undefined 
+        : prev.targetElement || { selector: '', operator: 'equals', value: '' },
+      payloadMappings: initialFields.map(field => ({
+        field,
+        source: field.toLowerCase().includes('user') ? MappingSource.LOCAL_STORAGE : MappingSource.ELEMENT,
+        path: '',
+        required: true
+      }))
+    }));
+  }, [rule.eventType]);
+
+  const handleAddCondition = () => {
+    const newCondition: Condition = {
+      id: Math.random().toString(36).substr(2, 9),
+      pattern: 'URL',
+      operator: 'Contains',
+      value: ''
     };
+    setRule(prev => ({ ...prev, conditions: [...prev.conditions, newCondition] }));
+  };
 
-    if (eventPatterns.length > 0 && operators.length > 0) {
-      fetchPayloadPatterns();
-    }
-  }, [eventPatterns, operators]);
+  const handleRemoveCondition = (id: string) => {
+    setRule(prev => ({ ...prev, conditions: prev.conditions.filter(c => c.id !== id) }));
+  };
 
-  // Load data from ruleDetails when available
-  useEffect(() => {
-    if (ruleDetails) {
-      // Set name
-      setName(ruleDetails.Name || '');
-      
-      // Set trigger based on TriggerEventID
-      const triggerMap: { [key: number]: TriggerType } = {
-        1: 'click',
-        2: 'rate',
-        3: 'page_view',
-        4: 'scroll'
-      };
-      setTrigger(triggerMap[ruleDetails.TriggerEventID] || 'click');
-      
-      // Set target element
-      if (ruleDetails.TargetElement) {
-        setTargetPattern(ruleDetails.TargetElement.EventPatternID || null);
-        setTargetMatchOperator(ruleDetails.TargetElement.OperatorID || 1);
-        setTargetValue(ruleDetails.TargetElement.Value || '');
-      }
-      
-      // Set conditions
-      if (ruleDetails.Conditions && ruleDetails.Conditions.length > 0) {
-        setConditions(ruleDetails.Conditions.map((cond: any) => ({
-          pattern: cond.EventPatternID || null,
-          operator: cond.OperatorID || 1,
-          value: cond.Value || ''
-        })));
-      }
-      
-      // Set payload configs
-      if (ruleDetails.PayloadConfigs && ruleDetails.PayloadConfigs.length > 0) {
-        ruleDetails.PayloadConfigs.forEach((config: any) => {
-          if (config.Type === 'itemId') {
-            setItemPattern(config.PayloadPatternID || null);
-            setItemMatchOperator(config.OperatorID || 1);
-            setItemValue(config.Value || '');
-          } else if (config.Type === 'userId') {
-            setUserPattern(config.PayloadPatternID || null);
-            setUserMatchOperator(config.OperatorID || 1);
-            setUserValue(config.Value || 'window.USER_ID');
-          }
-        });
+  const handleUpdateCondition = (id: string, updates: Partial<Condition>) => {
+    setRule(prev => ({
+      ...prev,
+      conditions: prev.conditions.map(c => c.id === id ? { ...c, ...updates } : c)
+    }));
+  };
+
+  const handleUpdateMapping = (index: number, updates: Partial<PayloadMapping>) => {
+    const newMappings = [...rule.payloadMappings];
+    let updatedMapping = { ...newMappings[index], ...updates };
+    
+    // If source is being updated, set appropriate fields to NULL
+    if (updates.source) {
+      if (updates.source === MappingSource.REQUEST_BODY) {
+        // Keep requestUrlPattern, requestMethod, requestBodyPath; set others to null/undefined
+        updatedMapping = {
+          ...updatedMapping,
+          value: undefined,
+          urlPart: undefined,
+          urlPartValue: undefined,
+          fullUrl: undefined,
+          pathname: undefined,
+          queryString: undefined
+        };
+      } else if (updates.source === MappingSource.URL) {
+        // Keep urlPart, urlPartValue; set others to null/undefined
+        updatedMapping = {
+          ...updatedMapping,
+          value: undefined,
+          requestUrlPattern: undefined,
+          requestMethod: undefined,
+          requestBodyPath: undefined
+        };
+      } else if ([MappingSource.ELEMENT, MappingSource.COOKIE, MappingSource.LOCAL_STORAGE, MappingSource.SESSION_STORAGE].includes(updates.source)) {
+        // Keep value; set others to null/undefined
+        updatedMapping = {
+          ...updatedMapping,
+          requestUrlPattern: undefined,
+          requestMethod: undefined,
+          requestBodyPath: undefined,
+          urlPart: undefined,
+          urlPartValue: undefined,
+          fullUrl: undefined,
+          pathname: undefined,
+          queryString: undefined
+        };
       }
     }
-  }, [ruleDetails]);
-
-  // Add a new condition
-  const addCondition = () => {
-    setConditions([
-      ...conditions,
-      {
-        pattern: eventPatterns[0]?.Id || null,
-        operator: 1,
-        value: ''
-      }
-    ]);
+    
+    newMappings[index] = updatedMapping;
+    setRule(prev => ({ ...prev, payloadMappings: newMappings }));
   };
 
-  // Remove a condition
-  const removeCondition = (index: number) => {
-    setConditions(conditions.filter((_, i) => i !== index));
-  };
-
-  // Update a specific condition
-  const updateCondition = (index: number, field: 'pattern' | 'operator' | 'value', value: any) => {
-    const newConditions = [...conditions];
-    newConditions[index] = {
-      ...newConditions[index],
-      [field]: value
-    };
-    setConditions(newConditions);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setSubmitError(null);
-
+  const parseUrl = useCallback((index: number, url: string) => {
     try {
-      // Find trigger event ID from cached triggerEvents
-      const triggerEventId = triggerEvents.find(te => normalizeTriggerName(te.Name) === trigger)?.Id || 1;
-      
-      // Construct CreateRuleDto matching backend
-      const createRuleDto = {
-        name,
-        domainKey: domainKey,
-        triggerEventId: triggerEventId,
-        targetEventPatternId: targetPattern || null,
-        targetOperatorId: targetMatchOperator,
-        targetElementValue: targetValue,
-        conditions: conditions
-          .filter(c => c.value) // Only include conditions with values
-          .map(c => ({
-            eventPatternId: c.pattern || null,
-            operatorId: c.operator,
-            value: c.value
-          })),
-        payloadConfigs: [
-          {
-            payloadPatternId: itemPattern || null,
-            operatorId: itemMatchOperator,
-            value: itemValue,
-            type: 'itemId'
-          },
-          {
-            payloadPatternId: userPattern || null,
-            operatorId: userMatchOperator,
-            value: userValue,
-            type: 'userId'
-          }
-        ]
+      const parsed = new URL(url);
+      handleUpdateMapping(index, {
+        fullUrl: url,
+        pathname: parsed.pathname,
+        queryString: parsed.search.slice(1)
+      });
+    } catch (e) {
+      handleUpdateMapping(index, {
+        fullUrl: url,
+        pathname: 'Invalid URL',
+        queryString: ''
+      });
+    }
+  }, []);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    
+    try {
+      // Transform conditions
+      const conditions = rule.conditions.map(cond => ({
+        PatternId: PATTERN_TO_ID[cond.pattern],
+        OperatorId: OPERATOR_TO_ID[cond.operator],
+        Value: cond.value
+      }));
+
+      // Transform payload mappings
+      const payloadMappings = rule.payloadMappings.map(mapping => {
+        const backendMapping: any = {
+          Field: FIELD_TO_BACKEND[mapping.field] || mapping.field,
+          Source: SOURCE_TO_BACKEND[mapping.source]
+        };
+
+        // Set values based on source type
+        if (mapping.source === MappingSource.REQUEST_BODY) {
+          backendMapping.RequestUrlPattern = mapping.requestUrlPattern || null;
+          backendMapping.RequestMethod = mapping.requestMethod || null;
+          backendMapping.RequestBodyPath = mapping.value || null;
+          backendMapping.Value = null;
+          backendMapping.UrlPart = null;
+          backendMapping.UrlPartValue = null;
+        } else if (mapping.source === MappingSource.URL) {
+          backendMapping.UrlPart = mapping.urlPart || null;
+          backendMapping.UrlPartValue = mapping.urlPartValue || null;
+          backendMapping.Value = null;
+          backendMapping.RequestUrlPattern = null;
+          backendMapping.RequestMethod = null;
+          backendMapping.RequestBodyPath = null;
+        } else {
+          // Element, Cookie, LocalStorage, SessionStorage
+          backendMapping.Value = mapping.value || null;
+          backendMapping.RequestUrlPattern = null;
+          backendMapping.RequestMethod = null;
+          backendMapping.RequestBodyPath = null;
+          backendMapping.UrlPart = null;
+          backendMapping.UrlPartValue = null;
+        }
+
+        return backendMapping;
+      });
+
+      // Transform tracking target (NULL for Scroll and Page view)
+      let trackingTarget = null;
+      if (rule.eventType !== EventType.SCROLL && rule.eventType !== EventType.PAGE_VIEW && rule.targetElement) {
+        trackingTarget = {
+          PatternId: 1, // Always "CSS Selector"
+          OperatorId: OPERATOR_TO_ID[rule.targetElement.operator] || 2,
+          Value: rule.targetElement.selector || ''
+        };
+      }
+
+      // Prepare the payload
+      const payload = {
+        Name: rule.name,
+        DomainKey: domainKey,
+        EventTypeId: EVENT_TYPE_TO_ID[rule.eventType],
+        Conditions: conditions,
+        PayloadMappings: payloadMappings,
+        TrackingTarget: trackingTarget
       };
 
-      // POST to API
-      const response = await ruleApi.create(createRuleDto);
+      // Call the API
+      const response = await ruleApi.create(payload);
       
-      // Call onSave with API response
+      setIsSaving(false);
       onSave(response);
-
-    } catch (error: any) {
-      console.error('Failed to create rule:', error);
-      
-      // Extract error message from API response
-      let errorMessage = 'Failed to create rule. Please try again.';
-      
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
-      // Handle specific error codes
-      if (error.response?.status === 409 || error.response?.data?.statusCode === 409) {
-        errorMessage = 'A rule with this name already exists. Please use a different name.';
-      }
-      
-      setSubmitError(errorMessage);
-    } finally {
-      setIsSubmitting(false);
+    } catch (error) {
+      setIsSaving(false);
+      onSave({ 
+        statusCode: 500, 
+        message: error instanceof Error ? error.message : 'Failed to save rule' 
+      });
     }
   };
+
+  const openExamples = (section: string) => {
+    const examples = SECTION_EXAMPLES[section][rule.eventType] || [];
+    setModalContent({
+      title: `Config Examples: ${section.charAt(0).toUpperCase() + section.slice(1)}`,
+      examples: examples
+    });
+  };
+
+  const SectionHeader = ({ title, icon, sectionKey, required = false }: { title: string, icon: React.ReactNode, sectionKey?: string, required?: boolean }) => (
+    <div className={styles.sectionHeader}>
+      <div className={styles.headerIcon}>
+        {icon}
+      </div>
+      <h3 className={styles.sectionTitle}>
+        {title}
+        {required && <span className={styles.required}>*</span>}
+      </h3>
+      {sectionKey && (
+        <Lightbulb
+          className={styles.lightbulb}
+          size={18}
+          title="View example configs" 
+          onClick={() => openExamples(sectionKey)}
+        />
+      )}
+    </div>
+  );
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h3 className={styles.title}>
-          {isViewMode ? 'View Rule' : initialRule ? 'Edit Rule' : 'New Tracking Rule'}
-        </h3>
-        <button onClick={onCancel} className={styles.closeButton}>
-            <span className="sr-only">Close</span>
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-        </button>
-      </div>
+    <div className={styles.mainContainer}>
+      {/* Modal Overlay */}
+      {modalContent && (
+        <div className={styles.modalOverlay} onClick={() => setModalContent(null)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <X className={styles.modalClose} size={24} onClick={() => setModalContent(null)} />
+            <h2 className={styles.modalTitle}>
+              <Lightbulb className={styles.modalLightbulbIcon} size={24} />
+              {modalContent.title}
+            </h2>
+            {modalContent.examples.length === 0 ? (
+              <p className={styles.noExamplesText}>No specific examples available.</p>
+            ) : (
+              modalContent.examples.map((ex, i) => (
+                <div key={i} className={styles.exampleCard}>
+                  <div className={styles.exampleLabel}>{ex.title}</div>
+                  
+                  {ex.htmlContext && (
+                    <div className={styles.exampleHtmlContext}>
+                      <p className={styles.exampleHtmlTitle}>Actual DIV / HTML example on website:</p>
+                      <pre className={styles.examplePre}>
+                        {ex.htmlContext}
+                      </pre>
+                    </div>
+                  )}
 
-      <form onSubmit={handleSubmit} className={styles.form}>
-        {/* Error Message */}
-        {submitError && (
-          <div className={styles.errorMessage}>
-            <svg className={styles.errorIcon} fill="none" stroke="currentColor" viewBox="0 0 24 24" width="20" height="20">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>{submitError}</span>
+                  <div className={styles.exampleDivider}></div>
+                  
+                  <p className={styles.exampleConfigTitle}>Config sample:</p>
+                  <code className={`${styles.exampleCode} ${styles.exampleCodeNoMargin}`}>
+                    {ex.config}
+                  </code>
+                </div>
+              ))
+            )}
+            <button className={`${styles.btnPrimary} ${styles.modalCloseButton}`} onClick={() => setModalContent(null)}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className={styles.formSection}>
+        {/* 1. Identification */}
+        <div className={styles.card}>
+          <SectionHeader title="Event Identification" icon={<Fingerprint size={14} />} />
+          <div className={styles.grid2}>
+            <div>
+              <label className={styles.label}>Rule Name</label>
+              <input 
+                type="text"
+                placeholder="e.g., Click Register Button"
+                className={styles.input}
+                value={rule.name}
+                onChange={e => setRule({...rule, name: e.target.value})}
+              />
+            </div>
+            <div>
+              <label className={styles.label}>Event Type</label>
+              <select 
+                className={styles.input}
+                value={rule.eventType}
+                onChange={e => setRule({...rule, eventType: e.target.value as EventType})}
+              >
+                {EVENT_TYPE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+              </select>
+              <p className={styles.description}>{EVENT_DESCRIPTIONS[rule.eventType]}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* 2. Target Configuration */}
+        {rule.eventType !== EventType.SCROLL && rule.eventType !== EventType.PAGE_VIEW && (
+          <div className={styles.card}>
+            <SectionHeader 
+              title="Target Element" 
+              icon={<Target size={14} />} 
+              sectionKey="target" 
+              required 
+            />
+            <div className={styles.grid3}>
+              <div>
+                <label className={styles.label}>Pattern</label>
+                <input 
+                  type="text"
+                  disabled
+                  className={`${styles.input} ${styles.disabledInput}`}
+                  value="CSS Selector"
+                />
+              </div>
+              <div>
+                <label className={styles.label}>Match Operator</label>
+                <select 
+                  className={styles.input}
+                  value={rule.targetElement?.operator || 'equals'}
+                  onChange={e => setRule({...rule, targetElement: {...rule.targetElement, operator: e.target.value}})}
+                >
+                  <option value="Contains">contains</option>
+                  <option value="Equals">equals</option>
+                  <option value="Starts with">starts with</option>
+                  <option value="Ends with">ends with</option>
+                </select>
+              </div>
+              <div>
+                <label className={styles.label}>Value</label>
+                <input 
+                  type="text"
+                  placeholder=".my-element"
+                  className={`${styles.input} ${styles.monospaceInput}`}
+                  value={rule.targetElement?.selector || ''}
+                  onChange={e => setRule({...rule, targetElement: {...rule.targetElement, selector: e.target.value}})}
+                />
+              </div>
+            </div>
+            <p className={styles.suggestion}>{TARGET_SUGGESTIONS[rule.eventType]}</p>
           </div>
         )}
-        
-        {/* Basic Info */}
-        <div className={styles.formGrid}>
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Rule Name</label>
-            <input 
-              type="text" 
-              required
-              className={styles.input}
-              placeholder="e.g., Track Play Button"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              disabled={isViewMode}
-            />
-          </div>
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Trigger Event</label>
-            <div className={styles.selectContainer}>
-                <select 
-                className={styles.select}
-                value={trigger}
-                onChange={e => setTrigger(normalizeTriggerName(e.target.value))}
-                disabled={isViewMode}
-                >
-                  {triggerEvents.length > 0 ? (
-                    triggerEvents.map(te => (
-                      <option key={te.Id} value={normalizeTriggerName(te.Name)}>
-                        {te.Name}
-                      </option>
-                    ))
-                  ) : (
-                    <>
-                      <option value="click">Click</option>
-                      <option value="rate">Rate</option>
-                      <option value="page_view">Page View</option>
-                      <option value="scroll">Scroll</option>
-                    </>
-                  )}
-                </select>
-                <div className={styles.selectIcon}>
-                    {TRIGGER_ICONS[trigger] && React.createElement(TRIGGER_ICONS[trigger], { size: 18 })}
-                </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Selector Config */}
-        <div className={styles.selectorSection}>
-          <label className={styles.selectorLabel}>
-            Target Element
-          </label>
-          <div className={styles.selectorInputGroup}>
-            <select 
-              className={styles.selectorMethodSelect}
-              value={targetPattern || ''}
-              onChange={e => setTargetPattern(Number(e.target.value))}
-              disabled={isLoadingOptions || isViewMode}
-            >
-              {isLoadingOptions ? (
-                <option>Loading...</option>
-              ) : eventPatterns.length > 0 ? (
-                eventPatterns.map(pattern => (
-                  <option key={pattern.Id} value={pattern.Id}>
-                    {pattern.Name}
-                  </option>
-                ))
-              ) : (
-                <>
-                  <option value="1">CSS Selector</option>
-                  <option value="2">DOM attribute</option>
-                  <option value="3">Data attribute</option>
-                </>
-              )}
-            </select>
-            <select 
-              className={styles.selectorMethodSelect}
-              value={targetMatchOperator}
-              onChange={e => setTargetMatchOperator(Number(e.target.value))}
-              disabled={isLoadingOptions || isViewMode}
-            >
-              {isLoadingOptions ? (
-                <option>Loading operators...</option>
-              ) : operators.length > 0 ? (
-                operators.map(op => (
-                  <option key={op.Id} value={op.Id}>
-                    {op.Name}
-                  </option>
-                ))
-              ) : (
-                <>
-                  <option value="1">Contains</option>
-                  <option value="2">Not contains</option>
-                  <option value="3">Starts with</option>
-                  <option value="4">Ends with</option>
-                  <option value="5">Equals</option>
-                  <option value="6">Not equals</option>
-                </>
-              )}
-            </select>
-            <input 
-              type="text" 
-              className={styles.selectorInput}
-              placeholder={
-                targetPattern === 'css' ? '.btn-primary or #submit-form' :
-                targetPattern === 'dom_path' ? 'body > div > button' :
-                targetPattern === 'regex' ? '^/product/.*' :
-                '/checkout/*'
-              }
-              value={targetValue}
-              onChange={e => setTargetValue(e.target.value)}
-              disabled={isViewMode}
-            />
-          </div>
-        </div>
-
-        {/* Condition Config */}
-        <div className={styles.selectorSection}>
-          <div className={styles.conditionHeader}>
-            <label className={styles.selectorLabel}>
-              Track When
-            </label>
-            {!isViewMode && (
-              <button 
-                type="button" 
-                onClick={addCondition}
-                className={styles.addButton}
-              >
-                <span>+</span>
-                Add Condition
-              </button>
-            )}
+        {/* 3. Conditions */}
+        <div className={styles.card}>
+          <div className={styles.conditionsHeader}>
+            <SectionHeader title="Conditions" icon={<Filter size={14} />} sectionKey="conditions" />
+            <button onClick={handleAddCondition} className={styles.btnAdd}>
+              <Plus size={16} /> Add Condition
+            </button>
           </div>
           
-          {conditions.length === 0 ? (
-            <div className={styles.conditionEmptyState}>
-              No conditions added. Click "+ Add Condition" to add a condition.
-            </div>
-          ) : (
-            <div className={styles.conditionList}>
-              {conditions.map((condition, index) => (
-                <div key={index} className={styles.conditionRow}>
-                  <div className={styles.selectorInputGroup}>
-                    <select 
-                      className={styles.selectorMethodSelect}
-                      value={condition.pattern || ''}
-                      onChange={e => updateCondition(index, 'pattern', Number(e.target.value))}
-                      disabled={isLoadingOptions || isViewMode}
-                    >
-                      {isLoadingOptions ? (
-                        <option>Loading...</option>
-                      ) : eventPatterns.length > 0 ? (
-                        eventPatterns.map(pattern => (
-                          <option key={pattern.Id} value={pattern.Id}>
-                            {pattern.Name}
-                          </option>
-                        ))
-                      ) : (
-                        <>
-                          <option value="1">CSS Selector</option>
-                          <option value="2">URL Param</option>
-                          <option value="3">DOM attribute</option>
-                          <option value="4">Data attribute</option>
-                        </>
-                      )}
-                    </select>
-                    <select 
-                      className={styles.selectorMethodSelect}
-                      value={condition.operator}
-                      onChange={e => updateCondition(index, 'operator', Number(e.target.value))}
-                      disabled={isLoadingOptions || isViewMode}
-                    >
-                      {isLoadingOptions ? (
-                        <option>Loading operators...</option>
-                      ) : operators.length > 0 ? (
-                        operators.map(op => (
-                          <option key={op.Id} value={op.Id}>
-                            {op.Name}
-                          </option>
-                        ))
-                      ) : (
-                        <>
-                          <option value="1">Contains</option>
-                          <option value="2">Not contains</option>
-                          <option value="3">Starts with</option>
-                          <option value="4">Ends with</option>
-                          <option value="5">Equals</option>
-                          <option value="6">Not equals</option>
-                        </>
-                      )}
-                    </select>
-                    <input 
-                      type="text" 
-                      className={styles.selectorInput}
-                      placeholder="URL pattern, CSS selector, or value..."
-                      value={condition.value}
-                      onChange={e => updateCondition(index, 'value', e.target.value)}
-                      disabled={isViewMode}
-                    />
-                  </div>
-                  {!isViewMode && (
-                    <button
-                      type="button"
-                      onClick={() => removeCondition(index)}
-                      className={styles.removeButton}
-                      title="Remove condition"
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Payload Mapping */}
-        <div className={styles.extractionSection}>
-          <h4>
-            <span></span>
-            Payload Extraction
-          </h4>
-          <div className={styles.extractionList}>
-            <div>
-              <label className={styles.selectorLabel}>
-                Item ID
-              </label>
-              <div className={styles.selectorInputGroup}>
+          <div className={styles.conditionsContainer}>
+            {rule.conditions.length === 0 && (
+              <div className={styles.emptyState}>
+                No conditions added. The rule will trigger for every occurrence.
+                <p className={`${styles.suggestion} ${styles.suggestionInEmptyState}`}>{CONDITION_SUGGESTIONS[rule.eventType]}</p>
+              </div>
+            )}
+            {rule.conditions.map((cond) => (
+              <div key={cond.id} className={styles.conditionRow}>
                 <select 
-                  className={styles.selectorMethodSelect}
-                  value={itemPattern}
-                  onChange={e => setItemPattern(Number(e.target.value))}
-                  disabled={isLoadingOptions || isViewMode}
+                  className={`${styles.input} ${styles.conditionSelectFlex1}`}
+                  value={cond.pattern}
+                  onChange={e => handleUpdateCondition(cond.id, { pattern: e.target.value as any })}
                 >
-                  {isLoadingOptions ? (
-                    <option>Loading patterns...</option>
-                  ) : payloadPatterns.length > 0 ? (
-                    payloadPatterns.map(pattern => (
-                      <option key={pattern.Id} value={pattern.Id}>
-                        {pattern.Name}
-                      </option>
-                    ))
-                  ) : (
-                    <>
-                      <option value="css_attribute">CSS Selector</option>
-                      <option value="dom_path">DOM Path</option>
-                      <option value="url_param">URL Param</option>
-                      <option value="js_variable">JS Variable</option>
-                      <option value="inner_text">Inner Text</option>
-                      <option value="static">Static Value</option>
-                    </>
-                  )}
+                  <option>URL</option>
+                  <option>CSS Selector</option>
+                  <option>Data Attribute</option>
                 </select>
                 <select 
-                  className={styles.selectorMethodSelect}
-                  value={itemMatchOperator}
-                  onChange={e => setItemMatchOperator(Number(e.target.value))}
-                  disabled={isLoadingOptions || isViewMode}
+                  className={`${styles.input} ${styles.conditionSelectAuto}`}
+                  value={cond.operator}
+                  onChange={e => handleUpdateCondition(cond.id, { operator: e.target.value as any })}
                 >
-                  {isLoadingOptions ? (
-                    <option>Loading operators...</option>
-                  ) : operators.length > 0 ? (
-                    operators.map(op => (
-                      <option key={op.Id} value={op.Id}>
-                        {op.Name}
-                      </option>
-                    ))
-                  ) : (
-                    <>
-                      <option value="1">Contains</option>
-                      <option value="2">Not contains</option>
-                      <option value="3">Starts with</option>
-                      <option value="4">Ends with</option>
-                      <option value="5">Equals</option>
-                      <option value="6">Not equals</option>
-                    </>
-                  )}
+                  {OPERATORS.map(op => <option key={op} value={op}>{op}</option>)}
                 </select>
                 <input 
-                  type="text" 
-                  className={styles.selectorInput}
-                  placeholder={itemPattern === 'static' ? 'Value...' : itemPattern === 'js_variable' ? 'window.ITEM_ID' : 'Attribute/Selector/Var Name...'}
-                  value={itemValue}
-                  onChange={e => setItemValue(e.target.value)}
-                  disabled={isViewMode}
+                  type="text" placeholder="Filter value..." className={`${styles.input} ${styles.conditionInputFlex2}`}
+                  value={cond.value}
+                  onChange={e => handleUpdateCondition(cond.id, { value: e.target.value })}
                 />
+                <button onClick={() => handleRemoveCondition(cond.id)} className={styles.btnDelete}>
+                  <Trash2 size={16} />
+                </button>
               </div>
-            </div>
-            <div>
-              <label className={styles.selectorLabel}>
-                User ID
-              </label>
-              <div className={styles.selectorInputGroup}>
-                <select 
-                  className={styles.selectorMethodSelect}
-                  value={userPattern}
-                  onChange={e => setUserPattern(Number(e.target.value))}
-                  disabled={isLoadingOptions || isViewMode}
-                >
-                  {isLoadingOptions ? (
-                    <option>Loading patterns...</option>
-                  ) : payloadPatterns.length > 0 ? (
-                    payloadPatterns.map(pattern => (
-                      <option key={pattern.Id} value={pattern.Id}>
-                        {pattern.Name}
-                      </option>
-                    ))
-                  ) : (
-                    <>
-                      <option value="css_attribute">CSS Selector</option>
-                      <option value="dom_path">DOM Path</option>
-                      <option value="url_param">URL Param</option>
-                      <option value="js_variable">JS Variable</option>
-                      <option value="inner_text">Inner Text</option>
-                      <option value="static">Static Value</option>
-                    </>
-                  )}
-                </select>
-                <select 
-                  className={styles.selectorMethodSelect}
-                  value={userMatchOperator}
-                  onChange={e => setUserMatchOperator(Number(e.target.value))}
-                  disabled={isLoadingOptions || isViewMode}
-                >
-                  {isLoadingOptions ? (
-                    <option>Loading operators...</option>
-                  ) : operators.length > 0 ? (
-                    operators.map(op => (
-                      <option key={op.Id} value={op.Id}>
-                        {op.Name}
-                      </option>
-                    ))
-                  ) : (
-                    <>
-                      <option value="1">Contains</option>
-                      <option value="2">Not contains</option>
-                      <option value="3">Starts with</option>
-                      <option value="4">Ends with</option>
-                      <option value="5">Equals</option>
-                      <option value="6">Not equals</option>
-                    </>
-                  )}
-                </select>
-                <input 
-                  type="text" 
-                  className={styles.selectorInput}
-                  placeholder={userPattern === 'static' ? 'Value...' : userPattern === 'js_variable' ? 'window.USER_ID' : 'Attribute/Selector/Var Name...'}
-                  value={userValue}
-                  onChange={e => setUserValue(e.target.value)}
-                  disabled={isViewMode}
-                />
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
-        <div className={styles.actions}>
-            <button
-                type="button"
-                onClick={onCancel}
-                className={styles.cancelButton}
-                disabled={isSubmitting}
-            >
-                {isViewMode ? 'Close' : 'Cancel'}
-            </button>
-            {!isViewMode && (
-              <button
-                  type="submit"
-                  className={styles.saveButton}
-                  disabled={isSubmitting}
-              >
-                  {isSubmitting ? 'Saving...' : 'Save Configuration'}
-              </button>
-            )}
+        {/* 4. Payload Mapping */}
+        <div className={styles.card}>
+          <SectionHeader title="Payload Mapping" icon={<Database size={14} />} sectionKey="payload" />
+          <div className={styles.tableWrapper}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th className={`${styles.th} ${styles.thWidth180}`}>Data Field</th>
+                  <th className={`${styles.th} ${styles.thWidth180}`}>Source</th>
+                  <th className={styles.th}>Details / Configuration</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rule.payloadMappings.map((mapping, idx) => {
+                  const isUserField = mapping.field === 'userId' || mapping.field === 'username';
+                  const isItemField = mapping.field === 'itemId' || mapping.field === 'itemTitle';
+
+                  return (
+                    <tr key={idx}>
+                      <td className={`${styles.td} ${styles.tdVerticalTop}`}>
+                        {isUserField ? (
+                          <div className={styles.radioGroup}>
+                            <label className={styles.radioLabel}>
+                              <input type="radio" name={`user-field-${idx}`} checked={mapping.field === 'userId'} onChange={() => handleUpdateMapping(idx, { field: 'userId' })} />
+                              UserId
+                            </label>
+                            <label className={styles.radioLabel}>
+                              <input type="radio" name={`user-field-${idx}`} checked={mapping.field === 'username'} onChange={() => handleUpdateMapping(idx, { field: 'username' })} />
+                              Username
+                            </label>
+                          </div>
+                        ) : isItemField ? (
+                          <div className={styles.radioGroup}>
+                            <label className={styles.radioLabel}>
+                              <input type="radio" name={`item-field-${idx}`} checked={mapping.field === 'itemId'} onChange={() => handleUpdateMapping(idx, { field: 'itemId' })} />
+                              ItemId
+                            </label>
+                            <label className={styles.radioLabel}>
+                              <input type="radio" name={`item-field-${idx}`} checked={mapping.field === 'itemTitle'} onChange={() => handleUpdateMapping(idx, { field: 'itemTitle' })} />
+                              ItemTitle
+                            </label>
+                          </div>
+                        ) : (
+                          <span className={styles.fieldTag}>{mapping.field}</span>
+                        )}
+                      </td>
+                      <td className={`${styles.td} ${styles.tdVerticalTop}`}>
+                        <select 
+                          className={styles.input}
+                          value={mapping.source}
+                          onChange={e => handleUpdateMapping(idx, { source: e.target.value as MappingSource })}
+                        >
+                          {MAPPING_SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                      </td>
+                      <td className={styles.td}>
+                        {/* SOURCE SPECIFIC INPUTS */}
+                        {mapping.source === MappingSource.REQUEST_BODY && (
+                          <div className={styles.urlParsingContainer}>
+                            <div className={styles.urlParsingInputRow}>
+                              <input 
+                                type="text" placeholder="URL Pattern (/api/...)" className={`${styles.input} ${styles.urlParsingInputFlex2}`}
+                                value={mapping.requestUrlPattern || ''}
+                                onChange={e => handleUpdateMapping(idx, { requestUrlPattern: e.target.value })}
+                              />
+                              <select 
+                                className={`${styles.input} ${styles.urlParsingInputFlex1}`}
+                                value={mapping.requestMethod || 'POST'}
+                                onChange={e => handleUpdateMapping(idx, { requestMethod: e.target.value as any })}
+                              >
+                                <option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option><option>GET</option>
+                              </select>
+                            </div>
+                            <input 
+                              type="text" placeholder="Body Path (e.g., content.id)" className={styles.input}
+                              value={mapping.value || ''}
+                              onChange={e => handleUpdateMapping(idx, { value: e.target.value })}
+                            />
+                          </div>
+                        )}
+
+                        {mapping.source === MappingSource.URL && (
+                          <div className={styles.urlParsingContainer}>
+                            <input 
+                              type="text" placeholder="Enter full URL to parse..." className={styles.input}
+                              value={mapping.fullUrl || ''}
+                              onChange={e => parseUrl(idx, e.target.value)}
+                            />
+                            {mapping.pathname && (
+                              <div className={styles.urlParsingResultsGrid}>
+                                <input type="text" disabled className={`${styles.input} ${styles.urlParsingDisabledInput}`} value={`Path: ${mapping.pathname}`} />
+                                <input type="text" disabled className={`${styles.input} ${styles.urlParsingDisabledInput}`} value={`Query: ${mapping.query_string || 'None'}`} />
+                              </div>
+                            )}
+                            <div className={styles.urlParsingControlRow}>
+                              <select 
+                                className={`${styles.input} ${styles.urlParsingSelect}`}
+                                value={mapping.urlPart || 'pathname'}
+                                onChange={e => handleUpdateMapping(idx, { urlPart: e.target.value as any })}
+                              >
+                                <option value="pathname">pathname</option>
+                                <option value="query_param">query_param</option>
+                              </select>
+                              {mapping.urlPart === 'pathname' ? (
+                                <input 
+                                  type="number" placeholder="Segment Index" className={`${styles.input} ${styles.urlParsingInputFlexAuto}`}
+                                  value={mapping.urlPartValue || ''}
+                                  onChange={e => handleUpdateMapping(idx, { urlPartValue: e.target.value })}
+                                />
+                              ) : (
+                                <input 
+                                  type="text" placeholder="Param Key (e.g. itemId)" className={`${styles.input} ${styles.urlParsingInputFlexAuto}`}
+                                  value={mapping.urlPartValue || ''}
+                                  onChange={e => handleUpdateMapping(idx, { urlPartValue: e.target.value })}
+                                />
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {mapping.source !== MappingSource.REQUEST_BODY && mapping.source !== MappingSource.URL && (
+                          <input 
+                            type="text"
+                            placeholder={mapping.source === MappingSource.ELEMENT ? 'CSS Selector (e.g. .title)' : 'Path (e.g. user.id)'}
+                            className={styles.input}
+                            value={mapping.value || ''}
+                            onChange={e => handleUpdateMapping(idx, { value: e.target.value })}
+                          />
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </form>
+
+        {/* Important Notes */}
+        <div className={styles.warningCard}>
+          <h4 className={styles.warningCardTitle}>
+            <AlertCircle size={18} /> Important Notes:
+          </h4>
+          <p className={styles.warningCardText}>
+            <strong>1. Transparency Notice:</strong> <br></br>
+            Our service operates based on user interaction data collected through the methods you select and configure. <br></br>
+            By continuing to use the service, you acknowledge that you understand and agree to the sharing of this data. <br></br>
+            We commit to strictly protecting the data and using it solely for improving recommendation quality.<br /><br />
+            <strong>2. Testing Required:</strong> <br></br>
+            Ensure configurations are verified in the testing environment. Network request tracking requires the API endpoint to match the specified pattern.<br /><br />
+            <strong>3. Security Policy:</strong> <br></br>
+            Whitelist our tracking script domain in your Content Security Policy (CSP) to ensure proper functionality.
+          </p>
+        </div>
+
+        <div className={styles.buttonActions}>
+          <button onClick={onCancel} className={styles.btnSecondary}>
+            Cancel
+          </button>
+          <button onClick={handleSave} disabled={isSaving} className={styles.btnPrimary}>
+            {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} style={{ marginRight: '4px' }} />}
+            Save
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

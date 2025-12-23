@@ -56,38 +56,32 @@ export interface DomainResponse {
 
 // ==================== RETURN METHOD TYPES ====================
 
-export interface ReturnMethodType {
-  id: number;
-  name: string;
+export enum ReturnType {
+  POPUP = 'POPUP',
+  INLINE_INJECTION = 'INLINE_INJECTION'
 }
 
-export interface CreateReturnMethodDto {
-  key: string;
-  slotName: string;
-  returnMethodId: number;
-  targetUrl: string;
-  targetSelector?: string;
+export interface CreateReturnMethod {
+  Key: string;
+  ConfigurationName: string;
+  ReturnType: ReturnType;
+  Value: string;
+  OperatorId: number;
 }
 
 export interface ReturnMethodResponse {
   DomainID: number;
-  SlotName: string;
+  ConfigurationName: string;
+  Operator: string;
   Value: string;
-  TargetUrl: string;
-  ReturnMethodID: number;
+  ReturnType: string;
 }
 
 // ==================== RULE TYPES ====================
 
-export interface EventPattern {
+export interface Pattern {
   Id: number;
   Name: string;
-}
-
-export interface PayloadPattern {
-  Id: number;
-  Name: string;
-  Type: string | null;
 }
 
 export interface Operator {
@@ -95,62 +89,59 @@ export interface Operator {
   Name: string;
 }
 
-export interface ConditionDto {
-  eventPatternId: number;
-  operatorId: number;
-  value: string;
+export interface EventType {
+  Id: number;
+  Name: string;
 }
 
-export interface PayloadConfigDto {
-  payloadPatternId: number;
-  operatorId: number;
-  value?: string;
-  type?: string;
+export interface Condition {
+  PatternId: number;
+  OperatorId: number;
+  Value: string;
 }
 
-export interface CreateRuleDto {
-  name: string;
-  domainKey: string;
-  triggerEventId: number;
-  targetEventPatternId: number;
-  targetOperatorId: number;
-  targetElementValue: string;
-  conditions: ConditionDto[];
-  payloadConfigs: PayloadConfigDto[];
-}
-
-// Response from /rule/:id - detailed rule info
 export interface PayloadConfig {
-  PayloadPatternID: number;
-  RuleID: number;
-  Value: string;
-  Type: string;
-  OperatorID: number;
+  Field: string;
+  Source: string;
+  Value?: string | null;
+  RequestUrlPattern?: string | null;
+  RequestMethod?: string | null;
+  RequestBodyPath?: string | null;
+  UrlPart?: string | null;
+  UrlPartValue?: string | null;
 }
 
-export interface RuleCondition {
-  EventPatternID: number;
-  RuleID: number;
-  OperatorID: number;
+export interface TrackingTarget {
+  PatternId: number;
+  OperatorId: number;
   Value: string;
+}
+
+export interface CreateRule {
+  Name: string;
+  DomainKey: string;
+  EventTypeId: number;
+  TrackingTarget?: TrackingTarget | null;
+  Conditions: Condition[];
+  PayloadMappings: PayloadConfig[];
 }
 
 export interface TargetElement {
   Id: number;
   Value: string;
-  EventPatternID: number;
-  OperatorID: number;
+  PatternId: number;
+  OperatorId: number;
 }
 
 export interface RuleDetailResponse {
   Id: number;
   Name: string;
   DomainID: number;
-  TriggerEventID: number;
-  TargetElementID: number;
-  PayloadConfigs: PayloadConfig[];
-  Conditions: RuleCondition[];
-  TargetElement: TargetElement;
+  EventTypeID: number;
+  TrackingTargetId: number;
+  TrackingTarget: TargetElement;
+  Conditions: Condition[];
+  PayloadMappings: PayloadConfig[];
 }
 
 // Response from /rule/domain/:domainKey - list of rules
@@ -158,6 +149,7 @@ export interface RuleListItem {
   id: number;
   name: string;
   TriggerTypeName: string;
+  TrackingTarget?: TargetElement;
 }
 
 // ==================== USER TYPES ====================
@@ -170,7 +162,7 @@ export interface UserResponse {
 }
 
 // ==================== ITEM TYPES ====================
-export interface CreateItemDto {
+export interface CreateItem {
   ternantItemId: string;
   title: string;
   description?: string;

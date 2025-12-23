@@ -1,20 +1,20 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRuleDto } from './dto';
 
 @Injectable()
 export class RuleService {
-    constructor(private prisma: PrismaService) {}
+    constructor(private prisma: PrismaService) { }
 
-    async getEventPatterns() {
-        const eventPatterns = await this.prisma.eventPattern.findMany();
-        return eventPatterns;
+    async getPatterns() {
+        const patterns = await this.prisma.pattern.findMany();
+        return patterns;
     }
 
-    async getPayloadPatterns() {
-        const payloadPatterns = await this.prisma.payloadPattern.findMany();
-        return payloadPatterns;
-    }
+    // async getPayloadPatterns() {
+    //     const payloadPatterns = await this.prisma.payloadPattern.findMany();
+    //     return payloadPatterns;
+    // }
 
     async getOperators() {
         const operators = await this.prisma.operator.findMany();
@@ -23,96 +23,85 @@ export class RuleService {
 
     async createRule(rule: CreateRuleDto) {
         if (
-            !rule.name ||
-            !rule.domainId ||
-            !rule.triggerEventId ||
-            !rule.targetEventPatternId ||
-            !rule.targetOperatorId ||
-            !rule.payloadConfigs ||
-            rule.payloadConfigs.length === 0
+            !rule.Name ||
+            !rule.DomainKey ||
+            !rule.EventTypeId
         )
-            return null;
+            throw new BadRequestException('Missing required fields to create rule.');
+
+        const domain = await this.prisma.domain.findUnique({
+            where: {
+                Key: rule.DomainKey,
+            },
+        });
+
+        if (!domain) throw new NotFoundException(`Domain key '${rule.DomainKey}' does not exist.`);
 
         if (
-            !(await this.prisma.domain.findUnique({
+            !(await this.prisma.eventType.findUnique({
                 where: {
-                    Id: rule.domainId,
+                    Id: rule.EventTypeId,
                 },
             }))
         )
-            return null;
+            throw new NotFoundException(`Event type id '${rule.EventTypeId}' does not exist.`);
 
-        if (
-            !(await this.prisma.triggerEvent.findUnique({
-                where: {
-                    Id: rule.triggerEventId,
-                },
-            }))
-        )
-            return null;
-
-        const eventPatterns = await this.prisma.eventPattern.findMany();
+        const patterns = await this.prisma.pattern.findMany();
         const operators = await this.prisma.operator.findMany();
-        const payloadPatterns = await this.prisma.payloadPattern.findMany();
 
-        for (const payloadConfig of rule.payloadConfigs) {
-            if (
-                !payloadPatterns.find(
-                    (pp) => pp.Id === payloadConfig.payloadPatternId,
-                )
-            )
-                return null;
-            if (!operators.find((op) => op.Id === payloadConfig.operatorId))
-                return null;
-            if (!payloadConfig.value) return null;
+        // validate conditions
+        for (const condition of rule.Conditions) {
+            if (!patterns.find((ep) => ep.Id === condition.PatternId))
+                throw new NotFoundException(`Pattern id '${condition.PatternId}' does not exist.`);
+            if (!operators.find((op) => op.Id === condition.OperatorId))
+                throw new NotFoundException(`Operator id '${condition.OperatorId}' does not exist.`);
+            if (!condition.Value) throw new BadRequestException('Condition value is required.');
         }
 
-        for (const condition of rule.conditions) {
-            if (!eventPatterns.find((ep) => ep.Id === condition.eventPatternId))
-                return null;
-            if (!operators.find((op) => op.Id === condition.operatorId))
-                return null;
-            if (!condition.value) return null;
-        }
-
-        if (!eventPatterns.find((ep) => ep.Id === rule.targetEventPatternId)) return null;
-        if (!operators.find((op) => op.Id === rule.targetOperatorId)) return null;
-
-        const targetElement = await this.prisma.targetElement.create({
+        const trackingTarget = await this.prisma.trackingTarget.create({
             data: {
-                Value: rule.targetElementValue,
-                EventPatternID: rule.targetEventPatternId,
-                OperatorID: rule.targetOperatorId,
+                Value: rule.TrackingTarget.Value,
+                PatternId: rule.TrackingTarget.PatternId,
+                OperatorId: rule.TrackingTarget.OperatorId,
             }
         });
 
-        if (!targetElement) return null;
+        if (!trackingTarget) throw new BadRequestException('Error creating tracking target for the rule.');
 
-        const createdRule = await this.prisma.rule.create({
+        const createdRule = await this.prisma.trackingRule.create({
             data: {
-                Name: rule.name,
-                DomainID: rule.domainId,
-                TriggerEventID: rule.triggerEventId,
-                TargetElementID: targetElement.Id,
-                PayloadConfigs: {
-                    create: rule.payloadConfigs.map((pc) => ({
-                        PayloadPatternID: pc.payloadPatternId,
-                        OperatorID: pc.operatorId,
-                        Value: pc.value,
-                        Type: pc.type,
+                Name: rule.Name,
+                DomainID: domain.Id,
+                EventTypeID: rule.EventTypeId,
+                TrackingTargetId: trackingTarget.Id,
+                PayloadMappings: {
+                    create: rule.PayloadMappings.map((pm) => ({
+                        Field: pm.Field,
+                        Source: pm.Source,
+                        Value: pm.Value,
+                        RequestUrlPattern: pm.RequestUrlPattern,
+                        RequestMethod: pm.RequestMethod,
+                        RequestBodyPath: pm.RequestBodyPath,
+                        UrlPart: pm.UrlPart,
+                        UrlPartValue: pm.UrlPartValue,
                     })),
                 },
                 Conditions: {
-                    create: rule.conditions.map((c) => ({
-                        EventPatternID: c.eventPatternId,
-                        OperatorID: c.operatorId,
-                        Value: c.value,
-                    })),
+                    create: rule.Conditions.map(c => ({
+                        Value: c.Value,
+                        Pattern: {
+                            connect: { Id: c.PatternId }
+                        },
+                        Operator: {
+                            connect: { Id: c.OperatorId }
+                        }
+                    }))
                 },
             },
             include: {
-                PayloadConfigs: true,
+                PayloadMappings: true,
                 Conditions: true,
+                TrackingTarget: true,
             },
         });
 
@@ -120,14 +109,14 @@ export class RuleService {
     }
 
     async getRuleById(id: number) {
-        const rule = await this.prisma.rule.findUnique({
+        const rule = await this.prisma.trackingRule.findUnique({
             where: {
                 Id: id,
             },
             include: {
-                PayloadConfigs: true,
+                PayloadMappings: true,
                 Conditions: true,
-                TargetElement: true,
+                TrackingTarget: true,
             },
         });
         return rule;
@@ -141,16 +130,22 @@ export class RuleService {
         });
         if (!domain) return null;
 
-        const rules = await this.prisma.rule.findMany({
+        const rules = await this.prisma.trackingRule.findMany({
             where: {
                 DomainID: domain.Id,
             },
             include: {
-                PayloadConfigs: true,
+                PayloadMappings: true,
                 Conditions: true,
-                TargetElement: true,
+                TrackingTarget: true,
+                EventType: true
             },
         });
         return rules;
+    }
+
+    async getAllEventTypes() {
+        const types = await this.prisma.eventType.findMany();
+        return types;
     }
 }

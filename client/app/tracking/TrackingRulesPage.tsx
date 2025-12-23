@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Container, TrackingRule } from '../../types';
 import { RuleBuilder } from '../../components/dashboard/RuleBuilder';
-import { TRIGGER_ICONS } from '../../lib/constants';
 import { Box, Plus, Trash2, Edit2, MousePointer, Eye, Star, ArrowDownCircle } from 'lucide-react';
 import { ruleApi, RuleListItem, RuleDetailResponse } from '../../lib/api/';
-import { useDataCache } from '../../contexts/DataCacheContext';
 import styles from './TrackingRulesPage.module.css';
 
 interface TrackingRulesPageProps {
@@ -59,7 +57,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                     id: r.id.toString(),
                     name: r.name,
                     trigger: r.TriggerTypeName,
-                    selector: r.details?.TargetElement?.Value || '',
+                    selector: r.details?.TrackingTarget?.Value || '',
                     extraction: []
                 }));
                 setContainer({
@@ -144,8 +142,8 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
             const mappedRule: TrackingRule = {
                 id: ruleToView.id.toString(),
                 name: ruleToView.details.Name,
-                trigger: 'click', // Will be determined from TriggerEventID
-                selector: ruleToView.details.TargetElement?.Value || '',
+                trigger: 'click', // Will be determined from EventTypeID
+                selector: ruleToView.details.TrackingTarget?.Value || '',
                 extraction: []
             };
             setCurrentRule(mappedRule);
@@ -162,8 +160,8 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
             const mappedRule: TrackingRule = {
                 id: ruleToEdit.id.toString(),
                 name: ruleToEdit.details.Name,
-                trigger: 'click', // Will be determined from TriggerEventID
-                selector: ruleToEdit.details.TargetElement?.Value || '',
+                trigger: 'click', // Will be determined from EventTypeID
+                selector: ruleToEdit.details.TrackingTarget?.Value || '',
                 extraction: []
             };
             setCurrentRule(mappedRule);
@@ -219,7 +217,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                             </thead>
                             <tbody>
                                 {rulesWithDetails.map((rule, index) => {
-                                    const triggerInfo = getTriggerTypeFromId(rule.details?.TriggerEventID);
+                                    const triggerInfo = getTriggerTypeFromId(rule.details?.EventTypeID);
                                     const TriggerIcon = triggerInfo.icon;
                                     return (
                                         <tr key={rule.id}>
@@ -231,7 +229,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                                                 </div>
                                             </td>
                                             <td>{rule.name}</td>
-                                            <td>{rule.details?.TargetElement?.Value || 'N/A'}</td>
+                                            <td>{rule.details?.TrackingTarget?.Value || 'N/A'}</td>
                                             <td>
                                             <button 
                                                 className={styles.editButton}
