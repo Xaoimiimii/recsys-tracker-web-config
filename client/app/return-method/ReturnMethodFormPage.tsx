@@ -3,8 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Container } from '../../types';
 import { Save, Copy } from 'lucide-react';
 import styles from './returnMethodPage.module.css';
-import { DisplayConfiguration, DisplayType, SelectorType, MatchOperator } from './types';
+import { DisplayConfiguration, DisplayType } from './types';
 import { useDataCache } from '../../contexts/DataCacheContext';
+import { returnMethodApi } from '../../lib/api/return-method';
+import { ReturnType } from '../../lib/api/types';
 
 interface ReturnMethodFormPageProps {
     container: Container | null;
@@ -16,23 +18,18 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
     const { id } = useParams();
     const isReadOnly = mode === 'view';
     
-    const [displayType, setDisplayType] = useState<DisplayType>('custom-widget');
+    const [displayType, setDisplayType] = useState<DisplayType>('inline-injection');
     const [name, setName] = useState('');
+    const [operatorId, setOperatorId] = useState<number>(1);
+    const [value, setValue] = useState('');
     
     // Custom Widget fields
-    const [selectorType, setSelectorType] = useState<SelectorType>('class');
-    const [matchOperatorId, setMatchOperatorId] = useState<number>(1);
-    const [selectorValue, setSelectorValue] = useState('');
     const [layoutStyle, setLayoutStyle] = useState('grid');
     const [theme, setTheme] = useState('light');
     const [spacing, setSpacing] = useState('medium');
     const [size, setSize] = useState('large');
     
     // Popup fields
-    const [urlOperatorId, setUrlOperatorId] = useState<number>(1);
-    const [urlValue, setUrlValue] = useState('');
-    const [slotName, setSlotName] = useState('');
-
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     
@@ -44,13 +41,10 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
             // Mock loading existing configuration
             const mockConfig: DisplayConfiguration = {
                 id: id,
-                name: 'Product Page Widget',
-                displayType: 'custom-widget',
-                targetSelector: {
-                    type: 'class',
-                    operator: 'contains',
-                    value: 'product-detail'
-                },
+                configurationName: 'Product Page Widget',
+                displayType: 'inline-injection',
+                operator: 'contains',
+                value: 'product-detail',
                 widgetDesign: {
                     layout: 'grid',
                     theme: 'light',
@@ -61,29 +55,22 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                 updatedAt: '2025-12-15T10:00:00Z'
             };
 
-            setName(mockConfig.name);
+            setName(mockConfig.configurationName);
             setDisplayType(mockConfig.displayType);
+            const operatorId = mockConfig.operator === 'contains' ? 1 : 
+                    mockConfig.operator === 'equals' ? 2 : 
+                    mockConfig.operator === 'starts with' ? 3 : 
+                    mockConfig.operator === 'ends with' ? 4 : 1;
+            setOperatorId(operatorId);
+            setValue(mockConfig.value);
 
-            if (mockConfig.displayType === 'custom-widget' && mockConfig.targetSelector) {
-                setSelectorType(mockConfig.targetSelector.type);
-                // Map operator string to ID (mock implementation - should map from API)
-                const operatorId = mockConfig.targetSelector.operator === 'contains' ? 1 : 
-                                  mockConfig.targetSelector.operator === 'equals' ? 2 : 1;
-                setMatchOperatorId(operatorId);
-                setSelectorValue(mockConfig.targetSelector.value);
+            if (mockConfig.displayType === 'inline-injection') {
                 if (mockConfig.widgetDesign) {
                     setLayoutStyle(mockConfig.widgetDesign.layout);
                     setTheme(mockConfig.widgetDesign.theme);
                     setSpacing(mockConfig.widgetDesign.spacing);
                     setSize(mockConfig.widgetDesign.size);
                 }
-            } else if (mockConfig.displayType === 'popup' && mockConfig.urlTrigger) {
-                // Map operator string to ID (mock implementation - should map from API)
-                const operatorId = mockConfig.urlTrigger.operator === 'contains' ? 1 : 
-                                  mockConfig.urlTrigger.operator === 'equals' ? 2 : 1;
-                setUrlOperatorId(operatorId);
-                setUrlValue(mockConfig.urlTrigger.value);
-                setSlotName(mockConfig.slotName || '');
             }
         }
     }, [mode, id]);
@@ -94,66 +81,51 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
             return;
         }
 
-        if (displayType === 'custom-widget' && !selectorValue.trim()) {
+        if (displayType === 'inline-injection' && !value.trim()) {
             alert('Please enter a selector value');
             return;
         }
 
-        if (displayType === 'popup' && (!urlValue.trim() || !slotName.trim())) {
+        if (displayType === 'popup' && (!value.trim())) {
             alert('Please fill in all required popup fields');
+            return;
+        }
+
+        if (!container?.uuid) {
+            alert('Domain key is missing');
             return;
         }
 
         setIsSaving(true);
         
-        // Simulate API call
-        setTimeout(() => {
-            setIsSaving(false);
+        try {
+            const requestData = {
+                Key: container.uuid,
+                ConfigurationName: name,
+                ReturnType: displayType === 'popup' ? ReturnType.POPUP : ReturnType.INLINE_INJECTION,
+                Value: value,
+                OperatorId: operatorId
+            };
+
+            await returnMethodApi.create(requestData);
+            alert('Configuration saved successfully!');
             navigate('/dashboard/recommendation-display');
-        }, 500);
-    };
-
-    const generateWidgetCode = () => {
-        const configId = id || 'new-config';
-        return `<!-- RecoTrack Custom Widget -->
-<div id="recotrack-widget-${configId}"></div>
-<script>
-  window.recoTrackWidget = {
-    configId: '${configId}',
-    containerId: 'recotrack-widget-${configId}',
-    layout: '${layoutStyle}',
-    theme: '${theme}'
-  };
-</script>`;
-    };
-
-    const generatePopupCode = () => {
-        const configId = id || 'new-config';
-        return `<!-- RecoTrack Popup -->
-<div data-recotrack-slot="${slotName}"></div>
-<script>
-  window.recoTrackPopup = {
-    configId: '${configId}',
-    slotName: '${slotName}',
-    urlPattern: '${urlValue}'
-  };
-</script>`;
-    };
-
-    const getHelperText = () => {
-        if (displayType === 'custom-widget') {
-            const operatorName = operators.find(op => op.Id === matchOperatorId)?.Name || 'contains';
-            return `The widget will be rendered inside the element matching: ${selectorValue} (${operatorName})`;
-        } else {
-            const operatorName = operators.find(op => op.Id === urlOperatorId)?.Name || 'contains';
-            return `The popup will appear when URL ${operatorName}: ${urlValue || '[enter value]'}`;
+        } catch (error) {
+            console.error('Error saving configuration:', error);
+            alert('Failed to save configuration. Please try again.');
+        } finally {
+            setIsSaving(false);
         }
     };
 
-    const copyCode = () => {
-        const code = displayType === 'custom-widget' ? generateWidgetCode() : generatePopupCode();
-        navigator.clipboard.writeText(code);
-        alert('Code copied to clipboard!');
+    const getHelperText = () => {
+        if (displayType === 'inline-injection') {
+            const operatorName = operators.find(op => op.Id === operatorId)?.Name || 'contains';
+            return `The widget will be rendered inside the element matching: ${value} (${operatorName})`;
+        } else {
+            const operatorName = operators.find(op => op.Id === operatorId)?.Name || 'contains';
+            return `The popup will appear when URL ${operatorName}: ${value || '[enter value]'}`;
+        }
     };
 
     return (
@@ -179,12 +151,12 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                         <div className={styles.displayTypeGrid}>
                             <button
                                 type="button"
-                                className={`${styles.displayTypeCard} ${displayType === 'custom-widget' ? styles.displayTypeCardActive : ''}`}
-                                onClick={() => !isReadOnly && mode === 'create' && setDisplayType('custom-widget')}
+                                className={`${styles.displayTypeCard} ${displayType === 'inline-injection' ? styles.displayTypeCardActive : ''}`}
+                                onClick={() => !isReadOnly && mode === 'create' && setDisplayType('inline-injection')}
                                 disabled={isReadOnly || mode !== 'create'}
                             >
                                 <div className={styles.displayTypeIcon}>📦</div>
-                                <div className={styles.displayTypeTitle}>Custom Widget</div>
+                                <div className={styles.displayTypeTitle}>Inline Injection</div>
                                 <div className={styles.displayTypeDescription}>
                                     Embed recommendations in a specific location on your page
                                 </div>
@@ -222,8 +194,8 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                         />
                     </div>
 
-                    {/* Custom Widget Specific Fields */}
-                    {displayType === 'custom-widget' && (
+                    {/* Inline Injection Specific Fields */}
+                    {displayType === 'inline-injection' && (
                         <>
                             <div className={styles.formSection}>
                                 <label className={styles.sectionLabel}>Target CSS Selector</label>
@@ -234,8 +206,8 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                         <label className={styles.fieldLabel}>Match Operator</label>
                                         <select 
                                             className={styles.selectInput}
-                                            value={matchOperatorId}
-                                            onChange={(e) => setMatchOperatorId(Number(e.target.value))}
+                                            value={operatorId}
+                                            onChange={(e) => setOperatorId(Number(e.target.value))}
                                             disabled={isReadOnly}
                                         >
                                             {operators.length > 0 ? (
@@ -261,8 +233,8 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                         <input
                                             type="text"
                                             className={styles.textInput}
-                                            value={selectorValue}
-                                            onChange={(e) => setSelectorValue(e.target.value)}
+                                            value={value}
+                                            onChange={(e) => setValue(e.target.value)}
                                             placeholder="e.g., product-detail"
                                             disabled={isReadOnly}
                                         />
@@ -380,8 +352,8 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                         <label className={styles.fieldLabel}>Match Operator</label>
                                         <select 
                                             className={styles.selectInput}
-                                            value={urlOperatorId}
-                                            onChange={(e) => setUrlOperatorId(Number(e.target.value))}
+                                            value={operatorId}
+                                            onChange={(e) => setOperatorId(Number(e.target.value))}
                                             disabled={isReadOnly}
                                         >
                                             {operators.length > 0 ? (
@@ -407,8 +379,8 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                         <input
                                             type="text"
                                             className={styles.textInput}
-                                            value={urlValue}
-                                            onChange={(e) => setUrlValue(e.target.value)}
+                                            value={value}
+                                            onChange={(e) => setValue(e.target.value)}
                                             placeholder="e.g., /product"
                                             disabled={isReadOnly}
                                         />

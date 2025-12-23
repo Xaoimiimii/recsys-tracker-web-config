@@ -159,8 +159,8 @@
 }
 
 .nameCell {
-    font-weight: 600;
     color: var(--color-text-main);
+    font-size: 0.825rem;
 }
 
 .typeTag {
@@ -169,14 +169,13 @@
     background-color: var(--color-primary-light);
     color: var(--color-primary);
     border-radius: 1rem;
-    font-size: 0.75rem;
+    font-size: 0.825rem;
     font-weight: 600;
 }
 
 .summaryCell {
-    color: var(--color-text-secondary);
-    font-family: 'Courier New', monospace;
-    font-size: 0.8125rem;
+    color: var(--color-text-main);
+    font-size: 0.825rem;
 }
 
 /* Status Toggle */

@@ -1,4 +1,4 @@
-export type DisplayType = 'popup' | 'custom-widget';
+export type DisplayType = 'popup' | 'inline-injection';
 
 export interface DisplayConfiguration {
     id: string;

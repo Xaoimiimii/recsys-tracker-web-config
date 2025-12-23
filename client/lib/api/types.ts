@@ -56,11 +56,17 @@ export interface DomainResponse {
 
 // ==================== RETURN METHOD TYPES ====================
 
+export enum ReturnType {
+  POPUP = 'POPUP',
+  INLINE_INJECTION = 'INLINE_INJECTION'
+}
+
 export interface CreateReturnMethod {
-  key: string;
-  configurationName: string;
-  returnMethodId: number;
-  value: string;
+  Key: string;
+  ConfigurationName: string;
+  ReturnType: ReturnType;
+  Value: string;
+  OperatorId: number;
 }
 
 export interface ReturnMethodResponse {
@@ -68,7 +74,7 @@ export interface ReturnMethodResponse {
   ConfigurationName: string;
   Operator: string;
   Value: string;
-  ReturnMethodID: number;
+  ReturnType: string;
 }
 
 // ==================== RULE TYPES ====================

@@ -36,8 +36,7 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
                 
                 // Transform API response to DisplayConfiguration format
                 const transformedConfigs: DisplayConfiguration[] = response.map((item, index) => {
-                    // Determine display type based on ReturnMethodID or Value
-                    const displayType: DisplayType = item.Value === 'popup' ? 'popup' : 'custom-widget';
+                    const displayType: DisplayType = item.ReturnType === 'POPUP' ? 'popup' : 'inline-injection';
                     
                     const config: DisplayConfiguration = {
                         id: `${item.DomainID}-${index}`,
@@ -97,12 +96,12 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
     };
 
     const getSummary = (config: DisplayConfiguration): string => {
-        if (config.displayType === 'custom-widget') {
-            return `${config.operator} ${config.value}`;
+        if (config.displayType === 'inline-injection') {
+            return `Div: ${config.value}`;
         } else if (config.displayType === 'popup') {
-            return `URL ${config.operator} ${config.value}`;
+            return `URL: ${config.value}`;
         }
-        return 'N/A';
+        return `${config.value}`;
     };
 
     return (
@@ -125,8 +124,8 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
                             onChange={(e) => setFilterType(e.target.value as DisplayType | 'all')}
                         >
                             <option value="all">All Types</option>
-                            <option value="popup">Popup</option>
-                            <option value="custom-widget">Custom Widget</option>
+                            <option value="POPUP">Popup</option>
+                            <option value="INLINE_INJECTION">Inline Injection</option>
                         </select>
                     </div>
                 </div>
@@ -170,10 +169,10 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
                                 {filteredConfigurations.map((config, index) => (
                                     <tr key={config.id}>
                                         <td>#{index + 1}</td>
-                                        <td className={styles.nameCell}>{config.name}</td>
+                                        <td className={styles.nameCell}>{config.configurationName}</td>
                                         <td>
                                             <span className={styles.typeTag}>
-                                                {config.displayType === 'popup' ? 'Popup' : 'Custom Widget'}
+                                                {config.displayType === 'popup' ? 'Popup' : 'Inline Injection'}
                                             </span>
                                         </td>
                                         <td className={styles.summaryCell}>
