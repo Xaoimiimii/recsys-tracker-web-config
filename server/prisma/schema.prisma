@@ -273,7 +273,7 @@ model Event {
 
 model Category {
   Id   Int    @id @default(autoincrement())
-  Name String
+  Name String @unique
 
   ItemCategories ItemCategory[]
 }

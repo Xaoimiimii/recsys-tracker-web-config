@@ -6,7 +6,7 @@ import { Item } from 'src/generated/prisma/client';
 @Injectable()
 export class ItemService {
     constructor(private prisma: PrismaService) { }
-    
+
     async createBulk(items: CreateItemDto[]) {
         const domain = await this.prisma.domain.findFirst({
             where: {
@@ -22,26 +22,6 @@ export class ItemService {
             const results: Item[] = [];
 
             for (const item of items) {
-                const categoryIds: number[] = [];
-                
-                if (item.Categories && item.Categories.length > 0) {
-                    for (const catName of item.Categories) {
-                        const trimmedName = catName.trim();
-                        
-                        let category = await tx.category.findFirst({
-                            where: { Name: trimmedName }
-                        });
-
-                        if (!category) {
-                            category = await tx.category.create({
-                                data: { Name: trimmedName }
-                            });
-                        }
-                        
-                        if (category) categoryIds.push(category.Id);
-                    }
-                }
-
                 const createdItem = await tx.item.create({
                     data: {
                         DomainItemId: item.TernantItemId,
@@ -49,23 +29,29 @@ export class ItemService {
                         Description: item.Description || '',
                         EmbeddingVector: [],
                         ModifiedAt: new Date(),
-                        
+
                         Domain: {
                             connect: { Id: domain.Id }
                         },
 
                         ItemCategories: {
-                            create: categoryIds.map(catId => ({
+                            create: item.Categories?.map(catName => ({
                                 Category: {
-                                    connect: { Id: catId }
+                                    connectOrCreate: {
+                                        where: { Name: catName.trim() },
+                                        create: { Name: catName.trim() }
+                                    }
                                 }
-                            }))
+                            })) ?? []
                         },
                     }
                 });
+
                 results.push(createdItem);
             }
+
             return results;
         });
     }
+
 }
