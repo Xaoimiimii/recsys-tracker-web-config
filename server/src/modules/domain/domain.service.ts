@@ -5,11 +5,9 @@ import { randomBytes } from 'crypto';
 @Injectable()
 export class DomainService {
     constructor(private prisma: PrismaService) { }
-    
-    async generateApiKey() : Promise<string>
-    {
-        while (true)
-        {
+
+    async generateApiKey(): Promise<string> {
+        while (true) {
             const apiKey = randomBytes(32).toString('hex');
             const existing = await this.prisma.domain.findUnique({
                 where: {
