@@ -4,7 +4,8 @@ import type {
     Operator, 
     CreateRule, 
     RuleListItem,
-    RuleDetailResponse
+    RuleDetailResponse,
+    EventType
 } from './types';
 
 export const ruleApi = {
@@ -13,6 +14,9 @@ export const ruleApi = {
 
     getOperators: () => 
         apiFetch<Operator[]>('/rule/operators', undefined, true),
+
+    getAllEventType: () =>
+        apiFetch<EventType[]>('/rule/event-type', undefined, true),
 
     create: (data: CreateRule) => 
         apiFetch<{ statusCode: number; message: string }>('/rule/create', {

@@ -83,6 +83,11 @@ export interface Operator {
   Name: string;
 }
 
+export interface EventType {
+  Id: number;
+  Name: string;
+}
+
 export interface Condition {
   patternId: number;
   operatorId: number;

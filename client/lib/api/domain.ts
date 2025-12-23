@@ -19,9 +19,4 @@ export const domainApi = {
         apiFetch<DomainResponse[]>('/domain/ternant', {
             method: 'GET',
         }, false, true),
-
-    getAllEventType: () =>
-        apiFetch<DomainResponse[]>('/domain/event-type/all', {
-            method: 'GET',
-        }, true),
 };
