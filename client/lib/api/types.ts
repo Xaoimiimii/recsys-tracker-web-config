@@ -89,36 +89,42 @@ export interface EventType {
 }
 
 export interface Condition {
-  patternId: number;
-  operatorId: number;
-  value: string;
+  PatternId: number;
+  OperatorId: number;
+  Value: string;
 }
 
 export interface PayloadConfig {
-  field: string;
-  source: string;
-  value?: string;
-  requestUrlPattern?: string;
-  requestMethod?: string;
-  requestBodyPath?: string;
-  urlPart?: string;
-  urlPartValue?: string;
+  Field: string;
+  Source: string;
+  Value?: string | null;
+  RequestUrlPattern?: string | null;
+  RequestMethod?: string | null;
+  RequestBodyPath?: string | null;
+  UrlPart?: string | null;
+  UrlPartValue?: string | null;
+}
+
+export interface TrackingTarget {
+  PatternId: number;
+  OperatorId: number;
+  Value: string;
 }
 
 export interface CreateRule {
-  name: string;
-  domainKey: string;
-  eventTypeId: number;
-  targetElementOperatorId?: number;
-  targetElementValue?: string;
-  conditions: Condition[];
-  payloadConfigs: PayloadConfig[];
+  Name: string;
+  DomainKey: string;
+  EventTypeId: number;
+  TrackingTarget?: TrackingTarget | null;
+  Conditions: Condition[];
+  PayloadMappings: PayloadConfig[];
 }
 
 export interface TargetElement {
   Id: number;
   Value: string;
-  OperatorID: number;
+  PatternId: number;
+  OperatorId: number;
 }
 
 export interface RuleDetailResponse {
@@ -126,9 +132,10 @@ export interface RuleDetailResponse {
   Name: string;
   DomainID: number;
   EventTypeID: number;
-  TargetElement: TargetElement;
+  TrackingTargetId: number;
+  TrackingTarget: TargetElement;
   Conditions: Condition[];
-  PayloadConfigs: PayloadConfig[];
+  PayloadMappings: PayloadConfig[];
 }
 
 // Response from /rule/domain/:domainKey - list of rules
@@ -136,6 +143,7 @@ export interface RuleListItem {
   id: number;
   name: string;
   TriggerTypeName: string;
+  TrackingTarget?: TargetElement;
 }
 
 // ==================== USER TYPES ====================
