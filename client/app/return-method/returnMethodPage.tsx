@@ -6,6 +6,7 @@ import styles from './returnMethodPage.module.css';
 import { DisplayConfiguration, DisplayType } from './types';
 import { returnMethodApi } from '../../lib/api/return-method';
 import type { ReturnMethodResponse } from '../../lib/api/types';
+import { useDataCache } from '../../contexts/DataCacheContext';
 
 interface ReturnMethodPageProps {
     container: Container | null;
@@ -19,6 +20,8 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
     const [filterType, setFilterType] = useState<DisplayType | 'all'>('all');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    
+    const { getReturnMethodsByDomain, setReturnMethodsByDomain } = useDataCache();
 
     // Fetch return methods from API
     useEffect(() => {
@@ -28,45 +31,57 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
                 return;
             }
 
+            // Check cache first
+            const cachedReturnMethods = getReturnMethodsByDomain(container.uuid);
+            if (cachedReturnMethods) {
+                transformAndSetConfigurations(cachedReturnMethods);
+                return;
+            }
+
             setIsLoading(true);
             setError(null);
 
             try {
                 const response = await returnMethodApi.getByDomainKey(container.uuid);
+                setReturnMethodsByDomain(container.uuid, response);
                 
-                // Transform API response to DisplayConfiguration format
-                const transformedConfigs: DisplayConfiguration[] = response.map((item, index) => {
-                    const displayType: DisplayType = item.ReturnType === 'POPUP' ? 'popup' : 'inline-injection';
-                    
-                    const config: DisplayConfiguration = {
-                        id: `${item.DomainID}-${index}`,
-                        configurationName: item.ConfigurationName,
-                        displayType,
-                        operator: item.Operator,
-                        value: item.Value,
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString(),
-                    };
-
-                    if (displayType !== 'popup') {
-                        config.widgetDesign = {
-                            layout: 'grid',
-                            theme: 'light',
-                            spacing: 'medium',
-                            size: 'medium'
-                        };
-                    }
-
-                    return config;
-                });
-
-                setConfigurations(transformedConfigs);
+                transformAndSetConfigurations(response);
             } catch (err) {
                 console.error('Failed to fetch return methods:', err);
                 setError('Failed to load return methods. Please try again.');
             } finally {
                 setIsLoading(false);
             }
+        };
+
+        const transformAndSetConfigurations = (response: ReturnMethodResponse[]) => {
+            // Transform API response to DisplayConfiguration format
+            const transformedConfigs: DisplayConfiguration[] = response.map((item, index) => {
+                const displayType: DisplayType = item.ReturnType === 'POPUP' ? 'popup' : 'inline-injection';
+                
+                const config: DisplayConfiguration = {
+                    id: `${item.DomainID}-${index}`,
+                    configurationName: item.ConfigurationName,
+                    displayType,
+                    operator: item.Operator,
+                    value: item.Value,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                };
+
+                if (displayType !== 'popup') {
+                    config.widgetDesign = {
+                        layout: 'grid',
+                        theme: 'light',
+                        spacing: 'medium',
+                        size: 'medium'
+                    };
+                }
+
+                return config;
+            });
+
+            setConfigurations(transformedConfigs);
         };
 
         fetchReturnMethods();

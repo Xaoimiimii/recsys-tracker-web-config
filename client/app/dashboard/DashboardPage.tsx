@@ -18,26 +18,37 @@ interface DashboardPageProps {
 export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, setContainer, onLogout, domains }) => {
     const [showModal, setShowModal] = useState(false);
     const [showDomainSwitcher, setShowDomainSwitcher] = useState(false);
-    const { setPatterns, setOperators } = useDataCache();
+    const { patterns, operators, setPatterns, setOperators } = useDataCache();
 
     // Fetch master data when dashboard loads
     useEffect(() => {
         const fetchMasterData = async () => {
             try {
-                const [eventPatterns, operators] = await Promise.all([
-                    ruleApi.getPatterns(),
-                    ruleApi.getOperators(),
-                ]);
-
-                setPatterns(eventPatterns);
-                setOperators(operators);
+                // Only fetch if not already in cache
+                const promises = [];
+                
+                if (patterns.length === 0) {
+                    promises.push(
+                        ruleApi.getPatterns().then(data => setPatterns(data))
+                    );
+                }
+                
+                if (operators.length === 0) {
+                    promises.push(
+                        ruleApi.getOperators().then(data => setOperators(data))
+                    );
+                }
+                
+                if (promises.length > 0) {
+                    await Promise.all(promises);
+                }
             } catch (error) {
                 console.error('Failed to fetch master data:', error);
             }
         };
 
         fetchMasterData();
-    }, [setPatterns, setOperators]);
+    }, [patterns.length, operators.length, setPatterns, setOperators]);
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
@@ -106,7 +117,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
             {/* Top Stats / Info */}
             <div className={styles.statsGrid}>
                 <div className={styles.gradientCard} onClick={() => setShowModal(true)} style={{ cursor: 'pointer' }}>
-                    <p className={styles.cardLabel}>Domain Key</p>
+                    <p className={styles.cardLabel}>Domain</p>
                     {/* <code className={styles.domainKey}>{container?.uuid.substring(0, 40)}...</code> */}
                     <p className={styles.domainUrl}>{container?.url}</p>
                 </div>

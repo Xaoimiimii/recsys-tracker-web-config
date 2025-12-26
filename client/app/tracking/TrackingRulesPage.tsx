@@ -3,6 +3,7 @@ import { Container, TrackingRule } from '../../types';
 import { RuleBuilder } from '../../components/dashboard/RuleBuilder';
 import { Box, Plus, Trash2, Edit2, MousePointer, Eye, Star, ArrowDownCircle } from 'lucide-react';
 import { ruleApi, RuleListItem, RuleDetailResponse } from '../../lib/api/';
+import { useDataCache } from '../../contexts/DataCacheContext';
 import styles from './TrackingRulesPage.module.css';
 
 interface TrackingRulesPageProps {
@@ -19,11 +20,21 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
     
     const [rules, setRules] = useState<RuleListItem[]>([]);
     const [fetchError, setFetchError] = useState(false);
+    
+    const { getRulesByDomain, setRulesByDomain } = useDataCache();
 
     // Fetch rules from API when component mounts or container changes
     useEffect(() => {
         const fetchRules = async () => {
             if (!container?.uuid) return;
+            
+            // Check cache first
+            const cachedRules = getRulesByDomain(container.uuid);
+            if (cachedRules) {
+                setRules(cachedRules);
+                updateContainerRules(cachedRules);
+                return;
+            }
             
             setIsLoading(true);
             setFetchError(false);
@@ -31,19 +42,9 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                 // API now returns full details including PayloadMappings, Conditions, TrackingTarget, EventType
                 const rulesData = await ruleApi.getRulesByDomain(container.uuid);
                 setRules(rulesData);
+                setRulesByDomain(container.uuid, rulesData);
 
-                // Update container's rules based on fetched data
-                const updatedRules: TrackingRule[] = rulesData.map(r => ({
-                    id: r.Id.toString(),
-                    name: r.Name,
-                    trigger: r.EventType.Name,
-                    selector: r.TrackingTarget?.Value || '',
-                    extraction: []
-                }));
-                setContainer({
-                    ...container,
-                    rules: updatedRules
-                });
+                updateContainerRules(rulesData);
 
             } catch (error) {
                 console.error('Failed to fetch rules:', error);
@@ -57,6 +58,23 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
             } finally {
                 setIsLoading(false);
             }
+        };
+
+        const updateContainerRules = (rulesData: RuleListItem[]) => {
+            if (!container) return;
+            
+            // Update container's rules based on fetched data
+            const updatedRules: TrackingRule[] = rulesData.map(r => ({
+                id: r.Id.toString(),
+                name: r.Name,
+                trigger: r.EventType.Name,
+                selector: r.TrackingTarget?.Value || '',
+                extraction: []
+            }));
+            setContainer({
+                ...container,
+                rules: updatedRules
+            });
         };
 
         fetchRules();
@@ -86,6 +104,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
             // Refetch rules to get the latest data with full details
             const rulesData = await ruleApi.getRulesByDomain(container.uuid);
             setRules(rulesData);
+            setRulesByDomain(container.uuid, rulesData);
 
             // Update container's rules based on fetched data
             const updatedRules: TrackingRule[] = rulesData.map(r => ({
