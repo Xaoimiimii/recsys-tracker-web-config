@@ -1,11 +1,60 @@
-/* Container */
 .container {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
 }
 
-/* Card Styles */
+.pageHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.pageTitle {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--color-text-main);
+    margin: 0;
+}
+
+.sectionCard {
+    background-color: var(--color-white);
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--color-border);
+    padding: 1.5rem;
+    animation: fadeInSlideUp 0.3s ease-out;
+}
+
+@keyframes fadeInSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(1rem);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.sectionHeader {
+    margin-bottom: 1.5rem;
+}
+
+.sectionTitle {
+    font-size: 1rem;
+    font-weight: bold;
+    color: var(--color-text-main);
+    margin: 0;
+}
+
+.sectionContent {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
 .configCard {
     background-color: var(--color-white);
     border-radius: 0.75rem;
@@ -14,7 +63,6 @@
     padding: 1.5rem;
 }
 
-/* Header Styles */
 .cardHeader {
     display: flex;
     justify-content: space-between;
@@ -48,7 +96,6 @@
     background-color: var(--color-primary-hover);
 }
 
-/* Filters */
 .filters {
     display: flex;
     gap: 1rem;
@@ -83,7 +130,6 @@
     border-color: var(--color-primary);
 }
 
-/* Empty State */
 .emptyState {
     text-align: center;
     padding: 3rem 1rem;
@@ -120,7 +166,6 @@
     background-color: var(--color-primary-hover);
 }
 
-/* Table Styles */
 .tableContainer {
     overflow-x: auto;
     margin-top: 1rem;
@@ -178,7 +223,6 @@
     font-size: 0.825rem;
 }
 
-/* Status Toggle */
 .statusToggle {
     display: inline-flex;
     align-items: center;
@@ -230,7 +274,6 @@
     color: var(--color-text-main);
 }
 
-/* Action Buttons */
 .actionsCell {
     display: flex;
     gap: 0.5rem;
@@ -267,7 +310,6 @@
     border-color: #dc2626;
 }
 
-/* Form Styles */
 .formHeader {
     display: flex;
     justify-content: space-between;
@@ -312,6 +354,12 @@
     gap: 0.75rem;
 }
 
+.formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
 .sectionLabel {
     font-size: 1rem;
     font-weight: 700;
@@ -324,6 +372,13 @@
     font-weight: 600;
     color: var(--color-text-main);
     margin: 0;
+}
+
+.inputLabel {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    margin-bottom: 0.25rem;
 }
 
 .required {
@@ -595,7 +650,6 @@
     font-weight: 700;
 }
 
-/* Guide Box */
 .guideBox {
     padding: 1rem 1.5rem;
     background-color: #f9fafb;
@@ -603,8 +657,16 @@
     border-radius: 0.5rem;
 }
 
+.guideTitle {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-main);
+    margin: 0 0 0.75rem 0;
+}
+
 .guideList {
     padding: 0;
+    margin: 0;
 }
 
 .guideList li {
@@ -627,7 +689,6 @@
     margin: 0;
 }
 
-/* Code Section */
 .codeSection {
     border: 1px solid var(--color-border);
     border-radius: 0.5rem;
@@ -679,7 +740,6 @@
     overflow-x: auto;
 }
 
-/* Form Actions */
 .formActions {
     display: flex;
     justify-content: flex-end;
@@ -728,7 +788,6 @@
     cursor: not-allowed;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
     .widgetPreview {
         grid-template-columns: 1fr;
