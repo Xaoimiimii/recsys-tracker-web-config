@@ -4,10 +4,14 @@ export class CreateRatingDto {
     @IsString()
     @IsNotEmpty()
     itemId: string;
-    
+
     @IsString()
     @IsNotEmpty()
     userId: string;
+
+    @IsString()
+    @IsOptional()
+    username?: string;
 
     @IsNumber()
     @Min(1)

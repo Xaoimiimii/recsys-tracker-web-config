@@ -1,19 +1,19 @@
 import { apiFetch } from './client';
 
 export interface CreateItemInput {
-  TernantItemId: string;
-  Title: string;
-  Description?: string;
-  Categories?: string[];
-  DomainKey: string;
+    TernantItemId: string;
+    Title: string;
+    Description?: string;
+    Categories?: string[];
+    DomainKey: string;
 }
 
 export interface CreateReviewInput {
-  itemId: string;
-  userId: string;
-  rating: number;
-  review?: string;
-  DomainKey: string;
+    itemId: string;
+    userId: string;
+    rating: number;
+    DomainKey: string;
+    review?: string;
 }
 
 export const itemApi = {
@@ -25,8 +25,13 @@ export const itemApi = {
     },
 };
 
+export interface CreateReviewResponse {
+    success: { item: CreateReviewInput; rating: any }[];
+    failed: { item: CreateReviewInput; reason: string }[];
+}
+
 export const reviewApi = {
-    createBulk: async (reviews: CreateReviewInput[]) => {
+    createBulk: async (reviews: CreateReviewInput[]): Promise<CreateReviewResponse> => {
         return apiFetch('/rating/create', {
             method: 'POST',
             body: JSON.stringify(reviews),

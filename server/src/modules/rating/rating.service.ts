@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRatingDto } from './dto/create-rating.dto';
-import { Rating } from 'src/generated/prisma/client';
+import { Rating, User } from 'src/generated/prisma/client';
 
 @Injectable()
 export class RatingService {
@@ -17,7 +17,8 @@ export class RatingService {
         }
 
         return await this.prisma.$transaction(async (tx) => {
-            const results: Rating[] = [];;
+            const success: { item: CreateRatingDto, rating: Rating }[] = [];
+            const failed: { item: CreateRatingDto, reason: string }[] = [];
 
             for (const rating of ratings) {
                 const item = await tx.item.findFirst({
@@ -26,20 +27,53 @@ export class RatingService {
 
                 if (!item) {
                     console.warn(`Item not found: ${rating.itemId}`);
+                    failed.push({ item: rating, reason: `Item not found: ${rating.itemId}` });
                     continue;
                 }
 
-                let user = await tx.user.findFirst({
-                    where: { Username: rating.userId }
-                });
+                let user: User | null = null;
+                if (rating.username) {
+                    user = await tx.user.findFirst({
+                        where: { Username: rating.username }
+                    });
+
+                    if (user && rating.userId && user.DomainUserId !== rating.userId) {
+                        failed.push({
+                            item: rating,
+                            reason: `User ${rating.userId} not match with username ${rating.username}`
+                        });
+                        continue;
+                    }
+                }
+
+                if (!user && rating.userId) {
+                    user = await tx.user.findFirst({
+                        where: { DomainUserId: rating.userId }
+                    });
+                }
 
                 if (!user) {
                     user = await tx.user.create({
                         data: {
-                            Username: rating.userId,
+                            Username: rating.username,
+                            DomainUserId: rating.userId,
                             Domain: { connect: { Id: domain.Id } }
                         }
                     });
+                }
+
+                const existingRating = await tx.rating.findUnique({
+                    where: {
+                        UserId_ItemId: {
+                            UserId: user.Id,
+                            ItemId: item.Id
+                        }
+                    }
+                });
+
+                if (existingRating) {
+                    failed.push({ item: rating, reason: 'User already rated this item' });
+                    continue;
                 }
 
                 const createdRating = await tx.rating.create({
@@ -53,10 +87,10 @@ export class RatingService {
                     }
                 });
 
-                results.push(createdRating);
+                success.push({ item: rating, rating: createdRating });
             }
 
-            return results;
+            return { success, failed };
         });
     }
 }

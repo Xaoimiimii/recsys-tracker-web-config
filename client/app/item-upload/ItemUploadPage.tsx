@@ -3,7 +3,7 @@ import styles from './ItemUploadPage.module.css';
 import { parseItemImportExcelFile, parseReviewExcelFile } from '@/utils/parseExcel';
 import * as XLSX from 'xlsx';
 import { Container } from '@/types';
-import { CreateItemInput, CreateReviewInput, itemApi, reviewApi } from '@/lib/api/item';
+import { CreateItemInput, CreateReviewInput, CreateReviewResponse, itemApi, reviewApi } from '@/lib/api/item';
 
 interface ItemUploadPageProps {
   onUploadComplete?: () => void;
@@ -13,11 +13,11 @@ interface ItemUploadPageProps {
 type TabType = 'metadata' | 'review';
 
 const TEMPLATE_HEADERS = ['SKU', 'Item Name', 'Category', 'Description'];
-const REVIEW_TEMPLATE_HEADERS = ['ItemId', 'UserId', 'Rating', 'Review'];
+const REVIEW_TEMPLATE_HEADERS = ['ItemId', 'UserId', 'Username', 'Rating', 'Review'];
 const SAMPLE_ROW = [
-  'SP-001', 
-  'iPhone 15 Pro', 
-  'Điện thoại; Apple', 
+  'SP-001',
+  'iPhone 15 Pro',
+  'Điện thoại; Apple',
   'Titanium, 256GB'
 ];
 const REVIEW_SAMPLE_ROW = ['SP-001', 'nguyenvana', 5, 'Sản phẩm rất tốt, giao hàng nhanh!'];
@@ -28,7 +28,52 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({ onUploadComplete
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [uploadResult, setUploadResult] = useState<CreateReviewResponse | null>(null);
   const [dragActive, setDragActive] = useState(false);
+
+  const handleDownloadResult = () => {
+    if (!uploadResult) return;
+
+    const { success, failed } = uploadResult;
+    // Generate Excel
+    const resultData: any[] = [];
+
+    // Add failed items first
+    if (failed && failed.length > 0) {
+      failed.forEach((f) => {
+        resultData.push({
+          ItemId: f.item.itemId,
+          UserId: f.item.userId,
+          Rating: f.item.rating,
+          Review: f.item.review,
+          Status: 'Failed',
+          Reason: f.reason
+        });
+      });
+    }
+
+    // Add success items
+    if (success && success.length > 0) {
+      success.forEach((s) => {
+        // success item structure is now { item: ..., rating: ... }
+        resultData.push({
+          ItemId: s.item.itemId,
+          UserId: s.item.userId,
+          Rating: s.item.rating,
+          Review: s.item.review,
+          Status: 'Success',
+          Reason: 'OK'
+        });
+      });
+    }
+
+    if (resultData.length > 0) {
+      const ws = XLSX.utils.json_to_sheet(resultData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Upload Results");
+      XLSX.writeFile(wb, "Upload_Results.xlsx");
+    }
+  };
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -44,7 +89,7 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({ onUploadComplete
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFileSelect(e.dataTransfer.files[0]);
     }
@@ -52,18 +97,18 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({ onUploadComplete
 
   const handleDownloadTemplate = () => {
     const isReviewTab = activeTab === 'review';
-    
+
     const headers = isReviewTab ? REVIEW_TEMPLATE_HEADERS : TEMPLATE_HEADERS;
     const sample = isReviewTab ? REVIEW_SAMPLE_ROW : SAMPLE_ROW;
     const fileName = isReviewTab ? "Review_Import_Template.xlsx" : "Item_Import_Template.xlsx";
 
-    const wsData = [ headers, sample ];
+    const wsData = [headers, sample];
     const ws = XLSX.utils.aoa_to_sheet(wsData);
-    
+
     if (isReviewTab) {
-        ws['!cols'] = [{ wch: 15 }, { wch: 20 }, { wch: 10 }, { wch: 50 }];
+      ws['!cols'] = [{ wch: 15 }, { wch: 20 }, { wch: 10 }, { wch: 50 }];
     } else {
-        ws['!cols'] = [{ wch: 15 }, { wch: 30 }, { wch: 25 }, { wch: 50 }];
+      ws['!cols'] = [{ wch: 15 }, { wch: 30 }, { wch: 25 }, { wch: 50 }];
     }
 
     const wb = XLSX.utils.book_new();
@@ -81,13 +126,14 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({ onUploadComplete
     }
 
     if (selectedFile.size > 5 * 1024 * 1024) {
-        setError('File is too large. Please select a file smaller than 5MB.');
-        return;
+      setError('File is too large. Please select a file smaller than 5MB.');
+      return;
     }
 
     setFile(selectedFile);
     setError(null);
     setSuccess(null);
+    setUploadResult(null);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -107,15 +153,15 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({ onUploadComplete
     try {
       let jsonData;
       const currentDomainId = container?.uuid || "";
-      
+
       if (!currentDomainId) {
         throw new Error("Please select a domain first.");
       }
-      
+
       if (activeTab === 'metadata') {
         jsonData = await parseItemImportExcelFile(file);
         const mappedData: CreateItemInput[] = jsonData.map((row) => ({
-          TernantItemId: row.sku || '', 
+          TernantItemId: row.sku || '',
           Title: row.name || 'No Title',
           Description: row.description || '',
           Categories: row.categories || [],
@@ -132,7 +178,7 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({ onUploadComplete
       } else {
         jsonData = await parseReviewExcelFile(file);
         console.log('Parsed review data:', jsonData);
-        
+
         const mappedReviews: CreateReviewInput[] = jsonData.map((row) => ({
           itemId: row.itemId,
           userId: row.userId,
@@ -140,20 +186,51 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({ onUploadComplete
           review: row.review,
           DomainKey: currentDomainId,
         }));
-        
+
         const validReviews = mappedReviews.filter(r => r.itemId && r.userId && r.rating);
-        
+
         if (validReviews.length === 0) {
           throw new Error("No valid reviews found in the file.");
         }
-        
+
         console.log('Sending reviews to API:', validReviews);
-        await reviewApi.createBulk(validReviews);
-        jsonData = validReviews;
+        const response = await reviewApi.createBulk(validReviews);
+
+        // Handle new response format { success: [], failed: [] }
+        if (response && (response.success || response.failed)) {
+          const { success, failed } = response;
+          const resultCount = (success?.length || 0) + (failed?.length || 0);
+
+          // Store result for manual download
+          setUploadResult(response);
+
+          setSuccess(`Processed ${resultCount} reviews. Success: ${success?.length || 0}, Failed: ${failed?.length || 0}. Click "Download Result" to see details.`);
+
+          jsonData = validReviews; // For legacy behavior or just to keep success msg roughly correct logic
+        } else {
+          // Fallback for old simple array response if any
+          jsonData = validReviews;
+          setSuccess(`Successfully imported ${jsonData.length} ${activeTab === 'metadata' ? 'items' : 'reviews'} from "${file.name}"!`);
+        }
+
       }
-      
-      setSuccess(`Successfully imported ${jsonData.length} ${activeTab === 'metadata' ? 'items' : 'reviews'} from "${file.name}"!`);
-      
+
+      if (!success) { // logic adjustment: if we set success above, don't overwrite if not needed, but here we set it in the block
+        // actually setSuccess is called below. Let's adjust.
+      }
+
+      // setSuccess is called here in original code
+      // We should only call it if we didn't handle it in the block or if we want to overwrite.
+      // The original code:
+      // setSuccess(`Successfully imported ${jsonData.length} ...`);
+
+      // My change handled setSuccess inside the block for review tab.
+      // Metadata tab still uses old logic.
+
+      if (activeTab === 'metadata') {
+        setSuccess(`Successfully imported ${jsonData.length} items from "${file.name}"!`);
+      }
+
       if (onUploadComplete) onUploadComplete();
 
     } catch (err: any) {
@@ -168,6 +245,7 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({ onUploadComplete
     setFile(null);
     setError(null);
     setSuccess(null);
+    setUploadResult(null);
     const fileInput = document.getElementById('file-input') as HTMLInputElement;
     if (fileInput) fileInput.value = '';
   };
@@ -197,7 +275,7 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({ onUploadComplete
 
         <div className={styles.tabContent}>
           <div className={styles.uploadSection}>
-            <div 
+            <div
               className={`${styles.dropZone} ${dragActive ? styles.dragActive : ''} ${file ? styles.hasFile : ''}`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
@@ -242,7 +320,7 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({ onUploadComplete
                       {(file.size / 1024).toFixed(2)} KB
                     </p>
                   </div>
-                  <button 
+                  <button
                     className={styles.removeButton}
                     onClick={handleRemoveFile}
                     disabled={uploading}
@@ -270,6 +348,24 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({ onUploadComplete
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 {success}
+                {uploadResult && (
+                  <button
+                    onClick={handleDownloadResult}
+                    style={{
+                      marginLeft: 'auto',
+                      padding: '6px 12px',
+                      fontSize: '14px',
+                      color: '#2AA79B',
+                      border: '1px solid #2AA79B',
+                      borderRadius: '4px',
+                      background: 'white',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Download Result
+                  </button>
+                )}
               </div>
             )}
 
@@ -286,35 +382,35 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({ onUploadComplete
 
           <div className={styles.descriptionSection}>
             <div className={styles.descriptionHeaderRow} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h3 className={styles.descriptionTitle} style={{ margin: 0 }}>File Requirements</h3>
-                <button 
-                  onClick={handleDownloadTemplate}
-                  className={styles.downloadTemplateBtn}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '8px 12px',
-                    fontSize: '14px',
-                    color: '#0078d4',
-                    border: '1px solid #0078d4',
-                    borderRadius: '4px',
-                    background: 'white',
-                    cursor: 'pointer',
-                    fontWeight: 500
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  Download Template
-                </button>
+              <h3 className={styles.descriptionTitle} style={{ margin: 0 }}>File Requirements</h3>
+              <button
+                onClick={handleDownloadTemplate}
+                className={styles.downloadTemplateBtn}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '8px 12px',
+                  fontSize: '14px',
+                  color: '#0078d4',
+                  border: '1px solid #0078d4',
+                  borderRadius: '4px',
+                  background: 'white',
+                  cursor: 'pointer',
+                  fontWeight: 500
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Download Template
+              </button>
             </div>
 
             <p className={styles.descriptionText}>
               Please upload an Excel (.xlsx) file with the exact headers below:
             </p>
-            
+
             {activeTab === 'metadata' ? (
               <div className={styles.fieldsList}>
                 <div className={styles.fieldItem}>
@@ -329,7 +425,7 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({ onUploadComplete
                   <span className={styles.fieldName}>Category</span>
                   <span className={styles.fieldDescription}>
                     Enter category name (Text). The system will find or create it automatically.
-                    <br/><i>Example: "Smartphones"</i>
+                    <br /><i>Example: "Smartphones"</i>
                   </span>
                 </div>
                 <div className={styles.fieldItem}>
@@ -343,9 +439,14 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({ onUploadComplete
                   <span className={styles.fieldName}>ItemId / SKU</span>
                   <span className={styles.fieldDescription}>Target item code for the review.</span>
                 </div>
-                
+
                 <div className={styles.fieldItem}>
                   <span className={styles.fieldName}>UserId</span>
+                  <span className={styles.fieldDescription}>UserId of the reviewer.</span>
+                </div>
+
+                <div className={styles.fieldItem}>
+                  <span className={styles.fieldName}>Username</span>
                   <span className={styles.fieldDescription}>Username of the reviewer.</span>
                 </div>
 
