@@ -140,16 +140,50 @@ export interface RuleDetailResponse {
   EventTypeID: number;
   TrackingTargetId: number;
   TrackingTarget: TargetElement;
-  Conditions: Condition[];
-  PayloadMappings: PayloadConfig[];
+  Conditions: RuleCondition[];
+  PayloadMappings: RulePayloadMapping[];
 }
 
-// Response from /rule/domain/:domainKey - list of rules
+// Condition with all fields from API response
+export interface RuleCondition {
+  Id: number;
+  Value: string;
+  TrackingRuleID: number;
+  PatternId: number;
+  OperatorID: number;
+}
+
+// PayloadMapping with all fields from API response
+export interface RulePayloadMapping {
+  Id: number;
+  Field: string;
+  Source: string;
+  Value: string | null;
+  RequestUrlPattern: string | null;
+  RequestMethod: string | null;
+  RequestBodyPath: string | null;
+  UrlPart: string | null;
+  UrlPartValue: string | null;
+  TrackingRuleId: number;
+}
+
+// EventType info in rule
+export interface RuleEventType {
+  Id: number;
+  Name: string;
+}
+
+// Response from /rule/domain/:domainKey
 export interface RuleListItem {
-  id: number;
-  name: string;
-  TriggerTypeName: string;
-  TrackingTarget?: TargetElement;
+  Id: number;
+  Name: string;
+  DomainID: number;
+  EventTypeID: number;
+  TrackingTargetId: number;
+  PayloadMappings: RulePayloadMapping[];
+  Conditions: RuleCondition[];
+  TrackingTarget: TargetElement;
+  EventType: RuleEventType;
 }
 
 // ==================== USER TYPES ====================
