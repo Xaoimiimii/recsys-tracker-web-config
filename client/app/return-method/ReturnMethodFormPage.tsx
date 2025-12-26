@@ -41,7 +41,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
     }>({});
     
     // Get cached operators from context
-    const { operators } = useDataCache();
+    const { operators, clearReturnMethodsByDomain } = useDataCache();
 
     useEffect(() => {
         if (mode !== 'create' && id) {
@@ -120,6 +120,8 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
             };
 
             await returnMethodApi.create(requestData);
+            // Clear cache để trang danh sách sẽ fetch lại data mới
+            clearReturnMethodsByDomain(container.uuid);
             navigate('/dashboard/recommendation-display');
         } catch (error) {
             console.error('Error saving configuration:', error);
