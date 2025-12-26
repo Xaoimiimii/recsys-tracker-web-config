@@ -124,8 +124,8 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
                             onChange={(e) => setFilterType(e.target.value as DisplayType | 'all')}
                         >
                             <option value="all">All Types</option>
-                            <option value="POPUP">Popup</option>
-                            <option value="INLINE_INJECTION">Inline Injection</option>
+                            <option value="popup">Popup</option>
+                            <option value="inline-injection">Inline Injection</option>
                         </select>
                     </div>
                 </div>

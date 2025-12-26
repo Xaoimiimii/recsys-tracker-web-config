@@ -334,6 +334,8 @@ model ItemFactor {
 
   ItemBias    Float?
   ItemFactors Float[]
+
+  @@unique([ItemId, ModelId])
 }
 
 model User {
@@ -367,6 +369,8 @@ model UserFactor {
 
   UserBias    Float?
   UserFactors Float[]
+
+  @@unique([UserId, ModelId])
 }
 
 model Predict {
