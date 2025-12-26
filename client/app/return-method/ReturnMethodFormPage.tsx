@@ -33,6 +33,13 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     
+    // Error states
+    const [errors, setErrors] = useState<{
+        name?: string;
+        value?: string;
+        general?: string;
+    }>({});
+    
     // Get cached operators from context
     const { operators } = useDataCache();
 
@@ -76,23 +83,28 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
     }, [mode, id]);
 
     const handleSave = async () => {
+        // Reset errors
+        setErrors({});
+        
+        // Validate fields
+        const newErrors: typeof errors = {};
+        
         if (!name.trim()) {
-            alert('Please enter a configuration name');
-            return;
+            newErrors.name = 'Please enter a configuration name';
         }
 
-        if (displayType === 'inline-injection' && !value.trim()) {
-            alert('Please enter a selector value');
-            return;
-        }
-
-        if (displayType === 'popup' && (!value.trim())) {
-            alert('Please fill in all required popup fields');
-            return;
+        if (!value.trim()) {
+            newErrors.value = displayType === 'inline-injection' 
+                ? 'Please enter a selector value'
+                : 'Please enter a URL value';
         }
 
         if (!container?.uuid) {
-            alert('Domain key is missing');
+            newErrors.general = 'Domain key is missing';
+        }
+        
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
             return;
         }
 
@@ -108,11 +120,10 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
             };
 
             await returnMethodApi.create(requestData);
-            alert('Configuration saved successfully!');
             navigate('/dashboard/recommendation-display');
         } catch (error) {
             console.error('Error saving configuration:', error);
-            alert('Failed to save configuration. Please try again.');
+            setErrors({ general: 'Failed to save configuration. Please try again.' });
         } finally {
             setIsSaving(false);
         }
@@ -149,6 +160,11 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                     <h2 className={styles.sectionTitle}>Create New Configuration</h2>
                 </div>
                 <div className={styles.sectionContent}>
+                    {errors.general && (
+                        <div className={styles.errorAlert}>
+                            {errors.general}
+                        </div>
+                    )}
                     {/* Display Type Selection */}
                     <div className={styles.formGroup}>
                         <label className={styles.fieldLabel}>Display Type</label>
@@ -190,12 +206,20 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                         </label>
                         <input
                             type="text"
-                            className={styles.textInput}
+                            className={`${styles.textInput} ${errors.name ? styles.inputError : ''}`}
                             value={name}
-                            onChange={(e) => setName(e.target.value)}
+                            onChange={(e) => {
+                                setName(e.target.value);
+                                if (errors.name) {
+                                    setErrors(prev => ({ ...prev, name: undefined }));
+                                }
+                            }}
                             placeholder="e.g., Product Page Widget"
                             disabled={isReadOnly}
                         />
+                        {errors.name && (
+                            <span className={styles.errorText}>{errors.name}</span>
+                        )}
                     </div>
 
                     {/* Target Selector / URL Trigger */}
@@ -240,12 +264,20 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                 </label>
                                 <input
                                     type="text"
-                                    className={styles.textInput}
+                                    className={`${styles.textInput} ${errors.value ? styles.inputError : ''}`}
                                     value={value}
-                                    onChange={(e) => setValue(e.target.value)}
+                                    onChange={(e) => {
+                                        setValue(e.target.value);
+                                        if (errors.value) {
+                                            setErrors(prev => ({ ...prev, value: undefined }));
+                                        }
+                                    }}
                                     placeholder={displayType === 'inline-injection' ? 'e.g., product-detail' : 'e.g., /product'}
                                     disabled={isReadOnly}
                                 />
+                                {errors.value && (
+                                    <span className={styles.errorText}>{errors.value}</span>
+                                )}
                             </div>
                         </div>
                         <div className={styles.helperBox}>
