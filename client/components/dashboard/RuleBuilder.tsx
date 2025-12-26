@@ -280,6 +280,11 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
   });
 
   const [isSaving, setIsSaving] = useState(false);
+  const [errors, setErrors] = useState<{
+    ruleName?: string;
+    targetElement?: string;
+    payloadMappings?: { [key: number]: string };
+  }>({});
   const [modalContent, setModalContent] = useState<{title: string, examples: SectionExample[]} | null>(null);
 
   useEffect(() => {
@@ -385,6 +390,96 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
   }, []);
 
   const handleSave = async () => {
+    // Clear previous errors
+    setErrors({});
+    const newErrors: {
+      ruleName?: string;
+      targetElement?: string;
+      payloadMappings?: { [key: number]: string };
+    } = {};
+
+    // Validation 1: Rule Name is required
+    if (!rule.name.trim()) {
+      newErrors.ruleName = 'Rule Name is required.';
+    }
+
+    // Validation 2: Target element value is required for Click/Rating/Review
+    if ([EventType.CLICK, EventType.RATING, EventType.REVIEW].includes(rule.eventType)) {
+      if (!rule.targetElement?.selector?.trim()) {
+        newErrors.targetElement = 'Target Element value is required for this event type.';
+      }
+    }
+
+    // Validation 3: Payload Mapping validations
+    const payloadErrors: { [key: number]: string } = {};
+    rule.payloadMappings.forEach((mapping, idx) => {
+      // Check user/item fields (userId, username, itemId, itemTitle) - required for all event types
+      if (['userId', 'username', 'itemId', 'itemTitle'].includes(mapping.field)) {
+        if (mapping.source === MappingSource.REQUEST_BODY) {
+          if (!mapping.requestUrlPattern?.trim()) {
+            payloadErrors[idx] = 'URL Pattern is required when source is Request Body.';
+          } else if (!mapping.value?.trim()) {
+            payloadErrors[idx] = 'Body Path is required when source is Request Body.';
+          }
+        } else if (mapping.source === MappingSource.URL) {
+          if (!mapping.urlPart?.trim()) {
+            payloadErrors[idx] = 'URL Part is required when source is URL.';
+          } else if (!mapping.urlPartValue?.trim()) {
+            payloadErrors[idx] = 'URL Part Value is required when source is URL.';
+          }
+        } else {
+          // Element, Cookie, LocalStorage, SessionStorage
+          if (!mapping.value?.trim()) {
+            payloadErrors[idx] = 'Path/Value is required.';
+          }
+        }
+      }
+
+      // Check rating_value field
+      if (mapping.field === 'rating_value') {
+        if (mapping.source === MappingSource.REQUEST_BODY) {
+          if (!mapping.requestUrlPattern?.trim() || !mapping.requestMethod?.trim() || !mapping.value?.trim()) {
+            payloadErrors[idx] = 'URL Pattern, Method, and Body Path are required when source is Request Body.';
+          }
+        } else if (mapping.source === MappingSource.URL) {
+          if (!mapping.urlPart?.trim() || !mapping.urlPartValue?.trim()) {
+            payloadErrors[idx] = 'URL Part and its value are required when source is URL.';
+          }
+        } else {
+          if (!mapping.value?.trim()) {
+            payloadErrors[idx] = 'Path/Value is required.';
+          }
+        }
+      }
+
+      // Check review_text field
+      if (mapping.field === 'review_text') {
+        if (mapping.source === MappingSource.REQUEST_BODY) {
+          if (!mapping.requestUrlPattern?.trim() || !mapping.requestMethod?.trim() || !mapping.value?.trim()) {
+            payloadErrors[idx] = 'URL Pattern, Method, and Body Path are required when source is Request Body.';
+          }
+        } else if (mapping.source === MappingSource.URL) {
+          if (!mapping.urlPart?.trim() || !mapping.urlPartValue?.trim()) {
+            payloadErrors[idx] = 'URL Part and its value are required when source is URL.';
+          }
+        } else {
+          if (!mapping.value?.trim()) {
+            payloadErrors[idx] = 'Path/Value is required.';
+          }
+        }
+      }
+    });
+
+    if (Object.keys(payloadErrors).length > 0) {
+      newErrors.payloadMappings = payloadErrors;
+    }
+
+    // If there are any errors, set them and stop
+    if (Object.keys(newErrors).length > 0 || Object.keys(payloadErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
     setIsSaving(true);
     
     try {
@@ -545,10 +640,21 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
               <input 
                 type="text"
                 placeholder="e.g., Click Register Button"
-                className={styles.input}
+                className={`${styles.input} ${errors.ruleName ? styles.inputError : ''}`}
                 value={rule.name}
-                onChange={e => setRule({...rule, name: e.target.value})}
+                onChange={e => {
+                  setRule({...rule, name: e.target.value});
+                  if (errors.ruleName) {
+                    setErrors(prev => ({...prev, ruleName: undefined}));
+                  }
+                }}
               />
+              {errors.ruleName && (
+                <p className={styles.errorText}>
+                  <AlertCircle size={14} />
+                  {errors.ruleName}
+                </p>
+              )}
             </div>
             <div>
               <label className={styles.label}>Event Type</label>
@@ -601,10 +707,21 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                 <input 
                   type="text"
                   placeholder=".my-element"
-                  className={`${styles.input} ${styles.monospaceInput}`}
+                  className={`${styles.input} ${styles.monospaceInput} ${errors.targetElement ? styles.inputError : ''}`}
                   value={rule.targetElement?.selector || ''}
-                  onChange={e => setRule({...rule, targetElement: {...rule.targetElement, selector: e.target.value}})}
+                  onChange={e => {
+                    setRule({...rule, targetElement: {...rule.targetElement, selector: e.target.value}});
+                    if (errors.targetElement) {
+                      setErrors(prev => ({...prev, targetElement: undefined}));
+                    }
+                  }}
                 />
+                {errors.targetElement && (
+                  <p className={styles.errorText}>
+                    <AlertCircle size={14} />
+                    {errors.targetElement}
+                  </p>
+                )}
               </div>
             </div>
             <p className={styles.suggestion}>{TARGET_SUGGESTIONS[rule.eventType]}</p>
@@ -719,9 +836,17 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                           <div className={styles.urlParsingContainer}>
                             <div className={styles.urlParsingInputRow}>
                               <input 
-                                type="text" placeholder="URL Pattern (/api/...)" className={`${styles.input} ${styles.urlParsingInputFlex2}`}
+                                type="text" placeholder="URL Pattern (/api/...)" 
+                                className={`${styles.input} ${styles.urlParsingInputFlex2} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                                 value={mapping.requestUrlPattern || ''}
-                                onChange={e => handleUpdateMapping(idx, { requestUrlPattern: e.target.value })}
+                                onChange={e => {
+                                  handleUpdateMapping(idx, { requestUrlPattern: e.target.value });
+                                  if (errors.payloadMappings?.[idx]) {
+                                    const newPayloadErrors = {...errors.payloadMappings};
+                                    delete newPayloadErrors[idx];
+                                    setErrors(prev => ({...prev, payloadMappings: newPayloadErrors}));
+                                  }
+                                }}
                               />
                               <select 
                                 className={`${styles.input} ${styles.urlParsingInputFlex1}`}
@@ -732,10 +857,24 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                               </select>
                             </div>
                             <input 
-                              type="text" placeholder="Body Path (e.g., content.id)" className={styles.input}
+                              type="text" placeholder="Body Path (e.g., content.id)" 
+                              className={`${styles.input} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                               value={mapping.value || ''}
-                              onChange={e => handleUpdateMapping(idx, { value: e.target.value })}
+                              onChange={e => {
+                                handleUpdateMapping(idx, { value: e.target.value });
+                                if (errors.payloadMappings?.[idx]) {
+                                  const newPayloadErrors = {...errors.payloadMappings};
+                                  delete newPayloadErrors[idx];
+                                  setErrors(prev => ({...prev, payloadMappings: newPayloadErrors}));
+                                }
+                              }}
                             />
+                            {errors.payloadMappings?.[idx] && (
+                              <p className={styles.errorText}>
+                                <AlertCircle size={14} />
+                                {errors.payloadMappings[idx]}
+                              </p>
+                            )}
                           </div>
                         )}
 
@@ -754,38 +893,82 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                             )}
                             <div className={styles.urlParsingControlRow}>
                               <select 
-                                className={`${styles.input} ${styles.urlParsingSelect}`}
+                                className={`${styles.input} ${styles.urlParsingSelect} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                                 value={mapping.urlPart || 'pathname'}
-                                onChange={e => handleUpdateMapping(idx, { urlPart: e.target.value as any })}
+                                onChange={e => {
+                                  handleUpdateMapping(idx, { urlPart: e.target.value as any });
+                                  if (errors.payloadMappings?.[idx]) {
+                                    const newPayloadErrors = {...errors.payloadMappings};
+                                    delete newPayloadErrors[idx];
+                                    setErrors(prev => ({...prev, payloadMappings: newPayloadErrors}));
+                                  }
+                                }}
                               >
                                 <option value="pathname">pathname</option>
                                 <option value="query_param">query_param</option>
                               </select>
                               {mapping.urlPart === 'pathname' ? (
                                 <input 
-                                  type="number" placeholder="Segment Index" className={`${styles.input} ${styles.urlParsingInputFlexAuto}`}
+                                  type="number" placeholder="Segment Index" 
+                                  className={`${styles.input} ${styles.urlParsingInputFlexAuto} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                                   value={mapping.urlPartValue || ''}
-                                  onChange={e => handleUpdateMapping(idx, { urlPartValue: e.target.value })}
+                                  onChange={e => {
+                                    handleUpdateMapping(idx, { urlPartValue: e.target.value });
+                                    if (errors.payloadMappings?.[idx]) {
+                                      const newPayloadErrors = {...errors.payloadMappings};
+                                      delete newPayloadErrors[idx];
+                                      setErrors(prev => ({...prev, payloadMappings: newPayloadErrors}));
+                                    }
+                                  }}
                                 />
                               ) : (
                                 <input 
-                                  type="text" placeholder="Param Key (e.g. itemId)" className={`${styles.input} ${styles.urlParsingInputFlexAuto}`}
+                                  type="text" placeholder="Param Key (e.g. itemId)" 
+                                  className={`${styles.input} ${styles.urlParsingInputFlexAuto} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                                   value={mapping.urlPartValue || ''}
-                                  onChange={e => handleUpdateMapping(idx, { urlPartValue: e.target.value })}
+                                  onChange={e => {
+                                    handleUpdateMapping(idx, { urlPartValue: e.target.value });
+                                    if (errors.payloadMappings?.[idx]) {
+                                      const newPayloadErrors = {...errors.payloadMappings};
+                                      delete newPayloadErrors[idx];
+                                      setErrors(prev => ({...prev, payloadMappings: newPayloadErrors}));
+                                    }
+                                  }}
                                 />
                               )}
                             </div>
+                            {errors.payloadMappings?.[idx] && (
+                              <p className={styles.errorText}>
+                                <AlertCircle size={14} />
+                                {errors.payloadMappings[idx]}
+                              </p>
+                            )}
                           </div>
                         )}
 
                         {mapping.source !== MappingSource.REQUEST_BODY && mapping.source !== MappingSource.URL && (
-                          <input 
-                            type="text"
-                            placeholder={mapping.source === MappingSource.ELEMENT ? 'CSS Selector (e.g. .title)' : 'Path (e.g. user.id)'}
-                            className={styles.input}
-                            value={mapping.value || ''}
-                            onChange={e => handleUpdateMapping(idx, { value: e.target.value })}
-                          />
+                          <div>
+                            <input 
+                              type="text"
+                              placeholder={mapping.source === MappingSource.ELEMENT ? 'CSS Selector (e.g. .title)' : 'Path (e.g. user.id)'}
+                              className={`${styles.input} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
+                              value={mapping.value || ''}
+                              onChange={e => {
+                                handleUpdateMapping(idx, { value: e.target.value });
+                                if (errors.payloadMappings?.[idx]) {
+                                  const newPayloadErrors = {...errors.payloadMappings};
+                                  delete newPayloadErrors[idx];
+                                  setErrors(prev => ({...prev, payloadMappings: newPayloadErrors}));
+                                }
+                              }}
+                            />
+                            {errors.payloadMappings?.[idx] && (
+                              <p className={styles.errorText}>
+                                <AlertCircle size={14} />
+                                {errors.payloadMappings[idx]}
+                              </p>
+                            )}
+                          </div>
                         )}
                       </td>
                     </tr>

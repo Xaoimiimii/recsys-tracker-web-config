@@ -33,6 +33,13 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     
+    // Error states
+    const [errors, setErrors] = useState<{
+        name?: string;
+        value?: string;
+        general?: string;
+    }>({});
+    
     // Get cached operators from context
     const { operators } = useDataCache();
 
@@ -76,23 +83,28 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
     }, [mode, id]);
 
     const handleSave = async () => {
+        // Reset errors
+        setErrors({});
+        
+        // Validate fields
+        const newErrors: typeof errors = {};
+        
         if (!name.trim()) {
-            alert('Please enter a configuration name');
-            return;
+            newErrors.name = 'Please enter a configuration name';
         }
 
-        if (displayType === 'inline-injection' && !value.trim()) {
-            alert('Please enter a selector value');
-            return;
-        }
-
-        if (displayType === 'popup' && (!value.trim())) {
-            alert('Please fill in all required popup fields');
-            return;
+        if (!value.trim()) {
+            newErrors.value = displayType === 'inline-injection' 
+                ? 'Please enter a selector value'
+                : 'Please enter a URL value';
         }
 
         if (!container?.uuid) {
-            alert('Domain key is missing');
+            newErrors.general = 'Domain key is missing';
+        }
+        
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
             return;
         }
 
@@ -108,11 +120,10 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
             };
 
             await returnMethodApi.create(requestData);
-            alert('Configuration saved successfully!');
             navigate('/dashboard/recommendation-display');
         } catch (error) {
             console.error('Error saving configuration:', error);
-            alert('Failed to save configuration. Please try again.');
+            setErrors({ general: 'Failed to save configuration. Please try again.' });
         } finally {
             setIsSaving(false);
         }
@@ -130,24 +141,33 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
 
     return (
         <div className={styles.container}>
-            <div className={styles.configCard}>
-                <div className={styles.formHeader}>
-                    <h1 className={styles.formTitle}>
-                        {mode === 'create' ? 'Create New Configuration' : 
-                         mode === 'edit' ? 'Edit Configuration' : 'View Configuration'}
-                    </h1>
-                    <button className={styles.closeButton} onClick={() => navigate('/dashboard/recommendation-display')}>
-                        <span className="sr-only">Close</span>
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
+            <div className={styles.pageHeader}>
+                <h1 className={styles.pageTitle}>
+                    {mode === 'create' ? 'Create New Configuration' : 
+                     mode === 'edit' ? 'Edit Configuration' : 'View Configuration'}
+                </h1>
+                <button className={styles.closeButton} onClick={() => navigate('/dashboard/recommendation-display')}>
+                    <span className="sr-only">Close</span>
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
 
-                <div className={styles.formContent}>
+            {/* Section 1: Create New Configuration */}
+            <div className={styles.sectionCard}>
+                <div className={styles.sectionHeader}>
+                    <h2 className={styles.sectionTitle}>Create New Configuration</h2>
+                </div>
+                <div className={styles.sectionContent}>
+                    {errors.general && (
+                        <div className={styles.errorAlert}>
+                            {errors.general}
+                        </div>
+                    )}
                     {/* Display Type Selection */}
-                    <div className={styles.formSection}>
-                        <label className={styles.sectionLabel}>Display Type</label>
+                    <div className={styles.formGroup}>
+                        <label className={styles.fieldLabel}>Display Type</label>
                         <div className={styles.displayTypeGrid}>
                             <button
                                 type="button"
@@ -179,280 +199,258 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                         )}
                     </div>
 
-                    {/* Common Fields */}
-                    <div className={styles.formSection}>
-                        <label className={styles.sectionLabel}>
+                    {/* Configuration Name */}
+                    <div className={styles.formGroup}>
+                        <label className={styles.fieldLabel}>
                             Configuration Name <span className={styles.required}>*</span>
                         </label>
                         <input
                             type="text"
-                            className={styles.textInput}
+                            className={`${styles.textInput} ${errors.name ? styles.inputError : ''}`}
                             value={name}
-                            onChange={(e) => setName(e.target.value)}
+                            onChange={(e) => {
+                                setName(e.target.value);
+                                if (errors.name) {
+                                    setErrors(prev => ({ ...prev, name: undefined }));
+                                }
+                            }}
                             placeholder="e.g., Product Page Widget"
                             disabled={isReadOnly}
                         />
+                        {errors.name && (
+                            <span className={styles.errorText}>{errors.name}</span>
+                        )}
                     </div>
 
-                    {/* Inline Injection Specific Fields */}
-                    {displayType === 'inline-injection' && (
-                        <>
-                            <div className={styles.formSection}>
-                                <label className={styles.sectionLabel}>Target CSS Selector</label>
-                                <p className={styles.helperText}>Define where the widget should be rendered on your page</p>
-                                
-                                <div className={styles.formRow}>
-                                    <div className={styles.formCol}>
-                                        <label className={styles.fieldLabel}>Match Operator</label>
-                                        <select 
-                                            className={styles.selectInput}
-                                            value={operatorId}
-                                            onChange={(e) => setOperatorId(Number(e.target.value))}
-                                            disabled={isReadOnly}
-                                        >
-                                            {operators.length > 0 ? (
-                                                operators.map(op => (
-                                                    <option key={op.Id} value={op.Id}>
-                                                        {op.Name}
-                                                    </option>
-                                                ))
-                                            ) : (
-                                                <>
-                                                    <option value="1">Contains</option>
-                                                    <option value="2">Equals</option>
-                                                    <option value="3">Starts with</option>
-                                                    <option value="4">Ends with</option>
-                                                </>
-                                            )}
-                                        </select>
-                                    </div>
-                                    <div className={styles.formCol}>
-                                        <label className={styles.fieldLabel}>
-                                            CSS Selector Value <span className={styles.required}>*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            className={styles.textInput}
-                                            value={value}
-                                            onChange={(e) => setValue(e.target.value)}
-                                            placeholder="e.g., product-detail"
-                                            disabled={isReadOnly}
-                                        />
-                                    </div>
+                    {/* Target Selector / URL Trigger */}
+                    <div className={styles.formGroup}>
+                        <label className={styles.fieldLabel}>
+                            {displayType === 'inline-injection' ? 'Target CSS Selector' : 'URL Trigger'}
+                        </label>
+                        <p className={styles.helperText}>
+                            {displayType === 'inline-injection' 
+                                ? 'Define where the widget should be rendered on your page'
+                                : 'Define where the popup should appear'}
+                        </p>
+                        
+                        <div className={styles.formRow}>
+                            <div className={styles.formCol}>
+                                <label className={styles.inputLabel}>Match Operator</label>
+                                <select 
+                                    className={styles.selectInput}
+                                    value={operatorId}
+                                    onChange={(e) => setOperatorId(Number(e.target.value))}
+                                    disabled={isReadOnly}
+                                >
+                                    {operators.length > 0 ? (
+                                        operators.map(op => (
+                                            <option key={op.Id} value={op.Id}>
+                                                {op.Name}
+                                            </option>
+                                        ))
+                                    ) : (
+                                        <>
+                                            <option value="1">Contains</option>
+                                            <option value="2">Equals</option>
+                                            <option value="3">Starts with</option>
+                                            <option value="4">Ends with</option>
+                                        </>
+                                    )}
+                                </select>
+                            </div>
+                            <div className={styles.formCol} style={{ flex: 2 }}>
+                                <label className={styles.inputLabel}>
+                                    {displayType === 'inline-injection' ? 'CSS Selector Value' : 'URL Value'} <span className={styles.required}>*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    className={`${styles.textInput} ${errors.value ? styles.inputError : ''}`}
+                                    value={value}
+                                    onChange={(e) => {
+                                        setValue(e.target.value);
+                                        if (errors.value) {
+                                            setErrors(prev => ({ ...prev, value: undefined }));
+                                        }
+                                    }}
+                                    placeholder={displayType === 'inline-injection' ? 'e.g., product-detail' : 'e.g., /product'}
+                                    disabled={isReadOnly}
+                                />
+                                {errors.value && (
+                                    <span className={styles.errorText}>{errors.value}</span>
+                                )}
+                            </div>
+                        </div>
+                        <div className={styles.helperBox}>
+                            {getHelperText()}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Section 2: Widget Design (for inline) or Preview (for popup) */}
+            {displayType === 'inline-injection' ? (
+                <div className={styles.sectionCard}>
+                    <div className={styles.sectionHeader}>
+                        <h2 className={styles.sectionTitle}>Widget Design</h2>
+                    </div>
+                    <div className={styles.sectionContent}>
+                        <div className={styles.formRow}>
+                            <div className={styles.formCol}>
+                                <label className={styles.fieldLabel}>Layout</label>
+                                <select 
+                                    className={styles.selectInput}
+                                    value={layoutStyle}
+                                    onChange={(e) => setLayoutStyle(e.target.value)}
+                                    disabled={isReadOnly}
+                                >
+                                    <option value="grid">Grid</option>
+                                    <option value="list">List</option>
+                                    <option value="carousel">Carousel</option>
+                                </select>
+                            </div>
+                            <div className={styles.formCol}>
+                                <label className={styles.fieldLabel}>Theme</label>
+                                <select 
+                                    className={styles.selectInput}
+                                    value={theme}
+                                    onChange={(e) => setTheme(e.target.value)}
+                                    disabled={isReadOnly}
+                                >
+                                    <option value="light">Light</option>
+                                    <option value="dark">Dark</option>
+                                </select>
+                            </div>
+                            <div className={styles.formCol}>
+                                <label className={styles.fieldLabel}>Spacing</label>
+                                <select 
+                                    className={styles.selectInput}
+                                    value={spacing}
+                                    onChange={(e) => setSpacing(e.target.value)}
+                                    disabled={isReadOnly}
+                                >
+                                    <option value="small">Small</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="large">Large</option>
+                                </select>
+                            </div>
+                            <div className={styles.formCol}>
+                                <label className={styles.fieldLabel}>Size</label>
+                                <select 
+                                    className={styles.selectInput}
+                                    value={size}
+                                    onChange={(e) => setSize(e.target.value)}
+                                    disabled={isReadOnly}
+                                >
+                                    <option value="small">Small</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="large">Large</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className={styles.previewBox}>
+                            <p className={styles.previewLabel}>Widget Preview (Illustrative)</p>
+                            <div className={styles.widgetPreview}>
+                                <div className={`${styles.previewItem} ${styles[`preview-${theme}`]}`}>
+                                    <div className={styles.previewImage}>🖼️</div>
+                                    <div className={styles.previewTitle}>Recommended Item 1</div>
+                                    <div className={styles.previewPrice}>$29.99</div>
                                 </div>
-                                <div className={styles.helperBox}>
-                                    {getHelperText()}
+                                <div className={`${styles.previewItem} ${styles[`preview-${theme}`]}`}>
+                                    <div className={styles.previewImage}>🖼️</div>
+                                    <div className={styles.previewTitle}>Recommended Item 2</div>
+                                    <div className={styles.previewPrice}>$39.99</div>
+                                </div>
+                                <div className={`${styles.previewItem} ${styles[`preview-${theme}`]}`}>
+                                    <div className={styles.previewImage}>🖼️</div>
+                                    <div className={styles.previewTitle}>Recommended Item 3</div>
+                                    <div className={styles.previewPrice}>$49.99</div>
                                 </div>
                             </div>
-
-                            <div className={styles.formSection}>
-                                <label className={styles.sectionLabel}>Widget Design</label>
-                                
-                                <div className={styles.formRow}>
-                                    <div className={styles.formCol}>
-                                        <label className={styles.fieldLabel}>Layout</label>
-                                        <select 
-                                            className={styles.selectInput}
-                                            value={layoutStyle}
-                                            onChange={(e) => setLayoutStyle(e.target.value)}
-                                            disabled={isReadOnly}
-                                        >
-                                            <option value="grid">Grid</option>
-                                            <option value="list">List</option>
-                                            <option value="carousel">Carousel</option>
-                                        </select>
-                                    </div>
-                                    <div className={styles.formCol}>
-                                        <label className={styles.fieldLabel}>Theme</label>
-                                        <select 
-                                            className={styles.selectInput}
-                                            value={theme}
-                                            onChange={(e) => setTheme(e.target.value)}
-                                            disabled={isReadOnly}
-                                        >
-                                            <option value="light">Light</option>
-                                            <option value="dark">Dark</option>
-                                        </select>
-                                    </div>
-                                    <div className={styles.formCol}>
-                                        <label className={styles.fieldLabel}>Spacing</label>
-                                        <select 
-                                            className={styles.selectInput}
-                                            value={spacing}
-                                            onChange={(e) => setSpacing(e.target.value)}
-                                            disabled={isReadOnly}
-                                        >
-                                            <option value="small">Small</option>
-                                            <option value="medium">Medium</option>
-                                            <option value="large">Large</option>
-                                        </select>
-                                    </div>
-                                    <div className={styles.formCol}>
-                                        <label className={styles.fieldLabel}>Size</label>
-                                        <select 
-                                            className={styles.selectInput}
-                                            value={size}
-                                            onChange={(e) => setSize(e.target.value)}
-                                            disabled={isReadOnly}
-                                        >
-                                            <option value="small">Small</option>
-                                            <option value="medium">Medium</option>
-                                            <option value="large">Large</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className={styles.formSection}>
-                                <label className={styles.sectionLabel}>Preview</label>
-                                <div className={styles.previewBox}>
-                                    <p className={styles.previewLabel}>Widget Preview (Illustrative)</p>
-                                    <div className={styles.widgetPreview}>
-                                        <div className={`${styles.previewItem} ${styles[`preview-${theme}`]}`}>
-                                            <div className={styles.previewImage}>🖼️</div>
-                                            <div className={styles.previewTitle}>Recommended Item 1</div>
-                                            <div className={styles.previewPrice}>$29.99</div>
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <div className={styles.sectionCard}>
+                    <div className={styles.sectionHeader}>
+                        <h2 className={styles.sectionTitle}>Preview</h2>
+                    </div>
+                    <div className={styles.sectionContent}>
+                        <div className={styles.previewBox}>
+                            <p className={styles.previewLabel}>Popup Preview (Illustrative)</p>
+                            <div className={styles.popupPreview}>
+                                <div className={styles.popupOverlay}>
+                                    <div className={styles.popupContent}>
+                                        <div className={styles.popupHeader}>
+                                            <h3>Recommended for You</h3>
+                                            <span className={styles.popupClose}>×</span>
                                         </div>
-                                        <div className={`${styles.previewItem} ${styles[`preview-${theme}`]}`}>
-                                            <div className={styles.previewImage}>🖼️</div>
-                                            <div className={styles.previewTitle}>Recommended Item 2</div>
-                                            <div className={styles.previewPrice}>$39.99</div>
-                                        </div>
-                                        <div className={`${styles.previewItem} ${styles[`preview-${theme}`]}`}>
-                                            <div className={styles.previewImage}>🖼️</div>
-                                            <div className={styles.previewTitle}>Recommended Item 3</div>
-                                            <div className={styles.previewPrice}>$49.99</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className={styles.formSection}>
-                                <label className={styles.sectionLabel}>How to integrate this widget:</label>
-                                <div className={styles.guideBox}>
-                                    <ol className={styles.guideList}>
-                                        <li>Ensure the target element exists on your page</li>
-                                        <li>The widget will automatically render inside the target element</li>
-                                        <li>Design your widget for best user experience</li>
-                                    </ol>
-                                </div>
-                            </div>
-                        </>
-                    )}
-
-                    {/* Popup Specific Fields */}
-                    {displayType === 'popup' && (
-                        <>
-                            <div className={styles.formSection}>
-                                <label className={styles.sectionLabel}>URL Trigger</label>
-                                <p className={styles.helperText}>Define where the popup should appear</p>
-                                
-                                <div className={styles.formRow}>
-                                    <div className={styles.formCol}>
-                                        <label className={styles.fieldLabel}>Match Operator</label>
-                                        <select 
-                                            className={styles.selectInput}
-                                            value={operatorId}
-                                            onChange={(e) => setOperatorId(Number(e.target.value))}
-                                            disabled={isReadOnly}
-                                        >
-                                            {operators.length > 0 ? (
-                                                operators.map(op => (
-                                                    <option key={op.Id} value={op.Id}>
-                                                        {op.Name}
-                                                    </option>
-                                                ))
-                                            ) : (
-                                                <>
-                                                    <option value="1">Contains</option>
-                                                    <option value="2">Equals</option>
-                                                    <option value="3">Starts with</option>
-                                                    <option value="4">Ends with</option>
-                                                </>
-                                            )}
-                                        </select>
-                                    </div>
-                                    <div className={styles.formCol} style={{ flex: 2 }}>
-                                        <label className={styles.fieldLabel}>
-                                            URL Value <span className={styles.required}>*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            className={styles.textInput}
-                                            value={value}
-                                            onChange={(e) => setValue(e.target.value)}
-                                            placeholder="e.g., /product"
-                                            disabled={isReadOnly}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className={styles.helperBox}>
-                                    {getHelperText()}
-                                </div>
-                            </div>
-
-                            <div className={styles.formSection}>
-                                <label className={styles.sectionLabel}>Preview</label>
-                                <div className={styles.previewBox}>
-                                    <p className={styles.previewLabel}>Popup Preview (Illustrative)</p>
-                                    <div className={styles.popupPreview}>
-                                        <div className={styles.popupOverlay}>
-                                            <div className={styles.popupContent}>
-                                                <div className={styles.popupHeader}>
-                                                    <h3>Recommended for You</h3>
-                                                    <span className={styles.popupClose}>×</span>
-                                                </div>
-                                                <div className={styles.popupBody}>
-                                                    <div className={styles.popupItem}>
-                                                        <div className={styles.popupImage}>🖼️</div>
-                                                        <div className={styles.popupInfo}>
-                                                            <div className={styles.popupTitle}>Product Name</div>
-                                                            <div className={styles.popupPrice}>$29.99</div>
-                                                        </div>
-                                                    </div>
+                                        <div className={styles.popupBody}>
+                                            <div className={styles.popupItem}>
+                                                <div className={styles.popupImage}>🖼️</div>
+                                                <div className={styles.popupInfo}>
+                                                    <div className={styles.popupTitle}>Product Name</div>
+                                                    <div className={styles.popupPrice}>$29.99</div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
-                            <div className={styles.formSection}>
-                                <label className={styles.sectionLabel}>How does popup work?</label>
-                                <div className={styles.guideBox}>
-                                    <ol className={styles.guideList}>
-                                        <li>Search for matching URLs based on your specified conditions</li>
-                                        <li>Render the popup on matching pages into the specified div</li>
-                                        <li>The popup will automatically appear when the condition is met</li>
-                                        <li>The popup can move or be closed by the user</li>
-                                    </ol>
-                                </div>
-                            </div>
-                        </>
-                    )}
-
-                    {/* Action Buttons */}
-                    {!isReadOnly && (
-                        <div className={styles.formActions}>
-                            <button 
-                                className={styles.cancelButton} 
-                                onClick={() => navigate('/dashboard/recommendation-display')}
-                            >
-                                Cancel
-                            </button>
-                            <button 
-                                className={styles.saveButton} 
-                                onClick={handleSave}
-                                disabled={isSaving}
-                            >
-                                <Save size={18} />
-                                {isSaving ? 'Saving...' : 'Save Configuration'}
-                            </button>
                         </div>
-                    )}
+                    </div>
+                </div>
+            )}
+
+            {/* Section 3: Instructions */}
+            <div className={styles.sectionCard}>
+                <div className={styles.sectionHeader}>
+                    <h2 className={styles.sectionTitle}>Instructions</h2>
+                </div>
+                <div className={styles.sectionContent}>
+                    <div className={styles.guideBox}>
+                        <h3 className={styles.guideTitle}>
+                            {displayType === 'inline-injection' ? 'How to integrate this widget:' : 'How does popup work?'}
+                        </h3>
+                        <ol className={styles.guideList}>
+                            {displayType === 'inline-injection' ? (
+                                <>
+                                    <li>Ensure the target element exists on your page</li>
+                                    <li>The widget will automatically render inside the target element</li>
+                                    <li>Design your widget for best user experience</li>
+                                </>
+                            ) : (
+                                <>
+                                    <li>Search for matching URLs based on your specified conditions</li>
+                                    <li>Render the popup on matching pages into the specified div</li>
+                                    <li>The popup will automatically appear when the condition is met</li>
+                                    <li>The popup can move or be closed by the user</li>
+                                </>
+                            )}
+                        </ol>
+                    </div>
                 </div>
             </div>
+
+            {/* Action Buttons */}
+            {!isReadOnly && (
+                <div className={styles.formActions}>
+                    <button 
+                        className={styles.cancelButton} 
+                        onClick={() => navigate('/dashboard/recommendation-display')}
+                    >
+                        Cancel
+                    </button>
+                    <button 
+                        className={styles.saveButton} 
+                        onClick={handleSave}
+                        disabled={isSaving}
+                    >
+                        <Save size={18} />
+                        {isSaving ? 'Saving...' : 'Save Configuration'}
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

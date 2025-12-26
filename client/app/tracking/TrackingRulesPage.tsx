@@ -10,10 +10,6 @@ interface TrackingRulesPageProps {
     setContainer: (c: Container) => void;
 }
 
-interface RuleWithDetails extends RuleListItem {
-    details?: RuleDetailResponse;
-}
-
 export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container, setContainer }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [isEditingRule, setIsEditingRule] = useState(false);
@@ -21,7 +17,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
     const [currentRule, setCurrentRule] = useState<TrackingRule | undefined>(undefined);
     const [currentRuleDetails, setCurrentRuleDetails] = useState<RuleDetailResponse | undefined>(undefined);
     
-    const [rulesWithDetails, setRulesWithDetails] = useState<RuleWithDetails[]>([]);
+    const [rules, setRules] = useState<RuleListItem[]>([]);
     const [fetchError, setFetchError] = useState(false);
 
     // Fetch rules from API when component mounts or container changes
@@ -32,44 +28,27 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
             setIsLoading(true);
             setFetchError(false);
             try {
-                // Step 1: Get list of rules for the domain
-                const rulesList = await ruleApi.getRulesByDomain(container.uuid);
-                
-                // Step 2: Fetch detailed information for each rule
-                const rulesWithDetailsPromises = rulesList.map(async (rule) => {
-                    try {
-                        const details = await ruleApi.getRuleById(rule.id);
-                        return {
-                            ...rule,
-                            details
-                        };
-                    } catch (error) {
-                        console.error(`Failed to fetch details for rule ${rule.id}:`, error);
-                        return rule; // Return rule without details if fetch fails
-                    }
-                });
-                
-                const rulesData: RuleWithDetails[] = await Promise.all(rulesWithDetailsPromises);
-                setRulesWithDetails(rulesData);
+                // API now returns full details including PayloadMappings, Conditions, TrackingTarget, EventType
+                const rulesData = await ruleApi.getRulesByDomain(container.uuid);
+                setRules(rulesData);
 
                 // Update container's rules based on fetched data
                 const updatedRules: TrackingRule[] = rulesData.map(r => ({
-                    id: r.id.toString(),
-                    name: r.name,
-                    trigger: r.TriggerTypeName,
-                    selector: r.details?.TrackingTarget?.Value || '',
+                    id: r.Id.toString(),
+                    name: r.Name,
+                    trigger: r.EventType.Name,
+                    selector: r.TrackingTarget?.Value || '',
                     extraction: []
                 }));
                 setContainer({
                     ...container,
                     rules: updatedRules
                 });
-                
 
             } catch (error) {
                 console.error('Failed to fetch rules:', error);
                 setFetchError(true);
-                setRulesWithDetails([]);
+                setRules([]);
                 // Clear rules on error
                 setContainer({
                     ...container,
@@ -104,28 +83,26 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
         setIsLoading(true);
         try {
             // API call already done in RuleBuilder component
-            // Just update local state with the response
-            const newId = response.id || response.Id || Date.now().toString();
-            const newRule: TrackingRule = {
-                id: newId.toString(),
-                name: response.name || response.Name || 'New Rule',
-                trigger: 'click', // Default, can be enhanced with response data
-                selector: '',
-                extraction: []
-            };
+            // Refetch rules to get the latest data with full details
+            const rulesData = await ruleApi.getRulesByDomain(container.uuid);
+            setRules(rulesData);
 
-            let newRules = [...container.rules];
-            const existingIndex = newRules.findIndex(r => r.id === newId.toString());
-        
-            if (existingIndex >= 0) {
-                newRules[existingIndex] = newRule;
-            } else {
-                newRules.push(newRule);
-            }
+            // Update container's rules based on fetched data
+            const updatedRules: TrackingRule[] = rulesData.map(r => ({
+                id: r.Id.toString(),
+                name: r.Name,
+                trigger: r.EventType.Name,
+                selector: r.TrackingTarget?.Value || '',
+                extraction: []
+            }));
+            setContainer({
+                ...container,
+                rules: updatedRules
+            });
             
-            setContainer({ ...container, rules: newRules });
             setIsEditingRule(false);
             setCurrentRule(undefined);
+            setCurrentRuleDetails(undefined);
         } catch (error) {
             console.error('Failed to save rule:', error);
             alert('Failed to save tracking rule. Please try again.');
@@ -135,37 +112,59 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
     };
 
     const handleView = (id: string | number) => {
-        const ruleToView = rulesWithDetails.find(r => r.id.toString() === id.toString());
+        const ruleToView = rules.find(r => r.Id.toString() === id.toString());
         console.log('Viewing rule:', ruleToView, 'from id:', id);
-        if (ruleToView && ruleToView.details) {
-            // Map RuleDetailResponse to TrackingRule format
+        if (ruleToView) {
+            // Map to TrackingRule format
             const mappedRule: TrackingRule = {
-                id: ruleToView.id.toString(),
-                name: ruleToView.details.Name,
-                trigger: 'click', // Will be determined from EventTypeID
-                selector: ruleToView.details.TrackingTarget?.Value || '',
+                id: ruleToView.Id.toString(),
+                name: ruleToView.Name,
+                trigger: ruleToView.EventType.Name.toLowerCase(),
+                selector: ruleToView.TrackingTarget?.Value || '',
                 extraction: []
             };
+            // Map to RuleDetailResponse format for compatibility
+            const details: RuleDetailResponse = {
+                Id: ruleToView.Id,
+                Name: ruleToView.Name,
+                DomainID: ruleToView.DomainID,
+                EventTypeID: ruleToView.EventTypeID,
+                TrackingTargetId: ruleToView.TrackingTargetId,
+                TrackingTarget: ruleToView.TrackingTarget,
+                Conditions: ruleToView.Conditions,
+                PayloadMappings: ruleToView.PayloadMappings
+            };
             setCurrentRule(mappedRule);
-            setCurrentRuleDetails(ruleToView.details);
+            setCurrentRuleDetails(details);
             setIsViewMode(true);
             setIsEditingRule(true);
         }
     };
 
     const handleEdit = (id: string | number) => {
-        const ruleToEdit = rulesWithDetails.find(r => r.id.toString() === id.toString());
-        if (ruleToEdit && ruleToEdit.details) {
-            // Map RuleDetailResponse to TrackingRule format
+        const ruleToEdit = rules.find(r => r.Id.toString() === id.toString());
+        if (ruleToEdit) {
+            // Map to TrackingRule format
             const mappedRule: TrackingRule = {
-                id: ruleToEdit.id.toString(),
-                name: ruleToEdit.details.Name,
-                trigger: 'click', // Will be determined from EventTypeID
-                selector: ruleToEdit.details.TrackingTarget?.Value || '',
+                id: ruleToEdit.Id.toString(),
+                name: ruleToEdit.Name,
+                trigger: ruleToEdit.EventType.Name.toLowerCase(),
+                selector: ruleToEdit.TrackingTarget?.Value || '',
                 extraction: []
             };
+            // Map to RuleDetailResponse format for compatibility
+            const details: RuleDetailResponse = {
+                Id: ruleToEdit.Id,
+                Name: ruleToEdit.Name,
+                DomainID: ruleToEdit.DomainID,
+                EventTypeID: ruleToEdit.EventTypeID,
+                TrackingTargetId: ruleToEdit.TrackingTargetId,
+                TrackingTarget: ruleToEdit.TrackingTarget,
+                Conditions: ruleToEdit.Conditions,
+                PayloadMappings: ruleToEdit.PayloadMappings
+            };
             setCurrentRule(mappedRule);
-            setCurrentRuleDetails(ruleToEdit.details);
+            setCurrentRuleDetails(details);
             setIsViewMode(false);
             setIsEditingRule(true);
         }
@@ -216,11 +215,11 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                                 </tr>
                             </thead>
                             <tbody>
-                                {rulesWithDetails.map((rule, index) => {
-                                    const triggerInfo = getTriggerTypeFromId(rule.details?.EventTypeID);
+                                {rules.map((rule, index) => {
+                                    const triggerInfo = getTriggerTypeFromId(rule.EventTypeID);
                                     const TriggerIcon = triggerInfo.icon;
                                     return (
-                                        <tr key={rule.id}>
+                                        <tr key={rule.Id}>
                                             <td>#{index + 1}</td>
                                             <td>
                                                 <div className={styles.triggerCell}>
@@ -228,26 +227,26 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                                                     {triggerInfo.label}
                                                 </div>
                                             </td>
-                                            <td>{rule.name}</td>
-                                            <td>{rule.details?.TrackingTarget?.Value || 'N/A'}</td>
+                                            <td>{rule.Name}</td>
+                                            <td>{rule.TrackingTarget?.Value || 'N/A'}</td>
                                             <td>
                                             <button 
                                                 className={styles.editButton}
-                                                onClick={() => handleView(rule.id)}
+                                                onClick={() => handleView(rule.Id)}
                                                 title="View details"
                                             >
                                                 <Eye size={16} />
                                             </button>
                                             <button 
                                                 className={styles.editButton}
-                                                onClick={() => handleEdit(rule.id)} 
+                                                onClick={() => handleEdit(rule.Id)} 
                                                 title="Edit"
                                             >
                                                 <Edit2 size={16} />
                                             </button>
                                             <button 
                                                 className={styles.deleteButton}
-                                                onClick={() => handleDelete(rule.id.toString())}
+                                                onClick={() => handleDelete(rule.Id.toString())}
                                                 title="Delete"
                                             >
                                                 <Trash2 size={16} />
