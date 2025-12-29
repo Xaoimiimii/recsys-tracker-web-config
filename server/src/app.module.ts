@@ -9,6 +9,9 @@ import { UserController } from './modules/user/user.controller';
 import { UserModule } from './modules/user/user.module';
 import { ItemModule } from './modules/item/item.module';
 import { RatingModule } from './modules/rating/rating.module';
+import { TaskModule } from './modules/task/task.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { RecommendationModule } from './modules/recommendation/recommendation.module';
 
 @Module({
   imports: [
@@ -22,8 +25,11 @@ import { RatingModule } from './modules/rating/rating.module';
     PrismaModule,
     UserModule,
     ItemModule,
-    RatingModule
+    RatingModule,
+    TaskModule,
+    ScheduleModule.forRoot(),
+    RecommendationModule
   ],
   controllers: [UserController],
 })
-export class AppModule {}
+export class AppModule { }
