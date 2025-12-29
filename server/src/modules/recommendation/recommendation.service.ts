@@ -26,4 +26,27 @@ export class RecommendationService {
             );
         }
     }
+
+    async getRecommendations(userId: number, numberItems: number = 10) {
+        const items = await this.prisma.predict.findMany({
+            where: {
+                UserId: userId,
+            },
+            orderBy: {
+                Value: 'desc',
+            },
+        });
+
+        const ratedItems = await this.prisma.rating.findMany({
+            where: {
+                UserId: userId,
+            },
+        });
+
+        const ratedItemsIds = ratedItems.map((item) => item.ItemId);
+
+        const recommendations = items.filter((item) => !ratedItemsIds.includes(item.ItemId));
+
+        return recommendations.slice(0, numberItems);
+    }
 }
