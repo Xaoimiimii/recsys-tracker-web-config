@@ -11,6 +11,6 @@ export class TaskService {
     @Cron(CronExpression.EVERY_30_MINUTES)
     trainModels() {
         this.recommendationService.triggerTrainModels();
-        this.logger.debug('Called when the second is 0');
+        this.logger.debug('Trigger training models');
     }
 }
