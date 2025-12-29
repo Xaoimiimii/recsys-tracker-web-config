@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Lightbulb, X, Fingerprint, Target, Filter, Plus, Trash2, Database, AlertCircle, Loader2, Save } from 'lucide-react';
 import styles from './RuleBuilder.module.css';
 import { ruleApi } from '../../lib/api/rule';
+import { useDataCache } from '../../contexts/DataCacheContext';
 
 // ==================== TYPES ====================
 export enum EventType {
@@ -267,6 +268,8 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
   onCancel, 
   domainKey 
 }) => {
+  const { patterns, operators } = useDataCache();
+  
   const [rule, setRule] = useState<TrackingRule>({
     id: 'new-rule-' + Date.now(),
     name: '',
@@ -287,23 +290,126 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
   }>({});
   const [modalContent, setModalContent] = useState<{title: string, examples: SectionExample[]} | null>(null);
 
+  // Load data from ruleDetails when viewing a rule
+  useEffect(() => {
+    if (ruleDetails && isViewMode) {
+      // Helper function to convert backend source to frontend enum
+      const convertSource = (source: string): MappingSource => {
+        const sourceMap: Record<string, MappingSource> = {
+          'RequestBody': MappingSource.REQUEST_BODY,
+          'Element': MappingSource.ELEMENT,
+          'Cookie': MappingSource.COOKIE,
+          'LocalStorage': MappingSource.LOCAL_STORAGE,
+          'SessionStorage': MappingSource.SESSION_STORAGE,
+          'Url': MappingSource.URL
+        };
+        return sourceMap[source] || MappingSource.ELEMENT;
+      };
+
+      // Helper function to convert backend field to frontend field
+      const convertField = (field: string): string => {
+        const fieldMap: Record<string, string> = {
+          'UserId': 'userId',
+          'Username': 'username',
+          'ItemId': 'itemId',
+          'ItemTitle': 'itemTitle',
+          'Value': ruleDetails.EventType?.Name === 'Rating' ? 'rating_value' : 'review_text'
+        };
+        return fieldMap[field] || field.toLowerCase();
+      };
+
+      // Convert EventType
+      const eventTypeMap: Record<string, EventType> = {
+        'Click': EventType.CLICK,
+        'Rating': EventType.RATING,
+        'Review': EventType.REVIEW,
+        'Scroll': EventType.SCROLL,
+        'Page view': EventType.PAGE_VIEW
+      };
+
+      // Convert PatternId to pattern name from cached data
+      const patternIdToName: Record<number, string> = patterns.reduce((acc, p) => {
+        acc[p.Id] = p.Name;
+        return acc;
+      }, {} as Record<number, string>);
+
+      // Convert OperatorId to operator name from cached data
+      const operatorIdToName: Record<number, string> = operators.reduce((acc, o) => {
+        acc[o.Id] = o.Name;
+        return acc;
+      }, {} as Record<number, string>);
+
+      // Transform PayloadMappings
+      const payloadMappings: PayloadMapping[] = ruleDetails.PayloadMappings.map((mapping: any) => {
+        const source = convertSource(mapping.Source);
+        const result: PayloadMapping = {
+          field: convertField(mapping.Field),
+          source: source
+        };
+
+        if (source === MappingSource.REQUEST_BODY) {
+          result.requestUrlPattern = mapping.RequestUrlPattern || '';
+          result.requestMethod = mapping.RequestMethod || 'POST';
+          result.value = mapping.RequestBodyPath || '';
+        } else if (source === MappingSource.URL) {
+          result.urlPart = mapping.UrlPart || 'pathname';
+          result.urlPartValue = mapping.UrlPartValue || '';
+        } else {
+          result.value = mapping.Value || '';
+        }
+
+        return result;
+      });
+
+      // Transform Conditions
+      const conditions: Condition[] = ruleDetails.Conditions.map((cond: any) => ({
+        id: Math.random().toString(36).substr(2, 9),
+        pattern: patternIdToName[cond.PatternId] || 'URL',
+        operator: operatorIdToName[cond.OperatorID || cond.OperatorId] || 'Contains',
+        value: cond.Value || ''
+      }));
+
+      // Transform TrackingTarget
+      let targetElement = undefined;
+      if (ruleDetails.TrackingTarget) {
+        targetElement = {
+          selector: ruleDetails.TrackingTarget.Value || '',
+          operator: operatorIdToName[ruleDetails.TrackingTarget.OperatorId] || 'Equals',
+          value: ruleDetails.TrackingTarget.Value || ''
+        };
+      }
+
+      setRule({
+        id: ruleDetails.Id.toString(),
+        name: ruleDetails.Name || '',
+        eventType: eventTypeMap[ruleDetails.EventType?.Name] || EventType.CLICK,
+        targetElement: targetElement,
+        conditions: conditions,
+        payloadMappings: payloadMappings
+      });
+    }
+  }, [ruleDetails, isViewMode]);
+
   useEffect(() => {
     const initialFields = INITIAL_MAPPINGS[rule.eventType] || [];
     
-    setRule(prev => ({
-      ...prev,
-      // Set targetElement to NULL for Scroll and Page view
-      targetElement: (rule.eventType === EventType.SCROLL || rule.eventType === EventType.PAGE_VIEW) 
-        ? undefined 
-        : prev.targetElement || { selector: '', operator: 'equals', value: '' },
-      payloadMappings: initialFields.map(field => ({
-        field,
-        source: field.toLowerCase().includes('user') ? MappingSource.LOCAL_STORAGE : MappingSource.ELEMENT,
-        path: '',
-        required: true
-      }))
-    }));
-  }, [rule.eventType]);
+    // Only reset payloadMappings when not in view mode or when ruleDetails is not available
+    if (!isViewMode || !ruleDetails) {
+      setRule(prev => ({
+        ...prev,
+        // Set targetElement to NULL for Scroll and Page view
+        targetElement: (rule.eventType === EventType.SCROLL || rule.eventType === EventType.PAGE_VIEW) 
+          ? undefined 
+          : prev.targetElement || { selector: '', operator: 'equals', value: '' },
+        payloadMappings: initialFields.map(field => ({
+          field,
+          source: field.toLowerCase().includes('user') ? MappingSource.LOCAL_STORAGE : MappingSource.ELEMENT,
+          path: '',
+          required: true
+        }))
+      }));
+    }
+  }, [rule.eventType, isViewMode, ruleDetails]);
 
   const handleAddCondition = () => {
     const newCondition: Condition = {
@@ -693,13 +799,13 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                 <label className={styles.label}>Match Operator</label>
                 <select 
                   className={styles.input}
-                  value={rule.targetElement?.operator || 'equals'}
+                  value={rule.targetElement?.operator || 'Equals'}
                   onChange={e => setRule({...rule, targetElement: {...rule.targetElement, operator: e.target.value}})}
                 >
-                  <option value="Contains">contains</option>
-                  <option value="Equals">equals</option>
-                  <option value="Starts with">starts with</option>
-                  <option value="Ends with">ends with</option>
+                  <option value="Contains">Contains</option>
+                  <option value="Equals">Equals</option>
+                  <option value="Starts with">Starts with</option>
+                  <option value="Ends with">Ends with</option>
                 </select>
               </div>
               <div>
