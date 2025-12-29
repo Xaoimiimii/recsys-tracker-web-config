@@ -327,13 +327,13 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
         'Page view': EventType.PAGE_VIEW
       };
 
-      // Convert PatternId to pattern name from cached data
+      // Map PatternId to pattern name from cached data
       const patternIdToName: Record<number, string> = patterns.reduce((acc, p) => {
         acc[p.Id] = p.Name;
         return acc;
       }, {} as Record<number, string>);
 
-      // Convert OperatorId to operator name from cached data
+      // Map OperatorId to operator name from cached data
       const operatorIdToName: Record<number, string> = operators.reduce((acc, o) => {
         acc[o.Id] = o.Name;
         return acc;
@@ -748,6 +748,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                 placeholder="e.g., Click Register Button"
                 className={`${styles.input} ${errors.ruleName ? styles.inputError : ''}`}
                 value={rule.name}
+                disabled={isViewMode}
                 onChange={e => {
                   setRule({...rule, name: e.target.value});
                   if (errors.ruleName) {
@@ -767,6 +768,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
               <select 
                 className={styles.input}
                 value={rule.eventType}
+                disabled={isViewMode}
                 onChange={e => setRule({...rule, eventType: e.target.value as EventType})}
               >
                 {EVENT_TYPE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
@@ -800,6 +802,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                 <select 
                   className={styles.input}
                   value={rule.targetElement?.operator || 'Equals'}
+                  disabled={isViewMode}
                   onChange={e => setRule({...rule, targetElement: {...rule.targetElement, operator: e.target.value}})}
                 >
                   <option value="Contains">Contains</option>
@@ -815,6 +818,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                   placeholder=".my-element"
                   className={`${styles.input} ${styles.monospaceInput} ${errors.targetElement ? styles.inputError : ''}`}
                   value={rule.targetElement?.selector || ''}
+                  disabled={isViewMode}
                   onChange={e => {
                     setRule({...rule, targetElement: {...rule.targetElement, selector: e.target.value}});
                     if (errors.targetElement) {
@@ -838,7 +842,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
         <div className={styles.card}>
           <div className={styles.conditionsHeader}>
             <SectionHeader title="Conditions" icon={<Filter size={14} />} sectionKey="conditions" />
-            <button onClick={handleAddCondition} className={styles.btnAdd}>
+            <button onClick={handleAddCondition} className={styles.btnAdd} disabled={isViewMode}>
               <Plus size={16} /> Add Condition
             </button>
           </div>
@@ -855,6 +859,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                 <select 
                   className={`${styles.input} ${styles.conditionSelectFlex1}`}
                   value={cond.pattern}
+                  disabled={isViewMode}
                   onChange={e => handleUpdateCondition(cond.id, { pattern: e.target.value as any })}
                 >
                   <option>URL</option>
@@ -864,6 +869,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                 <select 
                   className={`${styles.input} ${styles.conditionSelectAuto}`}
                   value={cond.operator}
+                  disabled={isViewMode}
                   onChange={e => handleUpdateCondition(cond.id, { operator: e.target.value as any })}
                 >
                   {OPERATORS.map(op => <option key={op} value={op}>{op}</option>)}
@@ -871,9 +877,10 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                 <input 
                   type="text" placeholder="Filter value..." className={`${styles.input} ${styles.conditionInputFlex2}`}
                   value={cond.value}
+                  disabled={isViewMode}
                   onChange={e => handleUpdateCondition(cond.id, { value: e.target.value })}
                 />
-                <button onClick={() => handleRemoveCondition(cond.id)} className={styles.btnDelete}>
+                <button onClick={() => handleRemoveCondition(cond.id)} className={styles.btnDelete} disabled={isViewMode}>
                   <Trash2 size={16} />
                 </button>
               </div>
@@ -904,22 +911,22 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                         {isUserField ? (
                           <div className={styles.radioGroup}>
                             <label className={styles.radioLabel}>
-                              <input type="radio" name={`user-field-${idx}`} checked={mapping.field === 'userId'} onChange={() => handleUpdateMapping(idx, { field: 'userId' })} />
+                              <input type="radio" name={`user-field-${idx}`} checked={mapping.field === 'userId'} disabled={isViewMode} onChange={() => handleUpdateMapping(idx, { field: 'userId' })} />
                               UserId
                             </label>
                             <label className={styles.radioLabel}>
-                              <input type="radio" name={`user-field-${idx}`} checked={mapping.field === 'username'} onChange={() => handleUpdateMapping(idx, { field: 'username' })} />
+                              <input type="radio" name={`user-field-${idx}`} checked={mapping.field === 'username'} disabled={isViewMode} onChange={() => handleUpdateMapping(idx, { field: 'username' })} />
                               Username
                             </label>
                           </div>
                         ) : isItemField ? (
                           <div className={styles.radioGroup}>
                             <label className={styles.radioLabel}>
-                              <input type="radio" name={`item-field-${idx}`} checked={mapping.field === 'itemId'} onChange={() => handleUpdateMapping(idx, { field: 'itemId' })} />
+                              <input type="radio" name={`item-field-${idx}`} checked={mapping.field === 'itemId'} disabled={isViewMode} onChange={() => handleUpdateMapping(idx, { field: 'itemId' })} />
                               ItemId
                             </label>
                             <label className={styles.radioLabel}>
-                              <input type="radio" name={`item-field-${idx}`} checked={mapping.field === 'itemTitle'} onChange={() => handleUpdateMapping(idx, { field: 'itemTitle' })} />
+                              <input type="radio" name={`item-field-${idx}`} checked={mapping.field === 'itemTitle'} disabled={isViewMode} onChange={() => handleUpdateMapping(idx, { field: 'itemTitle' })} />
                               ItemTitle
                             </label>
                           </div>
@@ -931,6 +938,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                         <select 
                           className={styles.input}
                           value={mapping.source}
+                          disabled={isViewMode}
                           onChange={e => handleUpdateMapping(idx, { source: e.target.value as MappingSource })}
                         >
                           {MAPPING_SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
@@ -945,6 +953,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                                 type="text" placeholder="URL Pattern (/api/...)" 
                                 className={`${styles.input} ${styles.urlParsingInputFlex2} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                                 value={mapping.requestUrlPattern || ''}
+                                disabled={isViewMode}
                                 onChange={e => {
                                   handleUpdateMapping(idx, { requestUrlPattern: e.target.value });
                                   if (errors.payloadMappings?.[idx]) {
@@ -957,6 +966,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                               <select 
                                 className={`${styles.input} ${styles.urlParsingInputFlex1}`}
                                 value={mapping.requestMethod || 'POST'}
+                                disabled={isViewMode}
                                 onChange={e => handleUpdateMapping(idx, { requestMethod: e.target.value as any })}
                               >
                                 <option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option><option>GET</option>
@@ -966,6 +976,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                               type="text" placeholder="Body Path (e.g., content.id)" 
                               className={`${styles.input} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                               value={mapping.value || ''}
+                              disabled={isViewMode}
                               onChange={e => {
                                 handleUpdateMapping(idx, { value: e.target.value });
                                 if (errors.payloadMappings?.[idx]) {
@@ -989,6 +1000,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                             <input 
                               type="text" placeholder="Enter full URL to parse..." className={styles.input}
                               value={mapping.fullUrl || ''}
+                              disabled={isViewMode}
                               onChange={e => parseUrl(idx, e.target.value)}
                             />
                             {mapping.pathname && (
@@ -1001,6 +1013,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                               <select 
                                 className={`${styles.input} ${styles.urlParsingSelect} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                                 value={mapping.urlPart || 'pathname'}
+                                disabled={isViewMode}
                                 onChange={e => {
                                   handleUpdateMapping(idx, { urlPart: e.target.value as any });
                                   if (errors.payloadMappings?.[idx]) {
@@ -1018,6 +1031,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                                   type="number" placeholder="Segment Index" 
                                   className={`${styles.input} ${styles.urlParsingInputFlexAuto} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                                   value={mapping.urlPartValue || ''}
+                                  disabled={isViewMode}
                                   onChange={e => {
                                     handleUpdateMapping(idx, { urlPartValue: e.target.value });
                                     if (errors.payloadMappings?.[idx]) {
@@ -1032,6 +1046,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                                   type="text" placeholder="Param Key (e.g. itemId)" 
                                   className={`${styles.input} ${styles.urlParsingInputFlexAuto} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                                   value={mapping.urlPartValue || ''}
+                                  disabled={isViewMode}
                                   onChange={e => {
                                     handleUpdateMapping(idx, { urlPartValue: e.target.value });
                                     if (errors.payloadMappings?.[idx]) {
@@ -1059,6 +1074,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                               placeholder={mapping.source === MappingSource.ELEMENT ? 'CSS Selector (e.g. .title)' : 'Path (e.g. user.id)'}
                               className={`${styles.input} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                               value={mapping.value || ''}
+                              disabled={isViewMode}
                               onChange={e => {
                                 handleUpdateMapping(idx, { value: e.target.value });
                                 if (errors.payloadMappings?.[idx]) {
@@ -1104,12 +1120,14 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
 
         <div className={styles.buttonActions}>
           <button onClick={onCancel} className={styles.btnSecondary}>
-            Cancel
+            {isViewMode ? 'Close' : 'Cancel'}
           </button>
-          <button onClick={handleSave} disabled={isSaving} className={styles.btnPrimary}>
-            {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} style={{ marginRight: '4px' }} />}
-            Save
-          </button>
+          {!isViewMode && (
+            <button onClick={handleSave} disabled={isSaving} className={styles.btnPrimary}>
+              {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} style={{ marginRight: '4px' }} />}
+              Save
+            </button>
+          )}
         </div>
       </div>
     </div>
