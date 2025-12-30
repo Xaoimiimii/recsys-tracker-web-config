@@ -320,11 +320,11 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
 
       // Convert EventType
       const eventTypeMap: Record<string, EventType> = {
-        'Click': EventType.CLICK,
-        'Rating': EventType.RATING,
-        'Review': EventType.REVIEW,
-        'Scroll': EventType.SCROLL,
-        'Page view': EventType.PAGE_VIEW
+        '1': EventType.CLICK,
+        '2': EventType.RATING,
+        '3': EventType.REVIEW,
+        '4': EventType.SCROLL,
+        '5': EventType.PAGE_VIEW
       };
 
       // Map PatternId to pattern name from cached data
@@ -382,7 +382,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
       setRule({
         id: ruleDetails.Id.toString(),
         name: ruleDetails.Name || '',
-        eventType: eventTypeMap[ruleDetails.EventType?.Name] || EventType.CLICK,
+        eventType: eventTypeMap[ruleDetails.EventTypeID] || EventType.CLICK,
         targetElement: targetElement,
         conditions: conditions,
         payloadMappings: payloadMappings

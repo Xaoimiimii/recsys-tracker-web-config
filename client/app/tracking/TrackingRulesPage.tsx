@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, TrackingRule } from '../../types';
 import { RuleBuilder } from '../../components/dashboard/RuleBuilder';
-import { Box, Plus, Trash2, Edit2, MousePointer, Eye, Star, ArrowDownCircle } from 'lucide-react';
+import { Box, Plus, Trash2, Edit2, MousePointer, Eye, Star, ArrowDownCircle, MessageSquareHeart } from 'lucide-react';
 import { ruleApi, RuleListItem, RuleDetailResponse } from '../../lib/api/';
 import { useDataCache } from '../../contexts/DataCacheContext';
 import styles from './TrackingRulesPage.module.css';
@@ -85,11 +85,13 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
             case 1:
                 return { label: 'Click', icon: MousePointer };
             case 2:
-                return { label: 'Rate', icon: Star };
+                return { label: 'Rating', icon: Star };
             case 3:
-                return { label: 'Page View', icon: Eye };
+                return { label: 'Review', icon: MessageSquareHeart };
             case 4:
                 return { label: 'Scroll', icon: ArrowDownCircle };
+            case 5:
+                return { label: 'Page view', icon: Eye };
             default:
                 return { label: 'Click', icon: Box };
         }
