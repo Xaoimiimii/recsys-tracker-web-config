@@ -14,7 +14,7 @@ export const LoaderScriptPage: React.FC<LoaderScriptPageProps> = ({ container })
   const [gtmMethod, setGtmMethod] = useState('import'); 
   const gtmManualScript = `
     <script>window.__RECSYS_DOMAIN_KEY__ = "${container.uuid}";</script>
-    <script src="https://cdn.jsdelivr.net/gh/Xaoimiimii/recsys-tracker-module/packages/sdk/dist/loader.js"></script>
+    <script src="https://tracking-sdk.s3-ap-southeast-2.amazonaws.com/dist/loader.js"></script>
     `;
 
   if (!container) {
@@ -185,7 +185,7 @@ ${loaderScript}`;
   
   <!-- ✅ RecSys Tracker Script - Place here -->
   <script>window.__RECSYS_DOMAIN_KEY__ = "${container.uuid}";</script>
-  <script src="https://cdn.jsdelivr.net/gh/Xaoimiimii/recsys-tracker-module/packages/sdk/dist/loader.js"></script>
+  <script src="https://tracking-sdk.s3-ap-southeast-2.amazonaws.com/dist/loader.js"></script>
   <!-- ✅ End of RecSys Tracker Script -->
   
 </head>

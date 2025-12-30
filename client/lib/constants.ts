@@ -46,5 +46,5 @@ export const DOMAIN_PRESETS: Record<DomainType, Partial<TrackingRule>[]> = {
 };
 
 export const MOCK_SCRIPT_TEMPLATE = (config: any) => `<script>window.__RECSYS_DOMAIN_KEY__ = "${config.uuid}";</script>
-<script src="https://cdn.jsdelivr.net/gh/Xaoimiimii/recsys-tracker-module/packages/sdk/dist/loader.js"></script>`;
+<script src="https://tracking-sdk.s3-ap-southeast-2.amazonaws.com/dist/loader.js"></script>`;
 
