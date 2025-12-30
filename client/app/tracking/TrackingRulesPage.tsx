@@ -249,7 +249,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                                                 </div>
                                             </td>
                                             <td>{rule.Name}</td>
-                                            <td>{rule.TrackingTarget?.Value || 'N/A'}</td>
+                                            <td>{rule.TrackingTarget?.Value || ''}</td>
                                             <td>
                                             <button 
                                                 className={styles.editButton}
