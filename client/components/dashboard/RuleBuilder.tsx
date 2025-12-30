@@ -544,8 +544,8 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
       // Check rating_value field
       if (mapping.field === 'rating_value') {
         if (mapping.source === MappingSource.REQUEST_BODY) {
-          if (!mapping.requestUrlPattern?.trim() || !mapping.requestMethod?.trim() || !mapping.value?.trim()) {
-            payloadErrors[idx] = 'URL Pattern, Method, and Body Path are required when source is Request Body.';
+          if (!mapping.requestUrlPattern?.trim() || !mapping.value?.trim()) {
+            payloadErrors[idx] = 'URL Pattern and Body Path are required when source is Request Body.';
           }
         } else if (mapping.source === MappingSource.URL) {
           if (!mapping.urlPart?.trim() || !mapping.urlPartValue?.trim()) {
@@ -561,8 +561,8 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
       // Check review_text field
       if (mapping.field === 'review_text') {
         if (mapping.source === MappingSource.REQUEST_BODY) {
-          if (!mapping.requestUrlPattern?.trim() || !mapping.requestMethod?.trim() || !mapping.value?.trim()) {
-            payloadErrors[idx] = 'URL Pattern, Method, and Body Path are required when source is Request Body.';
+          if (!mapping.requestUrlPattern?.trim() || !mapping.value?.trim()) {
+            payloadErrors[idx] = 'URL Pattern and Body Path are required when source is Request Body.';
           }
         } else if (mapping.source === MappingSource.URL) {
           if (!mapping.urlPart?.trim() || !mapping.urlPartValue?.trim()) {
