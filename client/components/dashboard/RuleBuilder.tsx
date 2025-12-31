@@ -39,7 +39,7 @@ export interface PayloadMapping {
   fullUrl?: string;
   pathname?: string;
   queryString?: string;
-  urlPart?: 'pathname' | 'query_param';
+  urlPart?: 'PathName' | 'QueryParam';
   urlPartValue?: string;
 }
 
@@ -120,14 +120,14 @@ const PAYLOAD_COMMON_EXAMPLES: SectionExample[] = [
     config: "Source: session_storage | Path: temp_token"
   },
   {
-    title: "URL - Pathname Mapping",
-    htmlContext: "// Sample URL\nhttps://example.com/product/iphone-15/details\n\n// Parse Results\npathname: /product/iphone-15/details\nquery: (none)",
-    config: "Source: url | URL Part: pathname | Segment Index: 2 (gets 'iphone-15')"
+    title: "URL - PathName Mapping",
+    htmlContext: "// Sample URL\nhttps://example.com/product/iphone-15/details\n\n// Parse Results\nPathName: /product/iphone-15/details\nquery: (none)",
+    config: "Source: url | URL Part: PathName | Segment Index: 2 (gets 'iphone-15')"
   },
   {
     title: "URL - Query Param Mapping",
-    htmlContext: "// Sample URL\nhttps://example.com/search?q=shoes&category=mens\n\n// Parse Results\npathname: /search\nquery: q=shoes&category=mens",
-    config: "Source: url | URL Part: query_param | Key: q (gets 'shoes')"
+    htmlContext: "// Sample URL\nhttps://example.com/search?q=shoes&category=mens\n\n// Parse Results\nPathName: /search\nquery: q=shoes&category=mens",
+    config: "Source: url | URL Part: QueryParam | Key: q (gets 'shoes')"
   }
 ];
 
@@ -352,7 +352,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
           result.requestMethod = mapping.RequestMethod || 'POST';
           result.value = mapping.RequestBodyPath || '';
         } else if (source === MappingSource.URL) {
-          result.urlPart = mapping.UrlPart || 'pathname';
+          result.urlPart = mapping.UrlPart || 'PathName';
           result.urlPartValue = mapping.UrlPartValue || '';
         } else {
           result.value = mapping.Value || '';
@@ -537,9 +537,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
             payloadErrors[idx] = 'Body Path is required when source is Request Body.';
           }
         } else if (mapping.source === MappingSource.URL) {
-          if (!mapping.urlPart?.trim()) {
-            payloadErrors[idx] = 'URL Part is required when source is URL.';
-          } else if (!mapping.urlPartValue?.trim()) {
+          if (!mapping.urlPartValue?.trim()) {
             payloadErrors[idx] = 'URL Part Value is required when source is URL.';
           }
         } else {
@@ -557,7 +555,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
             payloadErrors[idx] = 'URL Pattern and Body Path are required when source is Request Body.';
           }
         } else if (mapping.source === MappingSource.URL) {
-          if (!mapping.urlPart?.trim() || !mapping.urlPartValue?.trim()) {
+          if (!mapping.urlPartValue?.trim()) {
             payloadErrors[idx] = 'URL Part and its value are required when source is URL.';
           }
         } else {
@@ -574,7 +572,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
             payloadErrors[idx] = 'URL Pattern and Body Path are required when source is Request Body.';
           }
         } else if (mapping.source === MappingSource.URL) {
-          if (!mapping.urlPart?.trim() || !mapping.urlPartValue?.trim()) {
+          if (!mapping.urlPartValue?.trim()) {
             payloadErrors[idx] = 'URL Part and its value are required when source is URL.';
           }
         } else {
@@ -615,13 +613,13 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
         // Set values based on source type
         if (mapping.source === MappingSource.REQUEST_BODY) {
           backendMapping.RequestUrlPattern = mapping.requestUrlPattern || null;
-          backendMapping.RequestMethod = mapping.requestMethod || null;
+          backendMapping.RequestMethod = mapping.requestMethod || 'POST';
           backendMapping.RequestBodyPath = mapping.value || null;
           backendMapping.Value = null;
           backendMapping.UrlPart = null;
           backendMapping.UrlPartValue = null;
         } else if (mapping.source === MappingSource.URL) {
-          backendMapping.UrlPart = mapping.urlPart || null;
+          backendMapping.UrlPart = mapping.urlPart || 'PathName';
           backendMapping.UrlPartValue = mapping.urlPartValue || null;
           backendMapping.Value = null;
           backendMapping.RequestUrlPattern = null;
@@ -1021,7 +1019,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                             <div className={styles.urlParsingControlRow}>
                               <select 
                                 className={`${styles.input} ${styles.urlParsingSelect} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
-                                value={mapping.urlPart || 'pathname'}
+                                value={mapping.urlPart || 'PathName'}
                                 disabled={isViewMode}
                                 onChange={e => {
                                   handleUpdateMapping(idx, { urlPart: e.target.value as any });
@@ -1032,10 +1030,10 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                                   }
                                 }}
                               >
-                                <option value="pathname">pathname</option>
-                                <option value="query_param">query_param</option>
+                                <option value="PathName">PathName</option>
+                                <option value="QueryParam">QueryParam</option>
                               </select>
-                              {mapping.urlPart === 'pathname' ? (
+                              {mapping.urlPart === 'PathName' ? (
                                 <input 
                                   type="number" placeholder="Segment Index" 
                                   className={`${styles.input} ${styles.urlParsingInputFlexAuto} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
