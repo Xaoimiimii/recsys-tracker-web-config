@@ -479,20 +479,29 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
   };
 
   const parseUrl = useCallback((index: number, url: string) => {
-    try {
-      const parsed = new URL(url);
-      handleUpdateMapping(index, {
-        fullUrl: url,
-        pathname: parsed.pathname,
-        queryString: parsed.search.slice(1)
-      });
-    } catch (e) {
-      handleUpdateMapping(index, {
-        fullUrl: url,
-        pathname: 'Invalid URL',
-        queryString: ''
-      });
-    }
+    setRule(prev => {
+      const newMappings = [...prev.payloadMappings];
+      const currentMapping = newMappings[index];
+      
+      try {
+        const parsed = new URL(url);
+        newMappings[index] = {
+          ...currentMapping,
+          fullUrl: url,
+          pathname: parsed.pathname,
+          queryString: parsed.search.slice(1)
+        };
+      } catch (e) {
+        newMappings[index] = {
+          ...currentMapping,
+          fullUrl: url,
+          pathname: 'Invalid URL',
+          queryString: ''
+        };
+      }
+      
+      return { ...prev, payloadMappings: newMappings };
+    });
   }, []);
 
   const handleSave = async () => {
@@ -1006,7 +1015,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                             {mapping.pathname && (
                               <div className={styles.urlParsingResultsGrid}>
                                 <input type="text" disabled className={`${styles.input} ${styles.urlParsingDisabledInput}`} value={`Path: ${mapping.pathname}`} />
-                                <input type="text" disabled className={`${styles.input} ${styles.urlParsingDisabledInput}`} value={`Query: ${mapping.query_string || 'None'}`} />
+                                <input type="text" disabled className={`${styles.input} ${styles.urlParsingDisabledInput}`} value={`Query: ${mapping.queryString || 'None'}`} />
                               </div>
                             )}
                             <div className={styles.urlParsingControlRow}>
@@ -1043,7 +1052,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                                 />
                               ) : (
                                 <input 
-                                  type="text" placeholder="Param Key (e.g. itemId)" 
+                                  type="text" placeholder="Param Key" 
                                   className={`${styles.input} ${styles.urlParsingInputFlexAuto} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                                   value={mapping.urlPartValue || ''}
                                   disabled={isViewMode}
