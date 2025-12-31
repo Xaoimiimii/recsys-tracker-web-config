@@ -3,6 +3,7 @@ import { Lightbulb, X, Fingerprint, Target, Filter, Plus, Trash2, Database, Aler
 import styles from './RuleBuilder.module.css';
 import { ruleApi } from '../../lib/api/rule';
 import { useDataCache } from '../../contexts/DataCacheContext';
+import { request } from 'http';
 
 // ==================== TYPES ====================
 export enum EventType {
@@ -15,11 +16,12 @@ export enum EventType {
 
 export enum MappingSource {
   REQUEST_BODY = 'request_body',
+  REQUEST_URL = 'request_url',
   ELEMENT = 'element',
   COOKIE = 'cookie',
   LOCAL_STORAGE = 'local_storage',
   SESSION_STORAGE = 'session_storage',
-  URL = 'url',
+  URL = 'page_url',
 }
 
 export interface Condition {
@@ -226,6 +228,7 @@ export const PATTERN_TO_ID: Record<string, number> = {
 
 export const SOURCE_TO_BACKEND: Record<MappingSource, string> = {
   [MappingSource.REQUEST_BODY]: 'RequestBody',
+  [MappingSource.REQUEST_URL]: 'RequestUrl',
   [MappingSource.ELEMENT]: 'Element',
   [MappingSource.COOKIE]: 'Cookie',
   [MappingSource.LOCAL_STORAGE]: 'LocalStorage',
@@ -297,6 +300,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
       const convertSource = (source: string): MappingSource => {
         const sourceMap: Record<string, MappingSource> = {
           'RequestBody': MappingSource.REQUEST_BODY,
+          'RequestUrl': MappingSource.REQUEST_URL,
           'Element': MappingSource.ELEMENT,
           'Cookie': MappingSource.COOKIE,
           'LocalStorage': MappingSource.LOCAL_STORAGE,
@@ -435,11 +439,19 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
   const handleUpdateMapping = (index: number, updates: Partial<PayloadMapping>) => {
     const newMappings = [...rule.payloadMappings];
     let updatedMapping = { ...newMappings[index], ...updates };
-    
-    // If source is being updated, set appropriate fields to NULL
+
     if (updates.source) {
-      if (updates.source === MappingSource.REQUEST_BODY) {
-        // Keep requestUrlPattern, requestMethod, requestBodyPath; set others to null/undefined
+      if (updates.source === MappingSource.REQUEST_URL) {
+        updatedMapping = {
+          ...updatedMapping,
+          requestBodyPath: undefined,
+          urlPart: undefined,
+          urlPartValue: undefined,
+          fullUrl: undefined,
+          pathname: undefined,
+          queryString: undefined
+        };
+      } else if (updates.source === MappingSource.REQUEST_BODY) {
         updatedMapping = {
           ...updatedMapping,
           value: undefined,
@@ -450,7 +462,6 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
           queryString: undefined
         };
       } else if (updates.source === MappingSource.URL) {
-        // Keep urlPart, urlPartValue; set others to null/undefined
         updatedMapping = {
           ...updatedMapping,
           value: undefined,
@@ -459,7 +470,6 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
           requestBodyPath: undefined
         };
       } else if ([MappingSource.ELEMENT, MappingSource.COOKIE, MappingSource.LOCAL_STORAGE, MappingSource.SESSION_STORAGE].includes(updates.source)) {
-        // Keep value; set others to null/undefined
         updatedMapping = {
           ...updatedMapping,
           requestUrlPattern: undefined,
@@ -473,7 +483,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
         };
       }
     }
-    
+
     newMappings[index] = updatedMapping;
     setRule(prev => ({ ...prev, payloadMappings: newMappings }));
   };
@@ -616,6 +626,13 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
           backendMapping.RequestMethod = mapping.requestMethod || 'POST';
           backendMapping.RequestBodyPath = mapping.value || null;
           backendMapping.Value = null;
+          backendMapping.UrlPart = null;
+          backendMapping.UrlPartValue = null;
+        } else if (mapping.source === MappingSource.REQUEST_URL) {
+          backendMapping.RequestUrlPattern = mapping.requestUrlPattern || null;
+          backendMapping.RequestMethod = mapping.requestMethod || 'POST';
+          backendMapping.RequestBodyPath = null;
+          backendMapping.Value = mapping.value || null;
           backendMapping.UrlPart = null;
           backendMapping.UrlPartValue = null;
         } else if (mapping.source === MappingSource.URL) {
@@ -1002,6 +1019,55 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                           </div>
                         )}
 
+                        {mapping.source === MappingSource.REQUEST_URL && (
+                          <div className={styles.urlParsingContainer}>
+                            <div className={styles.urlParsingInputRow}>
+                              <input 
+                                type="text" placeholder="URL Pattern (/api/cart/:itemId)" 
+                                className={`${styles.input} ${styles.urlParsingInputFlex2} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
+                                value={mapping.requestUrlPattern || ''}
+                                disabled={isViewMode}
+                                onChange={e => {
+                                  handleUpdateMapping(idx, { requestUrlPattern: e.target.value });
+                                  if (errors.payloadMappings?.[idx]) {
+                                    const newPayloadErrors = {...errors.payloadMappings};
+                                    delete newPayloadErrors[idx];
+                                    setErrors(prev => ({...prev, payloadMappings: newPayloadErrors}));
+                                  }
+                                }}
+                              />
+                              <select 
+                                className={`${styles.input} ${styles.urlParsingInputFlex1}`}
+                                value={mapping.requestMethod || 'POST'}
+                                disabled={isViewMode}
+                                onChange={e => handleUpdateMapping(idx, { requestMethod: e.target.value as any })}
+                              >
+                                <option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option><option>GET</option>
+                              </select>
+                            </div>
+                            <input 
+                              type="number" placeholder="Path Index (e.g., 1, 2, 3)" 
+                              className={`${styles.input} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
+                              value={mapping.value || ''}
+                              disabled={isViewMode}
+                              onChange={e => {
+                                handleUpdateMapping(idx, { value: e.target.value });
+                                if (errors.payloadMappings?.[idx]) {
+                                  const newPayloadErrors = {...errors.payloadMappings};
+                                  delete newPayloadErrors[idx];
+                                  setErrors(prev => ({...prev, payloadMappings: newPayloadErrors}));
+                                }
+                              }}
+                            />
+                            {errors.payloadMappings?.[idx] && (
+                              <p className={styles.errorText}>
+                                <AlertCircle size={14} />
+                                {errors.payloadMappings[idx]}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
                         {mapping.source === MappingSource.URL && (
                           <div className={styles.urlParsingContainer}>
                             <input 
@@ -1074,7 +1140,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                           </div>
                         )}
 
-                        {mapping.source !== MappingSource.REQUEST_BODY && mapping.source !== MappingSource.URL && (
+                        {mapping.source !== MappingSource.REQUEST_BODY && mapping.source !== MappingSource.REQUEST_URL && mapping.source !== MappingSource.URL && (
                           <div>
                             <input 
                               type="text"
