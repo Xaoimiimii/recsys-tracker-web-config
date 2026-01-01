@@ -19,6 +19,18 @@ const RULE_COLORS = [
     '#d084d0', '#8dd1e1', '#ffb347', '#ba55d3', '#20b2aa'
 ];
 
+const EVENT_TYPE_MAP: { [key: number]: string } = {
+    1: 'Click',
+    2: 'Rating',
+    3: 'Review',
+    4: 'Scroll',
+    5: 'Page View'
+};
+
+function getEventTypeName(eventTypeId: number): string {
+    return EVENT_TYPE_MAP[eventTypeId] || 'Unknown';
+}
+
 export const EventsChart: React.FC<EventsChartProps> = ({
     events,
     loading,
@@ -28,10 +40,15 @@ export const EventsChart: React.FC<EventsChartProps> = ({
     onRuleSelect
 }) => {
     // Group events by rule ID
-    const ruleIds = [...new Set(events.map(e => e.TrackingRuleId))].sort((a, b) => (a as number) - (b as number));
+    const ruleIds = [...new Set(events.map(e => e.TrackingRule.Id))].sort((a, b) => (a as number) - (b as number));
     const ruleColorMap = new Map<number, string>();
+    const ruleNameMap = new Map<number, string>();
     ruleIds.forEach((id, index) => {
         ruleColorMap.set(id as number, RULE_COLORS[index % RULE_COLORS.length]);
+        const event = events.find(e => e.TrackingRule.Id === id);
+        if (event) {
+            ruleNameMap.set(id as number, event.TrackingRule.Name);
+        }
     });
 
     // Transform events into chart data for scatter plot
@@ -39,14 +56,15 @@ export const EventsChart: React.FC<EventsChartProps> = ({
         .sort((a, b) => new Date(a.Timestamp).getTime() - new Date(b.Timestamp).getTime())
         .map((event, index) => ({
             x: index, // Index for X-axis positioning
-            y: event.TrackingRuleId, // Rule ID on Y-axis
+            y: event.TrackingRule.Name, // Rule Name on Y-axis
             timestamp: new Date(event.Timestamp).toLocaleTimeString('en-US', {
                 hour: '2-digit',
                 minute: '2-digit',
                 second: '2-digit'
             }),
             eventId: event.Id,
-            ruleId: event.TrackingRuleId,
+            ruleId: event.TrackingRule.Id,
+            ruleName: event.TrackingRule.Name,
             user: event.UserValue,
             item: event.ItemValue,
             eventType: event.EventTypeId,
@@ -70,11 +88,12 @@ export const EventsChart: React.FC<EventsChartProps> = ({
             return (
                 <div className={styles.customTooltip}>
                     <p className={styles.tooltipLabel}>Event #{data.eventId}</p>
-                    <p className={styles.tooltipItem}>Rule ID: {data.ruleId}</p>
-                    <p className={styles.tooltipItem}>Time: {data.fullTimestamp}</p>
+                    <p className={styles.tooltipItem}>Rule name: {data.ruleName}</p>
+                    <p className={styles.tooltipItem}>Event type: {getEventTypeName(data.eventType)}</p>
                     <p className={styles.tooltipItem}>User: {data.user}</p>
                     <p className={styles.tooltipItem}>Item: {data.item}</p>
-                    <p className={styles.tooltipItem}>Type: {data.eventType}</p>
+                    <p className={styles.tooltipItem}>Timestamp: {data.fullTimestamp}</p>
+                    
                 </div>
             );
         }
@@ -115,7 +134,11 @@ export const EventsChart: React.FC<EventsChartProps> = ({
                                 type="number"
                                 dataKey="x"
                                 name="Time"
-                                label={{ value: 'Timeline', position: 'insideBottom', offset: -10 }}
+                                label={{ 
+                                    value: 'Timeline', 
+                                    fontSize: 14,
+                                    position: 'insideBottom', 
+                                    offset: -10 }}
                                 tick={{ fontSize: 12 }}
                                 tickFormatter={(value) => {
                                     const event = chartData[value];
@@ -123,21 +146,31 @@ export const EventsChart: React.FC<EventsChartProps> = ({
                                 }}
                             />
                             <YAxis 
-                                type="number"
+                                type="category"
                                 dataKey="y"
-                                name="Rule ID"
-                                label={{ value: 'Tracking Rule ID', angle: -90, position: 'insideLeft' }}
+                                name="Rule"
+                                label={{ 
+                                    value: 'Tracking Rule', 
+                                    fontSize: 14,
+                                    angle: -90, 
+                                    dx: -20,
+                                    dy: 20,
+                                    position: 'insideLeft' }}
                                 tick={{ fontSize: 12 }}
-                                domain={['dataMin - 0.5', 'dataMax + 0.5']}
-                                allowDecimals={false}
                             />
                             <ZAxis range={[100, 100]} />
                             <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3' }} />
-                            <Legend />
+                            <Legend 
+                                wrapperStyle={{
+                                    paddingTop: "20px",
+                                    paddingLeft: "10px",
+                                    fontSize: "14px"
+                                }}
+                             />
                             {ruleIds.map(ruleId => (
                                 <Scatter
                                     key={ruleId as number}
-                                    name={`Rule #${ruleId}`}
+                                    name={ruleNameMap.get(ruleId as number) || `Rule #${ruleId}`}
                                     data={dataByRule.get(ruleId as number)}
                                     fill={ruleColorMap.get(ruleId as number)}
                                     shape="circle"
@@ -160,7 +193,7 @@ export const EventsChart: React.FC<EventsChartProps> = ({
                                         }}
                                         onClick={() => onRuleSelect(ruleId as number)}
                                     >
-                                        Rule #{ruleId}
+                                        {ruleNameMap.get(ruleId as number) || `Rule #${ruleId}`}
                                         <span className={styles.eventCount}>
                                             ({dataByRule.get(ruleId as number)?.length || 0} events)
                                         </span>

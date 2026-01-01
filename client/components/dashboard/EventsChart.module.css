@@ -10,7 +10,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 
 .chartTitle {
@@ -21,19 +21,17 @@
 }
 
 .refreshButton {
-    background: #f5f5f5;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 8px 12px;
+    padding: 12px 12px;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 6px;
     transition: all 0.2s;
-    color: #666;
+    color: var(--color-text-secondary);
 }
 
 .refreshButton:hover:not(:disabled) {
+    border-radius: 8px;
     background: #e8e8e8;
     border-color: #d0d0d0;
 }
