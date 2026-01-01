@@ -1,5 +1,5 @@
 import React from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ZAxis } from 'recharts';
 import { TrackedEvent } from '../../lib/api/types';
 import { RefreshCw } from 'lucide-react';
 import styles from './EventsChart.module.css';
@@ -34,10 +34,12 @@ export const EventsChart: React.FC<EventsChartProps> = ({
         ruleColorMap.set(id as number, RULE_COLORS[index % RULE_COLORS.length]);
     });
 
-    // Transform events into chart data
+    // Transform events into chart data for scatter plot
     const chartData = events
         .sort((a, b) => new Date(a.Timestamp).getTime() - new Date(b.Timestamp).getTime())
         .map((event, index) => ({
+            x: index, // Index for X-axis positioning
+            y: event.TrackingRuleId, // Rule ID on Y-axis
             timestamp: new Date(event.Timestamp).toLocaleTimeString('en-US', {
                 hour: '2-digit',
                 minute: '2-digit',
@@ -49,11 +51,10 @@ export const EventsChart: React.FC<EventsChartProps> = ({
             item: event.ItemValue,
             eventType: event.EventTypeId,
             fullTimestamp: new Date(event.Timestamp).toLocaleString(),
-            // For positioning on Y-axis (just for visual separation)
-            value: index + 1
+            timestampMs: new Date(event.Timestamp).getTime()
         }));
 
-    // Group data by rule for multiple lines
+    // Group data by rule for scatter plot
     const dataByRule = new Map<number, any[]>();
     chartData.forEach(point => {
         if (!dataByRule.has(point.ruleId)) {
@@ -104,37 +105,45 @@ export const EventsChart: React.FC<EventsChartProps> = ({
                     <p>No events found</p>
                 </div>
             ) : (
-                <>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <LineChart data={chartData}>
+<>
+                    <ResponsiveContainer width="100%" height={400}>
+                        <ScatterChart
+                            margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+                        >
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis 
-                                dataKey="timestamp" 
-                                angle={-45}
-                                textAnchor="end"
-                                height={80}
+                                type="number"
+                                dataKey="x"
+                                name="Time"
+                                label={{ value: 'Timeline', position: 'insideBottom', offset: -10 }}
                                 tick={{ fontSize: 12 }}
+                                tickFormatter={(value) => {
+                                    const event = chartData[value];
+                                    return event ? event.timestamp : '';
+                                }}
                             />
                             <YAxis 
-                                label={{ value: 'Events', angle: -90, position: 'insideLeft' }}
+                                type="number"
+                                dataKey="y"
+                                name="Rule ID"
+                                label={{ value: 'Tracking Rule ID', angle: -90, position: 'insideLeft' }}
                                 tick={{ fontSize: 12 }}
+                                domain={['dataMin - 0.5', 'dataMax + 0.5']}
+                                allowDecimals={false}
                             />
-                            <Tooltip content={<CustomTooltip />} />
+                            <ZAxis range={[100, 100]} />
+                            <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3' }} />
                             <Legend />
                             {ruleIds.map(ruleId => (
-                                <Line
+                                <Scatter
                                     key={ruleId as number}
-                                    type="monotone"
-                                    dataKey="value"
-                                    data={dataByRule.get(ruleId as number)}
                                     name={`Rule #${ruleId}`}
-                                    stroke={ruleColorMap.get(ruleId as number)}
-                                    strokeWidth={2}
-                                    dot={{ r: 5 }}
-                                    activeDot={{ r: 7 }}
+                                    data={dataByRule.get(ruleId as number)}
+                                    fill={ruleColorMap.get(ruleId as number)}
+                                    shape="circle"
                                 />
                             ))}
-                        </LineChart>
+                        </ScatterChart>
                     </ResponsiveContainer>
 
                     {onRuleSelect && (
