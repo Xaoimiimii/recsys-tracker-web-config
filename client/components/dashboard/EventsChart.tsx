@@ -43,20 +43,25 @@ export const EventsChart: React.FC<EventsChartProps> = ({
     const ruleIds = [...new Set(events.map(e => e.TrackingRule.Id))].sort((a, b) => (a as number) - (b as number));
     const ruleColorMap = new Map<number, string>();
     const ruleNameMap = new Map<number, string>();
+    const ruleIdToIndex = new Map<number, number>();
+    const indexToRuleName = new Map<number, string>();
+    
     ruleIds.forEach((id, index) => {
         ruleColorMap.set(id as number, RULE_COLORS[index % RULE_COLORS.length]);
+        ruleIdToIndex.set(id as number, index);
         const event = events.find(e => e.TrackingRule.Id === id);
         if (event) {
             ruleNameMap.set(id as number, event.TrackingRule.Name);
+            indexToRuleName.set(index, event.TrackingRule.Name);
         }
     });
 
     // Transform events into chart data for scatter plot
-    const chartData = events
+    const chartData = [...events]
         .sort((a, b) => new Date(a.Timestamp).getTime() - new Date(b.Timestamp).getTime())
         .map((event, index) => ({
             x: index, // Index for X-axis positioning
-            y: event.TrackingRule.Name, // Rule Name on Y-axis
+            y: ruleIdToIndex.get(event.TrackingRule.Id) ?? 0, // Sequential index for Y-axis
             timestamp: new Date(event.Timestamp).toLocaleTimeString('en-US', {
                 hour: '2-digit',
                 minute: '2-digit',
@@ -75,10 +80,10 @@ export const EventsChart: React.FC<EventsChartProps> = ({
     // Group data by rule for scatter plot
     const dataByRule = new Map<number, any[]>();
     chartData.forEach(point => {
-        if (!dataByRule.has(point.ruleId)) {
-            dataByRule.set(point.ruleId, []);
+        if (!dataByRule.has(point.y)) {
+            dataByRule.set(point.y, []);
         }
-        dataByRule.get(point.ruleId)!.push(point);
+        dataByRule.get(point.y)!.push(point);
     });
 
     // Custom tooltip
@@ -146,7 +151,7 @@ export const EventsChart: React.FC<EventsChartProps> = ({
                                 }}
                             />
                             <YAxis 
-                                type="category"
+                                type="number"
                                 dataKey="y"
                                 name="Rule"
                                 label={{ 
@@ -154,9 +159,15 @@ export const EventsChart: React.FC<EventsChartProps> = ({
                                     fontSize: 14,
                                     angle: -90, 
                                     dx: -20,
-                                    dy: 20,
+                                    dy: 40,
                                     position: 'insideLeft' }}
                                 tick={{ fontSize: 12 }}
+                                tickFormatter={(value) => {
+                                    return indexToRuleName.get(value) || '';
+                                }}
+                                ticks={Array.from({length: ruleIds.length}, (_, i) => i)}
+                                domain={[-0.5, ruleIds.length - 0.5]}
+                                allowDecimals={false}
                             />
                             <ZAxis range={[100, 100]} />
                             <Tooltip content={<CustomTooltip />} cursor={{ strokeDasharray: '3 3' }} />
@@ -167,11 +178,11 @@ export const EventsChart: React.FC<EventsChartProps> = ({
                                     fontSize: "14px"
                                 }}
                              />
-                            {ruleIds.map(ruleId => (
+                            {ruleIds.map((ruleId, index) => (
                                 <Scatter
                                     key={ruleId as number}
                                     name={ruleNameMap.get(ruleId as number) || `Rule #${ruleId}`}
-                                    data={dataByRule.get(ruleId as number)}
+                                    data={dataByRule.get(index)}
                                     fill={ruleColorMap.get(ruleId as number)}
                                     shape="circle"
                                 />
