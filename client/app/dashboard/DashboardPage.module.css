@@ -1,7 +1,6 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
 }
 
 .statsGrid {
@@ -963,4 +962,7 @@
   font-weight: 600;
   padding: 0.25rem 0.75rem;
   border-radius: 1rem;
+}
+.visualizationSection {
+  margin-top: 2rem;
 }

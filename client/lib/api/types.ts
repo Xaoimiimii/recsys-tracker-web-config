@@ -31,11 +31,11 @@ export interface RefreshResponse {
 }
 
 export interface UserState {
-    isAuthenticated: boolean;
-    currentUser: {
-        name: string;
-        email: string;
-    } | null;
+  isAuthenticated: boolean;
+  currentUser: {
+    name: string;
+    email: string;
+  } | null;
 }
 
 // ==================== DOMAIN TYPES ====================
@@ -202,4 +202,15 @@ export interface CreateItem {
   description?: string;
   categories?: string[];
   domainId: number;
+}
+
+// ==================== EVENT TYPES ====================
+
+export interface TrackedEvent {
+  uuid: string;
+  type: string;
+  payload: any;
+  createdAt: string;
+  domain: string;
+  trackingRuleId?: number;
 }

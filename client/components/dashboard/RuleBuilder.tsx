@@ -1068,7 +1068,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                               </select>
                             </div>
                             <input 
-                              type="number" placeholder="Path Index (e.g., 1, 2, 3)" 
+                              type="number" placeholder="Path Index (e.g., 3, 4, 5)" 
                               className={`${styles.input} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                               value={mapping.value || ''}
                               disabled={isViewMode}

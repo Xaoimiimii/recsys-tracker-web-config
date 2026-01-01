@@ -4,6 +4,8 @@ export { domainApi } from './domain';
 export { returnMethodApi } from './return-method';
 export { ruleApi } from './rule';
 export { userApi } from './user';
+export { eventApi } from './event';
+
 
 // Export client utilities
 export { apiFetch, VITE_API_BASE_URL, SERVER_API_BASE_URL } from './client';

@@ -15,7 +15,7 @@
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   width: 100%;
   max-width: 1000px;
-  max-height: calc(100vh - 4rem);
+  max-height: calc(100vh - 2rem);
   border: 1px solid var(--color-border);
   display: flex;
   overflow: hidden;
@@ -187,34 +187,6 @@
   text-decoration: underline;
 }
 
-@media (max-width: 768px) {
-  .card {
-    flex-direction: column;
-    min-height: auto;
-  }
-  
-  .card.signUpMode .illustrationSide,
-  .card.signUpMode .formSide {
-    order: initial;
-  }
-  
-  .illustrationSide {
-    padding: 2rem;
-  }
-  
-  .formSide {
-    padding: 2rem;
-  }
-  
-  .brandTitle {
-    font-size: 2rem;
-  }
-  
-  .formTitle {
-    font-size: 1.5rem;
-  }
-}
-
 .errorMessage {
   display: flex;
   align-items: center;
@@ -253,4 +225,52 @@
   width: 1.25rem;
   height: 1.25rem;
   flex-shrink: 0;
+}
+
+
+@media (max-width: 920px) {
+  .illustrationSide {
+    padding-right: 24px;
+    padding-left: 24px;
+  }
+}
+
+@media (max-width: 860px) {
+  .illustrationSide {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .formSide {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .illustrationSide {
+    display: none;
+  }
+
+  .formSide {
+    flex: 1 1 100%;
+    padding: 3rem 2.5rem;
+  }
+
+  .formContent {
+    max-width: 100%;
+  }
+  
+  .card.signUpMode .illustrationSide,
+  .card.signUpMode .formSide {
+    order: initial;
+  }
+  
+  .brandTitle {
+    font-size: 2rem;
+  }
+  
+  .formTitle {
+    font-size: 1.5rem;
+  }
 }
