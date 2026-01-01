@@ -26,7 +26,24 @@ export class EventService {
             orderBy: {
                 Timestamp: 'desc'
             },
-            take: k
+            take: k,
+            select: {
+                Id: true,
+                EventTypeId: true,
+                UserField: true,
+                UserValue: true,
+                ItemField: true,
+                ItemValue: true,
+                RatingValue: true,
+                ReviewValue: true,
+                Timestamp: true,
+                TrackingRule: {
+                    select: {
+                        Id: true,
+                        Name: true
+                    }
+                }
+            }
         });
     }
 
@@ -40,7 +57,24 @@ export class EventService {
             orderBy: {
                 Timestamp: 'desc'
             },
-            take: k
+            take: k,
+            select: {
+                Id: true,
+                EventTypeId: true,
+                UserField: true,
+                UserValue: true,
+                ItemField: true,
+                ItemValue: true,
+                RatingValue: true,
+                ReviewValue: true,
+                Timestamp: true,
+                TrackingRule: {
+                    select: {
+                        Id: true,
+                        Name: true
+                    }
+                }
+            }
         });
     }
 }

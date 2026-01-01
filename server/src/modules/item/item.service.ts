@@ -18,40 +18,62 @@ export class ItemService {
             throw new Error('Domain not found');
         }
 
-        return await this.prisma.$transaction(async (tx) => {
-            const results: Item[] = [];
+        const allCategoryNames = new Set<string>();
+        items.forEach(item => {
+            item.Categories?.forEach(cat => allCategoryNames.add(cat.trim()));
+        });
 
-            for (const item of items) {
-                const createdItem = await tx.item.create({
-                    data: {
-                        DomainItemId: item.TernantItemId,
-                        Title: item.Title,
-                        Description: item.Description || '',
-                        EmbeddingVector: [],
-                        ModifiedAt: new Date(),
+        const categoryMap = new Map<string, number>();
+        for (const catName of allCategoryNames) {
+            const category = await this.prisma.category.upsert({
+                where: { Name: catName },
+                create: { Name: catName },
+                update: {},
+            });
+            categoryMap.set(catName, category.Id);
+        }
 
-                        Domain: {
-                            connect: { Id: domain.Id }
-                        },
+        const BATCH_SIZE = 50;
+        const results: Item[] = [];
 
-                        ItemCategories: {
-                            create: item.Categories?.map(catName => ({
-                                Category: {
-                                    connectOrCreate: {
-                                        where: { Name: catName.trim() },
-                                        create: { Name: catName.trim() }
-                                    }
-                                }
-                            })) ?? []
-                        },
-                    }
+        for (let i = 0; i < items.length; i += BATCH_SIZE) {
+            const batch = items.slice(i, i + BATCH_SIZE);
+            
+            const batchResults = await this.prisma.$transaction(async (tx) => {
+                const itemPromises = batch.map(async (item) => {
+                    const categoryIds = (item.Categories || [])
+                        .map(catName => categoryMap.get(catName.trim()))
+                        .filter((id): id is number => id !== undefined);
+
+                    return tx.item.create({
+                        data: {
+                            DomainItemId: item.TernantItemId,
+                            Title: item.Title,
+                            Description: item.Description || '',
+                            EmbeddingVector: [],
+                            ModifiedAt: new Date(),
+                            Domain: {
+                                connect: { Id: domain.Id }
+                            },
+                            ItemCategories: {
+                                create: categoryIds.map(catId => ({
+                                    CategoryId: catId
+                                }))
+                            },
+                        }
+                    });
                 });
 
-                results.push(createdItem);
-            }
+                return await Promise.all(itemPromises);
+            }, {
+                maxWait: 10000,
+                timeout: 30000,
+            });
 
-            return results;
-        });
+            results.push(...batchResults);
+        }
+
+        return results;
     }
 
 }
