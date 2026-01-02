@@ -11,9 +11,10 @@ interface OnboardingPageProps {
   onCreateContainer?: (url: string) => void;
   onSelectDomain?: (type: DomainType) => void;
   onLogout?: () => void;
+  onDomainCreated?: (domain: any) => void;
 }
 
-export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onLogout }) => {
+export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onLogout, onDomainCreated }) => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [createdDomainKey, setCreatedDomainKey] = useState<string | null>(null);
@@ -42,6 +43,9 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onLogout }) => {
       });
       setCreatedDomainKey(domain.Key);
       localStorage.setItem('selectedDomainKey', domain.Key);
+      if (onDomainCreated) {
+        onDomainCreated(domain);
+      }
       navigate('/dashboard');
     } catch (err) {
       console.error('Failed to create domain:', err);

@@ -64,6 +64,13 @@ function AppContent() {
     setDomains(domainsList);
   };
 
+  const handleDomainCreated = (newDomain: DomainResponse) => {
+    setSelectedDomainKey(newDomain.Key);
+    localStorage.setItem('selectedDomainKey', newDomain.Key);
+    setDomains([...domains, newDomain]);
+    setContainer(mapDomainToContainer(newDomain));
+  };
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -102,7 +109,7 @@ function AppContent() {
             !isAuthenticated ? (
               <Navigate to="/login" replace />
             ) : (
-              <OnboardingPage onLogout={signout} />
+              <OnboardingPage onLogout={signout} onDomainCreated={handleDomainCreated} />
             )
           } 
         />
