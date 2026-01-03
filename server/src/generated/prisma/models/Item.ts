@@ -45,6 +45,7 @@ export type ItemMinAggregateOutputType = {
   DomainId: number | null
   Description: string | null
   ModifiedAt: Date | null
+  ImageUrl: string | null
 }
 
 export type ItemMaxAggregateOutputType = {
@@ -54,6 +55,7 @@ export type ItemMaxAggregateOutputType = {
   DomainId: number | null
   Description: string | null
   ModifiedAt: Date | null
+  ImageUrl: string | null
 }
 
 export type ItemCountAggregateOutputType = {
@@ -64,6 +66,8 @@ export type ItemCountAggregateOutputType = {
   Description: number
   EmbeddingVector: number
   ModifiedAt: number
+  ImageUrl: number
+  Attributes: number
   _all: number
 }
 
@@ -87,6 +91,7 @@ export type ItemMinAggregateInputType = {
   DomainId?: true
   Description?: true
   ModifiedAt?: true
+  ImageUrl?: true
 }
 
 export type ItemMaxAggregateInputType = {
@@ -96,6 +101,7 @@ export type ItemMaxAggregateInputType = {
   DomainId?: true
   Description?: true
   ModifiedAt?: true
+  ImageUrl?: true
 }
 
 export type ItemCountAggregateInputType = {
@@ -106,6 +112,8 @@ export type ItemCountAggregateInputType = {
   Description?: true
   EmbeddingVector?: true
   ModifiedAt?: true
+  ImageUrl?: true
+  Attributes?: true
   _all?: true
 }
 
@@ -203,6 +211,8 @@ export type ItemGroupByOutputType = {
   Description: string | null
   EmbeddingVector: number[]
   ModifiedAt: Date
+  ImageUrl: string | null
+  Attributes: runtime.JsonValue | null
   _count: ItemCountAggregateOutputType | null
   _avg: ItemAvgAggregateOutputType | null
   _sum: ItemSumAggregateOutputType | null
@@ -236,6 +246,8 @@ export type ItemWhereInput = {
   Description?: Prisma.StringNullableFilter<"Item"> | string | null
   EmbeddingVector?: Prisma.FloatNullableListFilter<"Item">
   ModifiedAt?: Prisma.DateTimeFilter<"Item"> | Date | string
+  ImageUrl?: Prisma.StringNullableFilter<"Item"> | string | null
+  Attributes?: Prisma.JsonNullableFilter<"Item">
   Domain?: Prisma.XOR<Prisma.DomainScalarRelationFilter, Prisma.DomainWhereInput>
   ItemCategories?: Prisma.ItemCategoryListRelationFilter
   ItemFactors?: Prisma.ItemFactorListRelationFilter
@@ -252,6 +264,8 @@ export type ItemOrderByWithRelationInput = {
   Description?: Prisma.SortOrderInput | Prisma.SortOrder
   EmbeddingVector?: Prisma.SortOrder
   ModifiedAt?: Prisma.SortOrder
+  ImageUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  Attributes?: Prisma.SortOrderInput | Prisma.SortOrder
   Domain?: Prisma.DomainOrderByWithRelationInput
   ItemCategories?: Prisma.ItemCategoryOrderByRelationAggregateInput
   ItemFactors?: Prisma.ItemFactorOrderByRelationAggregateInput
@@ -262,6 +276,7 @@ export type ItemOrderByWithRelationInput = {
 
 export type ItemWhereUniqueInput = Prisma.AtLeast<{
   Id?: number
+  DomainId_DomainItemId?: Prisma.ItemDomainIdDomainItemIdCompoundUniqueInput
   AND?: Prisma.ItemWhereInput | Prisma.ItemWhereInput[]
   OR?: Prisma.ItemWhereInput[]
   NOT?: Prisma.ItemWhereInput | Prisma.ItemWhereInput[]
@@ -271,13 +286,15 @@ export type ItemWhereUniqueInput = Prisma.AtLeast<{
   Description?: Prisma.StringNullableFilter<"Item"> | string | null
   EmbeddingVector?: Prisma.FloatNullableListFilter<"Item">
   ModifiedAt?: Prisma.DateTimeFilter<"Item"> | Date | string
+  ImageUrl?: Prisma.StringNullableFilter<"Item"> | string | null
+  Attributes?: Prisma.JsonNullableFilter<"Item">
   Domain?: Prisma.XOR<Prisma.DomainScalarRelationFilter, Prisma.DomainWhereInput>
   ItemCategories?: Prisma.ItemCategoryListRelationFilter
   ItemFactors?: Prisma.ItemFactorListRelationFilter
   Predicts?: Prisma.PredictListRelationFilter
   Ratings?: Prisma.RatingListRelationFilter
   interactions?: Prisma.InteractionListRelationFilter
-}, "Id">
+}, "Id" | "DomainId_DomainItemId">
 
 export type ItemOrderByWithAggregationInput = {
   Id?: Prisma.SortOrder
@@ -287,6 +304,8 @@ export type ItemOrderByWithAggregationInput = {
   Description?: Prisma.SortOrderInput | Prisma.SortOrder
   EmbeddingVector?: Prisma.SortOrder
   ModifiedAt?: Prisma.SortOrder
+  ImageUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  Attributes?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.ItemCountOrderByAggregateInput
   _avg?: Prisma.ItemAvgOrderByAggregateInput
   _max?: Prisma.ItemMaxOrderByAggregateInput
@@ -305,6 +324,8 @@ export type ItemScalarWhereWithAggregatesInput = {
   Description?: Prisma.StringNullableWithAggregatesFilter<"Item"> | string | null
   EmbeddingVector?: Prisma.FloatNullableListFilter<"Item">
   ModifiedAt?: Prisma.DateTimeWithAggregatesFilter<"Item"> | Date | string
+  ImageUrl?: Prisma.StringNullableWithAggregatesFilter<"Item"> | string | null
+  Attributes?: Prisma.JsonNullableWithAggregatesFilter<"Item">
 }
 
 export type ItemCreateInput = {
@@ -313,6 +334,8 @@ export type ItemCreateInput = {
   Description?: string | null
   EmbeddingVector?: Prisma.ItemCreateEmbeddingVectorInput | number[]
   ModifiedAt?: Date | string
+  ImageUrl?: string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Domain: Prisma.DomainCreateNestedOneWithoutItemsInput
   ItemCategories?: Prisma.ItemCategoryCreateNestedManyWithoutItemInput
   ItemFactors?: Prisma.ItemFactorCreateNestedManyWithoutItemInput
@@ -329,6 +352,8 @@ export type ItemUncheckedCreateInput = {
   Description?: string | null
   EmbeddingVector?: Prisma.ItemCreateEmbeddingVectorInput | number[]
   ModifiedAt?: Date | string
+  ImageUrl?: string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   ItemCategories?: Prisma.ItemCategoryUncheckedCreateNestedManyWithoutItemInput
   ItemFactors?: Prisma.ItemFactorUncheckedCreateNestedManyWithoutItemInput
   Predicts?: Prisma.PredictUncheckedCreateNestedManyWithoutItemInput
@@ -342,6 +367,8 @@ export type ItemUpdateInput = {
   Description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   EmbeddingVector?: Prisma.ItemUpdateEmbeddingVectorInput | number[]
   ModifiedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Domain?: Prisma.DomainUpdateOneRequiredWithoutItemsNestedInput
   ItemCategories?: Prisma.ItemCategoryUpdateManyWithoutItemNestedInput
   ItemFactors?: Prisma.ItemFactorUpdateManyWithoutItemNestedInput
@@ -358,6 +385,8 @@ export type ItemUncheckedUpdateInput = {
   Description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   EmbeddingVector?: Prisma.ItemUpdateEmbeddingVectorInput | number[]
   ModifiedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   ItemCategories?: Prisma.ItemCategoryUncheckedUpdateManyWithoutItemNestedInput
   ItemFactors?: Prisma.ItemFactorUncheckedUpdateManyWithoutItemNestedInput
   Predicts?: Prisma.PredictUncheckedUpdateManyWithoutItemNestedInput
@@ -373,6 +402,8 @@ export type ItemCreateManyInput = {
   Description?: string | null
   EmbeddingVector?: Prisma.ItemCreateEmbeddingVectorInput | number[]
   ModifiedAt?: Date | string
+  ImageUrl?: string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type ItemUpdateManyMutationInput = {
@@ -381,6 +412,8 @@ export type ItemUpdateManyMutationInput = {
   Description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   EmbeddingVector?: Prisma.ItemUpdateEmbeddingVectorInput | number[]
   ModifiedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type ItemUncheckedUpdateManyInput = {
@@ -391,6 +424,8 @@ export type ItemUncheckedUpdateManyInput = {
   Description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   EmbeddingVector?: Prisma.ItemUpdateEmbeddingVectorInput | number[]
   ModifiedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type ItemListRelationFilter = {
@@ -416,6 +451,11 @@ export type FloatNullableListFilter<$PrismaModel = never> = {
   isEmpty?: boolean
 }
 
+export type ItemDomainIdDomainItemIdCompoundUniqueInput = {
+  DomainId: number
+  DomainItemId: string
+}
+
 export type ItemCountOrderByAggregateInput = {
   Id?: Prisma.SortOrder
   DomainItemId?: Prisma.SortOrder
@@ -424,6 +464,8 @@ export type ItemCountOrderByAggregateInput = {
   Description?: Prisma.SortOrder
   EmbeddingVector?: Prisma.SortOrder
   ModifiedAt?: Prisma.SortOrder
+  ImageUrl?: Prisma.SortOrder
+  Attributes?: Prisma.SortOrder
 }
 
 export type ItemAvgOrderByAggregateInput = {
@@ -439,6 +481,7 @@ export type ItemMaxOrderByAggregateInput = {
   DomainId?: Prisma.SortOrder
   Description?: Prisma.SortOrder
   ModifiedAt?: Prisma.SortOrder
+  ImageUrl?: Prisma.SortOrder
 }
 
 export type ItemMinOrderByAggregateInput = {
@@ -448,6 +491,7 @@ export type ItemMinOrderByAggregateInput = {
   DomainId?: Prisma.SortOrder
   Description?: Prisma.SortOrder
   ModifiedAt?: Prisma.SortOrder
+  ImageUrl?: Prisma.SortOrder
 }
 
 export type ItemSumOrderByAggregateInput = {
@@ -583,6 +627,8 @@ export type ItemCreateWithoutDomainInput = {
   Description?: string | null
   EmbeddingVector?: Prisma.ItemCreateEmbeddingVectorInput | number[]
   ModifiedAt?: Date | string
+  ImageUrl?: string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   ItemCategories?: Prisma.ItemCategoryCreateNestedManyWithoutItemInput
   ItemFactors?: Prisma.ItemFactorCreateNestedManyWithoutItemInput
   Predicts?: Prisma.PredictCreateNestedManyWithoutItemInput
@@ -597,6 +643,8 @@ export type ItemUncheckedCreateWithoutDomainInput = {
   Description?: string | null
   EmbeddingVector?: Prisma.ItemCreateEmbeddingVectorInput | number[]
   ModifiedAt?: Date | string
+  ImageUrl?: string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   ItemCategories?: Prisma.ItemCategoryUncheckedCreateNestedManyWithoutItemInput
   ItemFactors?: Prisma.ItemFactorUncheckedCreateNestedManyWithoutItemInput
   Predicts?: Prisma.PredictUncheckedCreateNestedManyWithoutItemInput
@@ -641,6 +689,8 @@ export type ItemScalarWhereInput = {
   Description?: Prisma.StringNullableFilter<"Item"> | string | null
   EmbeddingVector?: Prisma.FloatNullableListFilter<"Item">
   ModifiedAt?: Prisma.DateTimeFilter<"Item"> | Date | string
+  ImageUrl?: Prisma.StringNullableFilter<"Item"> | string | null
+  Attributes?: Prisma.JsonNullableFilter<"Item">
 }
 
 export type ItemCreateWithoutItemCategoriesInput = {
@@ -649,6 +699,8 @@ export type ItemCreateWithoutItemCategoriesInput = {
   Description?: string | null
   EmbeddingVector?: Prisma.ItemCreateEmbeddingVectorInput | number[]
   ModifiedAt?: Date | string
+  ImageUrl?: string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Domain: Prisma.DomainCreateNestedOneWithoutItemsInput
   ItemFactors?: Prisma.ItemFactorCreateNestedManyWithoutItemInput
   Predicts?: Prisma.PredictCreateNestedManyWithoutItemInput
@@ -664,6 +716,8 @@ export type ItemUncheckedCreateWithoutItemCategoriesInput = {
   Description?: string | null
   EmbeddingVector?: Prisma.ItemCreateEmbeddingVectorInput | number[]
   ModifiedAt?: Date | string
+  ImageUrl?: string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   ItemFactors?: Prisma.ItemFactorUncheckedCreateNestedManyWithoutItemInput
   Predicts?: Prisma.PredictUncheckedCreateNestedManyWithoutItemInput
   Ratings?: Prisma.RatingUncheckedCreateNestedManyWithoutItemInput
@@ -692,6 +746,8 @@ export type ItemUpdateWithoutItemCategoriesInput = {
   Description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   EmbeddingVector?: Prisma.ItemUpdateEmbeddingVectorInput | number[]
   ModifiedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Domain?: Prisma.DomainUpdateOneRequiredWithoutItemsNestedInput
   ItemFactors?: Prisma.ItemFactorUpdateManyWithoutItemNestedInput
   Predicts?: Prisma.PredictUpdateManyWithoutItemNestedInput
@@ -707,6 +763,8 @@ export type ItemUncheckedUpdateWithoutItemCategoriesInput = {
   Description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   EmbeddingVector?: Prisma.ItemUpdateEmbeddingVectorInput | number[]
   ModifiedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   ItemFactors?: Prisma.ItemFactorUncheckedUpdateManyWithoutItemNestedInput
   Predicts?: Prisma.PredictUncheckedUpdateManyWithoutItemNestedInput
   Ratings?: Prisma.RatingUncheckedUpdateManyWithoutItemNestedInput
@@ -719,6 +777,8 @@ export type ItemCreateWithoutItemFactorsInput = {
   Description?: string | null
   EmbeddingVector?: Prisma.ItemCreateEmbeddingVectorInput | number[]
   ModifiedAt?: Date | string
+  ImageUrl?: string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Domain: Prisma.DomainCreateNestedOneWithoutItemsInput
   ItemCategories?: Prisma.ItemCategoryCreateNestedManyWithoutItemInput
   Predicts?: Prisma.PredictCreateNestedManyWithoutItemInput
@@ -734,6 +794,8 @@ export type ItemUncheckedCreateWithoutItemFactorsInput = {
   Description?: string | null
   EmbeddingVector?: Prisma.ItemCreateEmbeddingVectorInput | number[]
   ModifiedAt?: Date | string
+  ImageUrl?: string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   ItemCategories?: Prisma.ItemCategoryUncheckedCreateNestedManyWithoutItemInput
   Predicts?: Prisma.PredictUncheckedCreateNestedManyWithoutItemInput
   Ratings?: Prisma.RatingUncheckedCreateNestedManyWithoutItemInput
@@ -762,6 +824,8 @@ export type ItemUpdateWithoutItemFactorsInput = {
   Description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   EmbeddingVector?: Prisma.ItemUpdateEmbeddingVectorInput | number[]
   ModifiedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Domain?: Prisma.DomainUpdateOneRequiredWithoutItemsNestedInput
   ItemCategories?: Prisma.ItemCategoryUpdateManyWithoutItemNestedInput
   Predicts?: Prisma.PredictUpdateManyWithoutItemNestedInput
@@ -777,6 +841,8 @@ export type ItemUncheckedUpdateWithoutItemFactorsInput = {
   Description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   EmbeddingVector?: Prisma.ItemUpdateEmbeddingVectorInput | number[]
   ModifiedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   ItemCategories?: Prisma.ItemCategoryUncheckedUpdateManyWithoutItemNestedInput
   Predicts?: Prisma.PredictUncheckedUpdateManyWithoutItemNestedInput
   Ratings?: Prisma.RatingUncheckedUpdateManyWithoutItemNestedInput
@@ -789,6 +855,8 @@ export type ItemCreateWithoutPredictsInput = {
   Description?: string | null
   EmbeddingVector?: Prisma.ItemCreateEmbeddingVectorInput | number[]
   ModifiedAt?: Date | string
+  ImageUrl?: string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Domain: Prisma.DomainCreateNestedOneWithoutItemsInput
   ItemCategories?: Prisma.ItemCategoryCreateNestedManyWithoutItemInput
   ItemFactors?: Prisma.ItemFactorCreateNestedManyWithoutItemInput
@@ -804,6 +872,8 @@ export type ItemUncheckedCreateWithoutPredictsInput = {
   Description?: string | null
   EmbeddingVector?: Prisma.ItemCreateEmbeddingVectorInput | number[]
   ModifiedAt?: Date | string
+  ImageUrl?: string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   ItemCategories?: Prisma.ItemCategoryUncheckedCreateNestedManyWithoutItemInput
   ItemFactors?: Prisma.ItemFactorUncheckedCreateNestedManyWithoutItemInput
   Ratings?: Prisma.RatingUncheckedCreateNestedManyWithoutItemInput
@@ -832,6 +902,8 @@ export type ItemUpdateWithoutPredictsInput = {
   Description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   EmbeddingVector?: Prisma.ItemUpdateEmbeddingVectorInput | number[]
   ModifiedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Domain?: Prisma.DomainUpdateOneRequiredWithoutItemsNestedInput
   ItemCategories?: Prisma.ItemCategoryUpdateManyWithoutItemNestedInput
   ItemFactors?: Prisma.ItemFactorUpdateManyWithoutItemNestedInput
@@ -847,6 +919,8 @@ export type ItemUncheckedUpdateWithoutPredictsInput = {
   Description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   EmbeddingVector?: Prisma.ItemUpdateEmbeddingVectorInput | number[]
   ModifiedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   ItemCategories?: Prisma.ItemCategoryUncheckedUpdateManyWithoutItemNestedInput
   ItemFactors?: Prisma.ItemFactorUncheckedUpdateManyWithoutItemNestedInput
   Ratings?: Prisma.RatingUncheckedUpdateManyWithoutItemNestedInput
@@ -859,6 +933,8 @@ export type ItemCreateWithoutRatingsInput = {
   Description?: string | null
   EmbeddingVector?: Prisma.ItemCreateEmbeddingVectorInput | number[]
   ModifiedAt?: Date | string
+  ImageUrl?: string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Domain: Prisma.DomainCreateNestedOneWithoutItemsInput
   ItemCategories?: Prisma.ItemCategoryCreateNestedManyWithoutItemInput
   ItemFactors?: Prisma.ItemFactorCreateNestedManyWithoutItemInput
@@ -874,6 +950,8 @@ export type ItemUncheckedCreateWithoutRatingsInput = {
   Description?: string | null
   EmbeddingVector?: Prisma.ItemCreateEmbeddingVectorInput | number[]
   ModifiedAt?: Date | string
+  ImageUrl?: string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   ItemCategories?: Prisma.ItemCategoryUncheckedCreateNestedManyWithoutItemInput
   ItemFactors?: Prisma.ItemFactorUncheckedCreateNestedManyWithoutItemInput
   Predicts?: Prisma.PredictUncheckedCreateNestedManyWithoutItemInput
@@ -902,6 +980,8 @@ export type ItemUpdateWithoutRatingsInput = {
   Description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   EmbeddingVector?: Prisma.ItemUpdateEmbeddingVectorInput | number[]
   ModifiedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Domain?: Prisma.DomainUpdateOneRequiredWithoutItemsNestedInput
   ItemCategories?: Prisma.ItemCategoryUpdateManyWithoutItemNestedInput
   ItemFactors?: Prisma.ItemFactorUpdateManyWithoutItemNestedInput
@@ -917,6 +997,8 @@ export type ItemUncheckedUpdateWithoutRatingsInput = {
   Description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   EmbeddingVector?: Prisma.ItemUpdateEmbeddingVectorInput | number[]
   ModifiedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   ItemCategories?: Prisma.ItemCategoryUncheckedUpdateManyWithoutItemNestedInput
   ItemFactors?: Prisma.ItemFactorUncheckedUpdateManyWithoutItemNestedInput
   Predicts?: Prisma.PredictUncheckedUpdateManyWithoutItemNestedInput
@@ -929,6 +1011,8 @@ export type ItemCreateWithoutInteractionsInput = {
   Description?: string | null
   EmbeddingVector?: Prisma.ItemCreateEmbeddingVectorInput | number[]
   ModifiedAt?: Date | string
+  ImageUrl?: string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Domain: Prisma.DomainCreateNestedOneWithoutItemsInput
   ItemCategories?: Prisma.ItemCategoryCreateNestedManyWithoutItemInput
   ItemFactors?: Prisma.ItemFactorCreateNestedManyWithoutItemInput
@@ -944,6 +1028,8 @@ export type ItemUncheckedCreateWithoutInteractionsInput = {
   Description?: string | null
   EmbeddingVector?: Prisma.ItemCreateEmbeddingVectorInput | number[]
   ModifiedAt?: Date | string
+  ImageUrl?: string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   ItemCategories?: Prisma.ItemCategoryUncheckedCreateNestedManyWithoutItemInput
   ItemFactors?: Prisma.ItemFactorUncheckedCreateNestedManyWithoutItemInput
   Predicts?: Prisma.PredictUncheckedCreateNestedManyWithoutItemInput
@@ -972,6 +1058,8 @@ export type ItemUpdateWithoutInteractionsInput = {
   Description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   EmbeddingVector?: Prisma.ItemUpdateEmbeddingVectorInput | number[]
   ModifiedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   Domain?: Prisma.DomainUpdateOneRequiredWithoutItemsNestedInput
   ItemCategories?: Prisma.ItemCategoryUpdateManyWithoutItemNestedInput
   ItemFactors?: Prisma.ItemFactorUpdateManyWithoutItemNestedInput
@@ -987,6 +1075,8 @@ export type ItemUncheckedUpdateWithoutInteractionsInput = {
   Description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   EmbeddingVector?: Prisma.ItemUpdateEmbeddingVectorInput | number[]
   ModifiedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   ItemCategories?: Prisma.ItemCategoryUncheckedUpdateManyWithoutItemNestedInput
   ItemFactors?: Prisma.ItemFactorUncheckedUpdateManyWithoutItemNestedInput
   Predicts?: Prisma.PredictUncheckedUpdateManyWithoutItemNestedInput
@@ -1000,6 +1090,8 @@ export type ItemCreateManyDomainInput = {
   Description?: string | null
   EmbeddingVector?: Prisma.ItemCreateEmbeddingVectorInput | number[]
   ModifiedAt?: Date | string
+  ImageUrl?: string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 export type ItemUpdateWithoutDomainInput = {
@@ -1008,6 +1100,8 @@ export type ItemUpdateWithoutDomainInput = {
   Description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   EmbeddingVector?: Prisma.ItemUpdateEmbeddingVectorInput | number[]
   ModifiedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   ItemCategories?: Prisma.ItemCategoryUpdateManyWithoutItemNestedInput
   ItemFactors?: Prisma.ItemFactorUpdateManyWithoutItemNestedInput
   Predicts?: Prisma.PredictUpdateManyWithoutItemNestedInput
@@ -1022,6 +1116,8 @@ export type ItemUncheckedUpdateWithoutDomainInput = {
   Description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   EmbeddingVector?: Prisma.ItemUpdateEmbeddingVectorInput | number[]
   ModifiedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   ItemCategories?: Prisma.ItemCategoryUncheckedUpdateManyWithoutItemNestedInput
   ItemFactors?: Prisma.ItemFactorUncheckedUpdateManyWithoutItemNestedInput
   Predicts?: Prisma.PredictUncheckedUpdateManyWithoutItemNestedInput
@@ -1036,6 +1132,8 @@ export type ItemUncheckedUpdateManyWithoutDomainInput = {
   Description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   EmbeddingVector?: Prisma.ItemUpdateEmbeddingVectorInput | number[]
   ModifiedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ImageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  Attributes?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
 }
 
 
@@ -1113,6 +1211,8 @@ export type ItemSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   Description?: boolean
   EmbeddingVector?: boolean
   ModifiedAt?: boolean
+  ImageUrl?: boolean
+  Attributes?: boolean
   Domain?: boolean | Prisma.DomainDefaultArgs<ExtArgs>
   ItemCategories?: boolean | Prisma.Item$ItemCategoriesArgs<ExtArgs>
   ItemFactors?: boolean | Prisma.Item$ItemFactorsArgs<ExtArgs>
@@ -1130,6 +1230,8 @@ export type ItemSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   Description?: boolean
   EmbeddingVector?: boolean
   ModifiedAt?: boolean
+  ImageUrl?: boolean
+  Attributes?: boolean
   Domain?: boolean | Prisma.DomainDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["item"]>
 
@@ -1141,6 +1243,8 @@ export type ItemSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   Description?: boolean
   EmbeddingVector?: boolean
   ModifiedAt?: boolean
+  ImageUrl?: boolean
+  Attributes?: boolean
   Domain?: boolean | Prisma.DomainDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["item"]>
 
@@ -1152,9 +1256,11 @@ export type ItemSelectScalar = {
   Description?: boolean
   EmbeddingVector?: boolean
   ModifiedAt?: boolean
+  ImageUrl?: boolean
+  Attributes?: boolean
 }
 
-export type ItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"Id" | "DomainItemId" | "Title" | "DomainId" | "Description" | "EmbeddingVector" | "ModifiedAt", ExtArgs["result"]["item"]>
+export type ItemOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"Id" | "DomainItemId" | "Title" | "DomainId" | "Description" | "EmbeddingVector" | "ModifiedAt" | "ImageUrl" | "Attributes", ExtArgs["result"]["item"]>
 export type ItemInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   Domain?: boolean | Prisma.DomainDefaultArgs<ExtArgs>
   ItemCategories?: boolean | Prisma.Item$ItemCategoriesArgs<ExtArgs>
@@ -1189,6 +1295,8 @@ export type $ItemPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     Description: string | null
     EmbeddingVector: number[]
     ModifiedAt: Date
+    ImageUrl: string | null
+    Attributes: runtime.JsonValue | null
   }, ExtArgs["result"]["item"]>
   composites: {}
 }
@@ -1625,6 +1733,8 @@ export interface ItemFieldRefs {
   readonly Description: Prisma.FieldRef<"Item", 'String'>
   readonly EmbeddingVector: Prisma.FieldRef<"Item", 'Float[]'>
   readonly ModifiedAt: Prisma.FieldRef<"Item", 'DateTime'>
+  readonly ImageUrl: Prisma.FieldRef<"Item", 'String'>
+  readonly Attributes: Prisma.FieldRef<"Item", 'Json'>
 }
     
 
