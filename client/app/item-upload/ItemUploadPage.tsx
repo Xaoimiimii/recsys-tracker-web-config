@@ -12,13 +12,14 @@ interface ItemUploadPageProps {
 
 type TabType = 'metadata' | 'review';
 
-const TEMPLATE_HEADERS = ['SKU', 'Item Name', 'Category', 'Description'];
+const TEMPLATE_HEADERS = ['SKU', 'Item Name', 'Category', 'Description', 'Image'];
 const REVIEW_TEMPLATE_HEADERS = ['ItemId', 'UserId', 'Rating', 'Review'];
 const SAMPLE_ROW = [
   'SP-001', 
   'iPhone 15 Pro', 
   'Điện thoại; Apple', 
-  'Titanium, 256GB'
+  'Titanium, 256GB',
+  'https://example.com/images/iphone15.jpg'
 ];
 const REVIEW_SAMPLE_ROW = ['SP-001', 'nguyenvana', 5, 'Sản phẩm rất tốt, giao hàng nhanh!'];
 
@@ -63,7 +64,7 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({ onUploadComplete
     if (isReviewTab) {
         ws['!cols'] = [{ wch: 15 }, { wch: 20 }, { wch: 10 }, { wch: 50 }];
     } else {
-        ws['!cols'] = [{ wch: 15 }, { wch: 30 }, { wch: 25 }, { wch: 50 }];
+        ws['!cols'] = [{ wch: 15 }, { wch: 30 }, { wch: 25 }, { wch: 50 }, { wch: 40 }];
     }
 
     const wb = XLSX.utils.book_new();
@@ -119,6 +120,7 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({ onUploadComplete
           Title: row.name || 'No Title',
           Description: row.description || '',
           Categories: row.categories || [],
+          ImageUrl: row.imageUrl || '',
           DomainKey: currentDomainId,
         }));
         const validItems = mappedData.filter(item => item.Title && item.TernantItemId);
@@ -335,6 +337,10 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({ onUploadComplete
                 <div className={styles.fieldItem}>
                   <span className={styles.fieldName}>Description</span>
                   <span className={styles.fieldDescription}>Detailed information (Supports line breaks).</span>
+                </div>
+                <div className={styles.fieldItem}>
+                  <span className={styles.fieldName}>Image</span>
+                  <span className={styles.fieldDescription}>URL of the product image which will be displayed.</span>
                 </div>
               </div>
             ) : (

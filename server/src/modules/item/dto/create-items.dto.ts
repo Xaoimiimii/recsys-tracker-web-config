@@ -21,4 +21,8 @@ export class CreateItemDto {
     @IsString()
     @IsNotEmpty()
     DomainKey: string;
+
+    @IsString()
+    @IsOptional()
+    ImageUrl?: string;
 }

@@ -60,6 +60,7 @@ export class ItemService {
                                     CategoryId: catId
                                 }))
                             },
+                            ImageUrl: item.ImageUrl || null,
                         }
                     });
                 });
