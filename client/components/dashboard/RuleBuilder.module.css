@@ -741,6 +741,15 @@
   cursor: pointer;
 }
 
+.fieldNote {
+  font-size: 0.825rem;
+  color: var(--color-text-tertiary);
+  line-height: 1.4;
+  padding: 0.5rem;
+  background-color: #F9FAFB;
+  border-radius: 0.375rem;
+}
+
 .footerNote {
   border: none;
   background: #ffffff;

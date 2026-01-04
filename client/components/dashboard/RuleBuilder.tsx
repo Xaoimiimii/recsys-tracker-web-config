@@ -286,7 +286,6 @@ export const SOURCE_TO_BACKEND: Record<MappingSource, string> = {
 
 export const FIELD_TO_BACKEND: Record<string, string> = {
   'userId': 'UserId',
-  'username': 'Username',
   'anonymousId': 'AnonymousId',
   'itemId': 'ItemId',
   'itemTitle': 'ItemTitle',
@@ -330,7 +329,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     targetElement: { selector: '', operator: 'contains', value: '' },
     conditions: [],
     payloadMappings: [
-      { field: 'username', source: MappingSource.LOCAL_STORAGE, path: 'user.username', required: true },
+      { field: 'userId', source: MappingSource.LOCAL_STORAGE, path: 'user.id', required: true },
       { field: 'itemId', source: MappingSource.ELEMENT, path: '.product-id', required: true }
     ],
   });
@@ -364,7 +363,6 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
       const convertField = (field: string): string => {
         const fieldMap: Record<string, string> = {
           'UserId': 'userId',
-          'Username': 'username',
           'AnonymousId': 'anonymousId',
           'ItemId': 'itemId',
           'ItemTitle': 'itemTitle',
@@ -624,8 +622,8 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     // Validation 3: Payload Mapping validations
     const payloadErrors: { [key: number]: string } = {};
     rule.payloadMappings.forEach((mapping, idx) => {
-      // Check user/item fields (userId, username, itemId, itemTitle) - required for all event types
-      if (['userId', 'username', 'anonymousId', 'itemId', 'itemTitle'].includes(mapping.field)) {
+      // Check user/item fields (userId, anonymousId, itemId, itemTitle) - required for all event types
+      if (['userId', 'anonymousId', 'itemId', 'itemTitle'].includes(mapping.field)) {
         if (mapping.source === MappingSource.REQUEST_BODY) {
           if (!mapping.requestUrlPattern?.trim()) {
             payloadErrors[idx] = 'URL Pattern is required when source is Request Body.';
@@ -1112,21 +1110,18 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
               </thead>
               <tbody>
                 {rule.payloadMappings.map((mapping, idx) => {
-                  const isUserField = mapping.field === 'userId' || mapping.field === 'username' || mapping.field === 'anonymousId';
+                  const isUserField = mapping.field === 'userId' || mapping.field === 'anonymousId';
                   const isItemField = mapping.field === 'itemId' || mapping.field === 'itemTitle';
 
                   return (
-                    <tr key={idx}>
+                    <React.Fragment key={idx}>
+                    <tr>
                       <td className={`${styles.td} ${styles.tdVerticalTop}`}>
                         {isUserField ? (
                           <div className={styles.radioGroup}>
                             <label className={styles.radioLabel}>
                               <input type="radio" name={`user-field-${idx}`} checked={mapping.field === 'userId'} disabled={isViewMode} onChange={() => handleUpdateMapping(idx, { field: 'userId' })} />
-                              UserId
-                            </label>
-                            <label className={styles.radioLabel}>
-                              <input type="radio" name={`user-field-${idx}`} checked={mapping.field === 'username'} disabled={isViewMode} onChange={() => handleUpdateMapping(idx, { field: 'username' })} />
-                              Username
+                              User_info
                             </label>
                             <label className={styles.radioLabel}>
                               <input type="radio" name={`user-field-${idx}`} checked={mapping.field === 'anonymousId'} disabled={isViewMode} onChange={() => handleUpdateMapping(idx, { field: 'anonymousId' })} />
@@ -1164,7 +1159,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                           <div className={styles.urlParsingContainer}>
                             <div className={styles.urlParsingInputRow}>
                               <input 
-                                type="text" placeholder="URL Pattern (/api/...)" 
+                                type="text" placeholder="URL Pattern (/api/song/:id)" 
                                 className={`${styles.input} ${styles.urlParsingInputFlex2} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                                 value={mapping.requestUrlPattern || ''}
                                 disabled={isViewMode}
@@ -1206,6 +1201,9 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                                 {errors.payloadMappings[idx]}
                               </p>
                             )}
+                            <div fieldNote className={styles.fieldNote}>
+                              Specify the JSON path within the request body to extract the desired value. For example, for a request body like <code>{'{"content": {"id": "12345"}}'}</code>, the path to extract the ID would be <strong>content.id</strong>.
+                            </div>
                           </div>
                         )}
 
@@ -1213,7 +1211,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                           <div className={styles.urlParsingContainer}>
                             <div className={styles.urlParsingInputRow}>
                               <input 
-                                type="text" placeholder="URL Pattern (/api/cart/:itemId)" 
+                                type="text" placeholder="URL Pattern (/api/cart/:id)" 
                                 className={`${styles.input} ${styles.urlParsingInputFlex2} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                                 value={mapping.requestUrlPattern || ''}
                                 disabled={isViewMode}
@@ -1236,7 +1234,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                               </select>
                             </div>
                             <input 
-                              type="number" placeholder="Path Index (e.g., 3, 4, 5)" 
+                              type="number" placeholder="Path Index (e.g. 4 for :id)" 
                               className={`${styles.input} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                               value={mapping.value || ''}
                               disabled={isViewMode}
@@ -1255,6 +1253,9 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                                 {errors.payloadMappings[idx]}
                               </p>
                             )}
+                            <div fieldNote className={styles.fieldNote}>
+                              For example, in request URL <strong>www.example.com/api/products/:id</strong>, the path index for <strong>:id</strong> is <strong>4</strong>.
+                            </div>
                           </div>
                         )}
 
@@ -1320,6 +1321,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                                   }}
                                 />
                               )}
+
                             </div>
                             {errors.payloadMappings?.[idx] && (
                               <p className={styles.errorText}>
@@ -1327,7 +1329,16 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                                 {errors.payloadMappings[idx]}
                               </p>
                             )}
-                          </div>
+                          {mapping.urlPart === 'PathName' ? (
+                            <div fieldNote className={styles.fieldNote}>
+                              For example, in URL <strong>www.example.com/products/:id</strong>, the segment index of <strong>:id</strong> is 3.
+                            </div>
+                          ) : (
+                            <div fieldNote className={styles.fieldNote}>
+                              For example, in URL <strong>www.example.com/page?itemId=:id</strong>, the param key is <strong>itemId</strong>.
+                            </div>
+                          )}
+                        </div>
                         )}
 
                         {mapping.source !== MappingSource.REQUEST_BODY && mapping.source !== MappingSource.REQUEST_URL && mapping.source !== MappingSource.URL && (
@@ -1355,8 +1366,26 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                             )}
                           </div>
                         )}
+                    
                       </td>
                     </tr>
+                    {isUserField && (
+                      <tr>
+                        <td colSpan={3} className={styles.td}>
+                          {mapping.field === 'userId' && (
+                            <div className={styles.fieldNote}>
+                              We will attempt to capture user information according to this configuration, but will fall back to anonymous ID if capture fails.
+                            </div>
+                          )}
+                          {mapping.field === 'anonymousId' && (
+                            <div className={styles.fieldNote}>
+                              Anonymous ID has limitations in tracking user behavior across sessions. We recommend configuring User_info for better tracking accuracy.
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                    </React.Fragment>
                   );
                 })}
               </tbody>
