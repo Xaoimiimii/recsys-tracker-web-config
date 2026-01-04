@@ -707,6 +707,7 @@
 }
 
 .td {
+  vertical-align: top;
   padding: 1rem 0.5rem;
   border-bottom: 1px solid #F3F5F5;
 }

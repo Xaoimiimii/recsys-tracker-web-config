@@ -406,7 +406,13 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
           result.requestUrlPattern = mapping.RequestUrlPattern || '';
           result.requestMethod = mapping.RequestMethod || 'POST';
           result.value = mapping.RequestBodyPath || '';
-        } else if (source === MappingSource.URL) {
+        } 
+        else if (source === MappingSource.REQUEST_URL) {
+          result.requestUrlPattern = mapping.RequestUrlPattern || '';
+          result.requestMethod = mapping.RequestMethod || 'POST';
+          result.value = mapping.Value || '';
+        }
+        else if (source === MappingSource.URL) {
           result.urlPart = mapping.UrlPart || 'PathName';
           result.urlPartValue = mapping.UrlPartValue || '';
         } else {
