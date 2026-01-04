@@ -1,3 +1,4 @@
+import { IntentLevel } from './../../../generated/prisma/enums';
 import { IsArray, IsInt, IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
 import { Type } from "class-transformer";
 import { ApiProperty } from "@nestjs/swagger";
@@ -41,6 +42,12 @@ import { TrackingTargetDto } from "./tracking-target.dto";
 //     payloadConfigs: PayloadConfigDto[];
 // }
 
+enum IntentLevelDto {
+    Normal = "Normal",
+    Medium = "Medium",
+    High = "High"
+}
+
 export class CreateRuleDto {
     @ApiProperty({ example: "Rule Name" })
     @IsString()
@@ -75,4 +82,8 @@ export class CreateRuleDto {
     @IsNotEmpty()
     @Type(() => TrackingTargetDto)
     TrackingTarget: TrackingTargetDto;
+
+    @ApiProperty({ example: IntentLevel.Normal, enum: IntentLevel })
+    @IsNotEmpty()        
+    IntentLevel: IntentLevelDto;
 }
