@@ -45,10 +45,17 @@ export interface PayloadMapping {
   urlPartValue?: string;
 }
 
+export enum IntentLevel {
+  NORMAL = 'Normal',
+  MEDIUM = 'Medium',
+  HIGH = 'High'
+}
+
 export interface TrackingRule {
   id: string;
   name: string;
   eventType: EventType;
+  intentLevel?: IntentLevel;
   targetElement?: {
     operator: string;
     value: string;
@@ -82,6 +89,54 @@ export const CONDITION_SUGGESTIONS: Record<EventType, string> = {
   [EventType.REVIEW]: "Suggested: Use 'URL Path' to target page clicks or 'CSS Selector' to check element presence.",
   [EventType.SCROLL]: "Suggested: Use 'URL Path' to target page clicks or 'CSS Selector' to check element presence.",
   [EventType.PAGE_VIEW]: "Suggested: Use 'URL Path' to target page clicks or 'CSS Selector' to check element presence."
+};
+
+export const INTENT_LEVEL_INFO = {
+  [IntentLevel.NORMAL]: {
+    label: 'Normal (Low)',
+    description: 'Normal web browsing behavior, no intention to buy.',
+    examples: [
+      'View product details',
+      'Open filters / menus',
+      'Click loads more items'
+    ],
+    color: '#10B981',
+    impact: {
+      recommendation: 'Low weight in recommendation algorithm',
+      funnel: 'Tracked as early-stage engagement',
+      conversion: 'Not counted toward conversion metrics'
+    }
+  },
+  [IntentLevel.MEDIUM]: {
+    label: 'Medium (Mid)',
+    description: 'Intermediate purchase intent, consideration phase actions.',
+    examples: [
+      'Add to wishlist',
+      'Add to cart',
+      'View reviews'
+    ],
+    color: '#F59E0B',
+    impact: {
+      recommendation: 'Moderate weight in recommendation algorithm',
+      funnel: 'Tracked as mid-funnel consideration',
+      conversion: 'Contributes to engagement scoring'
+    }
+  },
+  [IntentLevel.HIGH]: {
+    label: 'High (Critical)',
+    description: 'High purchase intent, critical conversion actions.',
+    examples: [
+      'Add to cart',
+      'Click "Buy Now"',
+      'Checkout'
+    ],
+    color: '#EF4444',
+    impact: {
+      recommendation: 'High weight in recommendation algorithm',
+      funnel: 'Tracked as conversion attempt',
+      conversion: 'Counted toward conversion rate metrics'
+    }
+  }
 };
 
 export interface SectionExample {
@@ -278,6 +333,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     id: 'new-rule-' + Date.now(),
     name: '',
     eventType: EventType.CLICK,
+    intentLevel: IntentLevel.NORMAL,
     targetElement: { selector: '', operator: 'equals', value: '' },
     conditions: [],
     payloadMappings: [
@@ -401,19 +457,32 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     
     // Only reset payloadMappings when not in view mode or when ruleDetails is not available
     if (!isViewMode || !ruleDetails) {
-      setRule(prev => ({
-        ...prev,
-        // Set targetElement to NULL for Scroll and Page view
-        targetElement: (rule.eventType === EventType.SCROLL || rule.eventType === EventType.PAGE_VIEW) 
-          ? undefined 
-          : prev.targetElement || { selector: '', operator: 'equals', value: '' },
-        payloadMappings: initialFields.map(field => ({
-          field,
-          source: field.toLowerCase().includes('user') ? MappingSource.LOCAL_STORAGE : MappingSource.ELEMENT,
-          path: '',
-          required: true
-        }))
-      }));
+      setRule(prev => {
+        // Determine intentLevel based on event type
+        let intentLevel = prev.intentLevel;
+        if (rule.eventType === EventType.RATING || rule.eventType === EventType.REVIEW) {
+          intentLevel = IntentLevel.HIGH;
+        } else if (rule.eventType === EventType.PAGE_VIEW || rule.eventType === EventType.SCROLL) {
+          intentLevel = IntentLevel.NORMAL;
+        } else if (rule.eventType === EventType.CLICK) {
+          intentLevel = prev.intentLevel || IntentLevel.NORMAL;
+        }
+
+        return {
+          ...prev,
+          intentLevel: intentLevel,
+          // Set targetElement to NULL for Scroll and Page view
+          targetElement: (rule.eventType === EventType.SCROLL || rule.eventType === EventType.PAGE_VIEW) 
+            ? undefined 
+            : prev.targetElement || { selector: '', operator: 'equals', value: '' },
+          payloadMappings: initialFields.map(field => ({
+            field,
+            source: field.toLowerCase().includes('user') ? MappingSource.LOCAL_STORAGE : MappingSource.ELEMENT,
+            path: '',
+            required: true
+          }))
+        };
+      });
     }
   }, [rule.eventType, isViewMode, ruleDetails]);
 
@@ -820,7 +889,100 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
           </div>
         </div>
 
-        {/* 2. Target Configuration */}
+        {/* 2. Intent Level */}
+        {(rule.eventType === EventType.CLICK || rule.eventType === EventType.RATING || rule.eventType === EventType.REVIEW) && (
+          <div className={styles.card}>
+            <SectionHeader 
+              title="Intent Level" 
+              icon={<Target size={14} />} 
+              required 
+            />
+            
+            {/* Segmented Buttons */}
+            <div className={styles.intentLevelContainer}>
+              {Object.values(IntentLevel)
+                .filter(level => {
+                  // For Rating/Review: only show HIGH
+                  if (rule.eventType === EventType.RATING || rule.eventType === EventType.REVIEW) {
+                    return level === IntentLevel.HIGH;
+                  }
+                  // For Click: show all 3 levels
+                  return true;
+                })
+                .map((level) => {
+                  const info = INTENT_LEVEL_INFO[level];
+                  const isSelected = rule.intentLevel === level;
+                  
+                  return (
+                    <button
+                      key={level}
+                      type="button"
+                      disabled={isViewMode || (rule.eventType === EventType.RATING || rule.eventType === EventType.REVIEW)}
+                      className={`${styles.intentCard} ${isSelected ? styles.intentCardSelected : ''}`}
+                      style={{
+                        borderColor: isSelected ? info.color : 'var(--color-border)',
+                        backgroundColor: isSelected ? `${info.color}15` : 'transparent'
+                      }}
+                      onClick={() => setRule({...rule, intentLevel: level})}
+                    >
+                      <div className={styles.intentCardHeader}>
+                        <div 
+                          className={styles.intentBadge}
+                          style={{ backgroundColor: info.color }}
+                        >
+                          {info.label}
+                        </div>
+                      </div>
+                      
+                      <p className={styles.intentDescription}>
+                        {info.description}
+                      </p>
+                      
+                      <div className={styles.intentExamples}>
+                        <ul className={styles.intentExamplesList}>
+                          {info.examples.map((example, idx) => (
+                            <li key={idx}>{example}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </button>
+                  );
+                })}
+            </div>
+
+            {/* Preview Section */}
+            {rule.intentLevel && (
+              <div className={styles.intentPreview}>
+                <h4 className={styles.intentPreviewTitle}>
+                  <AlertCircle size={16} />
+                  Impact Preview: How {INTENT_LEVEL_INFO[rule.intentLevel].label} affects your data
+                </h4>
+                <div className={styles.intentPreviewGrid}>
+                  <div className={styles.intentPreviewItem}>
+                    <span className={styles.intentPreviewLabel}>Recommendation:</span>
+                    <span className={styles.intentPreviewValue}>
+                      {INTENT_LEVEL_INFO[rule.intentLevel].impact.recommendation}
+                    </span>
+                  </div>
+                  <div className={styles.intentPreviewItem}>
+                    <span className={styles.intentPreviewLabel}>Funnel Trigger:</span>
+                    <span className={styles.intentPreviewValue}>
+                      {INTENT_LEVEL_INFO[rule.intentLevel].impact.funnel}
+                    </span>
+                  </div>
+                  <div className={styles.intentPreviewItem}>
+                    <span className={styles.intentPreviewLabel}>Conversion Tracking:</span>
+                    <span className={styles.intentPreviewValue}>
+                      {INTENT_LEVEL_INFO[rule.intentLevel].impact.conversion}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 3. Target Configuration */}
         {rule.eventType !== EventType.SCROLL && rule.eventType !== EventType.PAGE_VIEW && (
           <div className={styles.card}>
             <SectionHeader 
@@ -880,7 +1042,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
           </div>
         )}
 
-        {/* 3. Conditions */}
+        {/* 4. Conditions */}
         <div className={styles.card}>
           <div className={styles.conditionsHeader}>
             <SectionHeader title="Conditions" icon={<Filter size={14} />} sectionKey="conditions" />
@@ -930,7 +1092,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
           </div>
         </div>
 
-        {/* 4. Payload Mapping */}
+        {/* 5. Payload Mapping */}
         <div className={styles.card}>
           <SectionHeader title="Payload Mapping" icon={<Database size={14} />} sectionKey="payload" />
           <div className={styles.tableWrapper}>
