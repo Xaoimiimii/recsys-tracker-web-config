@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 
-const REQUIRED_HEADERS = ['SKU', 'Item Name', 'Category', 'Description'];
+const REQUIRED_HEADERS = ['SKU', 'Item Name', 'Category', 'Description', 'Image'];
 const REQUIRED_REVIEW_HEADERS = ['ItemId', 'UserId', 'Rating', 'Review'];
 
 export interface ProductImportData {
@@ -8,6 +8,7 @@ export interface ProductImportData {
   name: string;
   categories: string[];
   description: string;
+  imageUrl?: string;
 }
 
 export interface ReviewImportData {
@@ -47,7 +48,7 @@ export const parseItemImportExcelFile = async (file: File): Promise<ProductImpor
 
         if (missingHeaders.length > 0) {
           throw new Error(
-            `File Excel sai mẫu! Đang thiếu các cột: [ ${missingHeaders.join(', ')} ].\nVui lòng đảm bảo file có đủ 4 cột: SKU, Item Name, Category, Description`
+            `File Excel sai mẫu! Đang thiếu các cột: [ ${missingHeaders.join(', ')} ].\nVui lòng đảm bảo file có đủ 5 cột: SKU, Item Name, Category, Description, Image`
           );
         }
 
@@ -89,11 +90,15 @@ export const parseItemImportExcelFile = async (file: File): Promise<ProductImpor
           const descRaw = getValue('Description');
           const description = descRaw ? descRaw.toString().trim() : '';
 
+          const imageRaw = getValue('Image');
+          const imageUrl = imageRaw ? imageRaw.toString().trim() : '';
+
           processedData.push({
             sku: sku.toString().trim(),
             name: name.toString().trim(),
             categories: categoriesList,
             description: description,
+            imageUrl: imageUrl,
           });
         });
 

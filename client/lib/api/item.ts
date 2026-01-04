@@ -5,6 +5,7 @@ export interface CreateItemInput {
   Title: string;
   Description?: string;
   Categories?: string[];
+  ImageUrl?: string;
   DomainKey: string;
 }
 
