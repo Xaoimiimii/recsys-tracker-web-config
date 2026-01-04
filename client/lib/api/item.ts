@@ -19,17 +19,10 @@ export interface CreateReviewInput {
 
 export const itemApi = {
     createBulk: async (items: CreateItemInput[]) => {
-        console.log('=== ITEM API - CREATE BULK ===');
-        console.log('Sending items:', items.length);
-        console.log('Items data:', JSON.stringify(items, null, 2));
-        
-        const result = await apiFetch('/item/create', {
+        return apiFetch('/item/create', {
             method: 'POST',
             body: JSON.stringify(items),
         });
-        
-        console.log('=== API RESPONSE ===', result);
-        return result;
     },
 };
 
