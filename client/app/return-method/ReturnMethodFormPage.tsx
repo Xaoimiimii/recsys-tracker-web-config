@@ -143,19 +143,6 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
 
     return (
         <div className={styles.container}>
-            <div className={styles.pageHeader}>
-                <h1 className={styles.pageTitle}>
-                    {mode === 'create' ? 'Create New Configuration' : 
-                     mode === 'edit' ? 'Edit Configuration' : 'View Configuration'}
-                </h1>
-                <button className={styles.closeButton} onClick={() => navigate('/dashboard/recommendation-display')}>
-                    <span className="sr-only">Close</span>
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-
             {/* Section 1: Create New Configuration */}
             <div className={styles.sectionCard}>
                 <div className={styles.sectionHeader}>
