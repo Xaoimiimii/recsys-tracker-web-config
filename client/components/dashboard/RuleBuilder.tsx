@@ -268,13 +268,6 @@ export const EVENT_TYPE_TO_ID: Record<EventType, number> = {
   [EventType.PAGE_VIEW]: 5
 };
 
-export const OPERATOR_TO_ID: Record<string, number> = {
-  'Contains': 1,
-  'Equals': 2,
-  'Starts with': 3,
-  'Ends with': 4
-};
-
 export const PATTERN_TO_ID: Record<string, number> = {
   'CSS Selector': 1,
   'URL': 2,
@@ -334,7 +327,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     name: '',
     eventType: EventType.CLICK,
     intentLevel: IntentLevel.NORMAL,
-    targetElement: { selector: '', operator: 'equals', value: '' },
+    targetElement: { selector: '', operator: 'contains', value: '' },
     conditions: [],
     payloadMappings: [
       { field: 'username', source: MappingSource.LOCAL_STORAGE, path: 'user.username', required: true },
@@ -693,10 +686,16 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     setIsSaving(true);
     
     try {
+      // Create operator name to ID mapping from cache
+      const operatorNameToId: Record<string, number> = operators.reduce((acc, o) => {
+        acc[o.Name] = o.Id;
+        return acc;
+      }, {} as Record<string, number>);
+
       // Transform conditions
       const conditions = rule.conditions.map(cond => ({
         PatternId: PATTERN_TO_ID[cond.pattern],
-        OperatorId: OPERATOR_TO_ID[cond.operator],
+        OperatorId: operatorNameToId[cond.operator] || 1,
         Value: cond.value
       }));
 
@@ -747,7 +746,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
       if (rule.eventType !== EventType.SCROLL && rule.eventType !== EventType.PAGE_VIEW && rule.targetElement) {
         trackingTarget = {
           PatternId: 1, // Always "CSS Selector"
-          OperatorId: OPERATOR_TO_ID[rule.targetElement.operator] || 2,
+          OperatorId: operatorNameToId[rule.targetElement.operator] || 1,
           Value: rule.targetElement.selector || ''
         };
       }
@@ -757,6 +756,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
         Name: rule.name,
         DomainKey: domainKey,
         EventTypeId: EVENT_TYPE_TO_ID[rule.eventType],
+        IntentLevelId: rule.intentLevel || IntentLevel.NORMAL,
         Conditions: conditions,
         PayloadMappings: payloadMappings,
         TrackingTarget: trackingTarget
