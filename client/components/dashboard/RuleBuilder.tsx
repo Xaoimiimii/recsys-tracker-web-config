@@ -1202,7 +1202,9 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                               </p>
                             )}
                             <div fieldNote className={styles.fieldNote}>
-                              Specify the JSON path within the request body to extract the desired value. For example, for a request body like <code>{'{"content": {"id": "12345"}}'}</code>, the path to extract the ID would be <strong>content.id</strong>.
+                              Specify the JSON path within the request body to extract the desired value. 
+                              <br />
+                              For example, for a request body like <code>{'{"content": {"id": "12345"}}'}</code>, the path to extract the ID would be <strong>content.id</strong>.
                             </div>
                           </div>
                         )}
@@ -1254,6 +1256,8 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                               </p>
                             )}
                             <div fieldNote className={styles.fieldNote}>
+                              Specify the path index from the URL to extract the desired value.
+                              <br />
                               For example, in request URL <strong>www.example.com/api/products/:id</strong>, the path index for <strong>:id</strong> is <strong>4</strong>.
                             </div>
                           </div>
@@ -1331,21 +1335,25 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                             )}
                           {mapping.urlPart === 'PathName' ? (
                             <div fieldNote className={styles.fieldNote}>
+                              Specify the segment index of the URL path to extract the value.
+                              <br />
                               For example, in URL <strong>www.example.com/products/:id</strong>, the segment index of <strong>:id</strong> is 3.
                             </div>
                           ) : (
                             <div fieldNote className={styles.fieldNote}>
+                              Specify the query parameter key to extract the value.
+                              <br />
                               For example, in URL <strong>www.example.com/page?itemId=:id</strong>, the param key is <strong>itemId</strong>.
                             </div>
                           )}
                         </div>
                         )}
 
-                        {mapping.source !== MappingSource.REQUEST_BODY && mapping.source !== MappingSource.REQUEST_URL && mapping.source !== MappingSource.URL && (
+                        {mapping.source === MappingSource.ELEMENT && (
                           <div>
                             <input 
                               type="text"
-                              placeholder={mapping.source === MappingSource.ELEMENT ? 'CSS Selector (e.g. .title)' : 'Path (e.g. user.id)'}
+                              placeholder='CSS Selector (e.g. .title)'
                               className={`${styles.input} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                               value={mapping.field === 'anonymousId' ? 'recsys_anon_id' : (mapping.value || '')}
                               disabled={isViewMode || mapping.field === 'anonymousId'}
@@ -1364,6 +1372,42 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                                 {errors.payloadMappings[idx]}
                               </p>
                             )}
+                            <div fieldNote className={styles.fieldNote}>
+                              Specify a valid CSS selector to extract the value from the target element on the webpage. 
+                              <br />
+                              For example, to extract the title from an element like <code>{'<div class="title">Song Name</div>'}</code>, use the selector <strong>.title</strong>.
+                            </div>
+                          </div>
+                        )}
+                    
+                        {mapping.source !== MappingSource.REQUEST_BODY && mapping.source !== MappingSource.REQUEST_URL && mapping.source !== MappingSource.URL && mapping.source !== MappingSource.ELEMENT && (
+                          <div>
+                            <input 
+                              type="text"
+                              placeholder='Path (e.g. user.id)'
+                              className={`${styles.input} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
+                              value={mapping.field === 'anonymousId' ? 'recsys_anon_id' : (mapping.value || '')}
+                              disabled={isViewMode || mapping.field === 'anonymousId'}
+                              onChange={e => {
+                                handleUpdateMapping(idx, { value: e.target.value });
+                                if (errors.payloadMappings?.[idx]) {
+                                  const newPayloadErrors = {...errors.payloadMappings};
+                                  delete newPayloadErrors[idx];
+                                  setErrors(prev => ({...prev, payloadMappings: newPayloadErrors}));
+                                }
+                              }}
+                            />
+                            {errors.payloadMappings?.[idx] && (
+                              <p className={styles.errorText}>
+                                <AlertCircle size={14} />
+                                {errors.payloadMappings[idx]}
+                              </p>
+                            )}
+                            <div fieldNote className={styles.fieldNote}>
+                              Specify the data path to extract the desired value from the selected source. 
+                              <br />
+                              For example, for a JSON object like <code>{'{"user": {"id": "12345"}}'}</code>, the path to extract the user ID would be <strong>user.id</strong>.
+                            </div>
                           </div>
                         )}
                     
