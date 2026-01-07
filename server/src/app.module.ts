@@ -12,7 +12,6 @@ import { RatingModule } from './modules/rating/rating.module';
 import { TaskModule } from './modules/task/task.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { RecommendationModule } from './modules/recommendation/recommendation.module';
-import { WidgetDesignModule } from './modules/widget-design/widget-design.module';
 
 @Module({
   imports: [
@@ -30,7 +29,6 @@ import { WidgetDesignModule } from './modules/widget-design/widget-design.module
     TaskModule,
     ScheduleModule.forRoot(),
     RecommendationModule,
-    WidgetDesignModule
   ],
   controllers: [UserController],
 })

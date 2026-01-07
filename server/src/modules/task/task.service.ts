@@ -8,9 +8,9 @@ export class TaskService {
     private readonly logger = new Logger(TaskService.name);
     constructor(private readonly recommendationService: RecommendationService) { }
 
-    @Cron(CronExpression.EVERY_30_MINUTES)
-    trainModels() {
-        this.recommendationService.triggerTrainModels();
-        this.logger.debug('Trigger training models');
-    }
+    // @Cron(CronExpression.EVERY_30_MINUTES)
+    // trainModels() {
+    //     this.recommendationService.triggerTrainModels();
+    //     this.logger.debug('Trigger training models');
+    // }
 }
