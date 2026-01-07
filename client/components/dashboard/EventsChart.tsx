@@ -213,9 +213,6 @@ export const EventsChart: React.FC<EventsChartProps> = ({
                                         onClick={() => onRuleSelect(ruleId as number)}
                                     >
                                         {ruleNameMap.get(ruleId as number) || `Rule #${ruleId}`}
-                                        <span className={styles.eventCount}>
-                                            ({dataByRule.get(ruleId as number)?.length || 0} events)
-                                        </span>
                                     </button>
                                 ))}
                             </div>
