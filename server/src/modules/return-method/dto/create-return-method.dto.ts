@@ -38,26 +38,29 @@ export class CreateReturnMethodDto {
     OperatorId: number;
 
     @IsOptional()
-    @IsObject()
+    @IsArray()
     @Transform(({ value }) => {
-        if (!value) return {};
+        if (!value) return [];
         return value;
     })
     @ApiProperty({
-        type: 'object',
-        additionalProperties: {
+        type: 'array',
+        items: {
             type: 'object',
-            properties: {
-                position: { type: 'number' },
-                isEnabled: { type: 'boolean' }
+            additionalProperties: {
+                type: 'object',
+                properties: {
+                    position: { type: 'number' },
+                    isEnabled: { type: 'boolean' }
+                }
             }
         },
-        example: {
-            album: { position: 1, isEnabled: true },
-            theme: { position: 2, isEnabled: false }
-        }
+        example: [
+            { album: { position: 1, isEnabled: true } },
+            { theme: { position: 2, isEnabled: false } }
+        ]
     })
-    CustomizingFields?: Record<string, CustomizingFieldValueDto>;
+    CustomizingFields?: Record<string, CustomizingFieldValueDto>[];
 
     @IsNotEmpty()
     @IsObject()

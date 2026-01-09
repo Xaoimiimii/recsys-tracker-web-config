@@ -31,7 +31,7 @@ export class ReturnMethodService {
         value: string,
         operatorId: number,
         delayDuration: number,
-        customizingFields: Record<string, CustomizingFieldValueDto>,
+        customizingFields: Record<string, CustomizingFieldValueDto>[],
         layoutJson: Record<string, any>,
         styleJson: Record<string, any>,
     ) {
@@ -40,27 +40,46 @@ export class ReturnMethodService {
         }
 
         const usedPositions = new Set<number>();
-        for (const [key, value] of Object.entries(customizingFields)) {
-            if (!value || typeof value !== 'object' || Array.isArray(value)) {
-                throw new BadRequestException(`Customizing field "${key}" must be a valid object`);
+        const usedNames = new Set<string>();
+        
+        for (const fieldObj of customizingFields) {
+            if (!fieldObj || typeof fieldObj !== 'object' || Array.isArray(fieldObj)) {
+                throw new BadRequestException('Each customizing field must be a valid object');
             }
 
-            if ('position' in value) {
-                const pos = value.position;
-                if (typeof pos !== 'number' || pos < 0) {
-                    throw new BadRequestException(`Customizing field "${key}".position must be a number >= 0`);
-                }
-
-                if (pos !== 0) {
-                    if (usedPositions.has(pos)) {
-                        throw new BadRequestException(`Customizing field position value "${pos}" cannot be duplicated`);
-                    }
-                    usedPositions.add(pos);
-                }
+            const entries = Object.entries(fieldObj);
+            if (entries.length !== 1) {
+                throw new BadRequestException('Each customizing field object must have exactly one key');
             }
 
-            if ('isEnabled' in value && typeof value.isEnabled !== 'boolean') {
-                throw new BadRequestException(`Customizing field "${key}".isEnabled must be boolean`);
+            const [fieldName, fieldValue] = entries[0];
+            
+            if (!fieldName || fieldName.trim() === '') {
+                throw new BadRequestException('Field name cannot be empty');
+            }
+
+            if (usedNames.has(fieldName)) {
+                throw new BadRequestException(`Customizing field name "${fieldName}" cannot be duplicated`);
+            }
+            usedNames.add(fieldName);
+
+            if (!fieldValue || typeof fieldValue !== 'object' || Array.isArray(fieldValue)) {
+                throw new BadRequestException(`Customizing field "${fieldName}" must have a valid value object`);
+            }
+
+            if (typeof fieldValue.position !== 'number' || fieldValue.position < 0) {
+                throw new BadRequestException(`Customizing field "${fieldName}".position must be a number >= 0`);
+            }
+
+            if (fieldValue.position !== 0) {
+                if (usedPositions.has(fieldValue.position)) {
+                    throw new BadRequestException(`Customizing field position value "${fieldValue.position}" cannot be duplicated`);
+                }
+                usedPositions.add(fieldValue.position);
+            }
+
+            if (typeof fieldValue.isEnabled !== 'boolean') {
+                throw new BadRequestException(`Customizing field "${fieldName}".isEnabled must be boolean`);
             }
         }
 
@@ -102,7 +121,7 @@ export class ReturnMethodService {
         configurationName?: string,
         operatorId?: number,
         value?: string,
-        customizingFields?: Record<string, any>[],
+        customizingFields?: Record<string, CustomizingFieldValueDto>[],
         layoutJson?: Record<string, any>,
         styleJson?: Record<string, any>,
         delayDuration?: number,
@@ -128,30 +147,54 @@ export class ReturnMethodService {
 
         if (customizingFields && customizingFields.length > 0) {
             const usedPositions = new Set<number>();
-            for (const [key, value] of Object.entries(customizingFields)) {
-                if (!value || typeof value !== 'object' || Array.isArray(value)) {
-                    throw new BadRequestException(`Customizing field "${key}" must be a valid object`);
+            const usedNames = new Set<string>();
+            
+            for (const fieldObj of customizingFields) {
+                if (!fieldObj || typeof fieldObj !== 'object' || Array.isArray(fieldObj)) {
+                    throw new BadRequestException('Each customizing field must be a valid object');
                 }
 
-                if ('position' in value) {
-                    const pos = value.position;
-                    if (typeof pos !== 'number' || pos < 0) {
-                        throw new BadRequestException(`Customizing field "${key}".position must be a number >= 0`);
-                    }
-
-                    if (pos !== 0) {
-                        if (usedPositions.has(pos)) {
-                            throw new BadRequestException(`Customizing field position value "${pos}" cannot be duplicated`);
-                        }
-                        usedPositions.add(pos);
-                    }
+                const entries = Object.entries(fieldObj);
+                if (entries.length !== 1) {
+                    throw new BadRequestException('Each customizing field object must have exactly one key');
                 }
-                if (!('isEnabled' in value)) {
-                    throw new BadRequestException(`Customizing field "${key}" must have isEnabled property`);
+
+                const [fieldName, fieldValue] = entries[0];
+                
+                if (!fieldName || fieldName.trim() === '') {
+                    throw new BadRequestException('Field name cannot be empty');
+                }
+
+                if (usedNames.has(fieldName)) {
+                    throw new BadRequestException(`Customizing field name "${fieldName}" cannot be duplicated`);
+                }
+                usedNames.add(fieldName);
+
+                if (!fieldValue || typeof fieldValue !== 'object' || Array.isArray(fieldValue)) {
+                    throw new BadRequestException(`Customizing field "${fieldName}" must have a valid value object`);
+                }
+
+                if (!('position' in fieldValue)) {
+                    throw new BadRequestException(`Customizing field "${fieldName}" must have position property`);
+                }
+
+                if (typeof fieldValue.position !== 'number' || fieldValue.position < 0) {
+                    throw new BadRequestException(`Customizing field "${fieldName}".position must be a number >= 0`);
+                }
+
+                if (fieldValue.position !== 0) {
+                    if (usedPositions.has(fieldValue.position)) {
+                        throw new BadRequestException(`Customizing field position value "${fieldValue.position}" cannot be duplicated`);
+                    }
+                    usedPositions.add(fieldValue.position);
+                }
+
+                if (!('isEnabled' in fieldValue)) {
+                    throw new BadRequestException(`Customizing field "${fieldName}" must have isEnabled property`);
                 }
                 
-                if (typeof value.isEnabled !== 'boolean') {
-                    throw new BadRequestException(`Customizing field "${key}".isEnabled must be boolean`);
+                if (typeof fieldValue.isEnabled !== 'boolean') {
+                    throw new BadRequestException(`Customizing field "${fieldName}".isEnabled must be boolean`);
                 }
             }
         }
@@ -162,7 +205,7 @@ export class ReturnMethodService {
                 ConfigurationName: configurationName,
                 OperatorID: operatorId,
                 Value: value,
-                Customizing: customizingFields,
+                Customizing: customizingFields as any,
                 Layout: layoutJson,
                 Style: styleJson,
                 Delay: delayDuration,
