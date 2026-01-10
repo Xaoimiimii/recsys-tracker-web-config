@@ -25,9 +25,18 @@ export class UpdateReturnMethodDto {
 
     @IsOptional()
     @IsArray()
-    @IsObject({ each: true })
     @ApiProperty({
         type: 'array',
+        items: {
+            type: 'object',
+            additionalProperties: {
+                type: 'object',
+                properties: {
+                    position: { type: 'number' },
+                    isEnabled: { type: 'boolean' }
+                }
+            }
+        },
         example: [
             { album: { position: 1, isEnabled: true } },
             { theme: { position: 2, isEnabled: false } }
