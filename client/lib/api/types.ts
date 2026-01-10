@@ -216,10 +216,17 @@ export interface CreateItem {
 // ==================== EVENT TYPES ====================
 
 export interface TrackedEvent {
-  uuid: string;
-  type: string;
-  payload: any;
-  createdAt: string;
-  domain: string;
-  trackingRuleId?: number;
+  Id: number;
+  EventTypeId: number;
+  UserField: string;
+  UserValue: string;
+  ItemField: string;
+  ItemValue: string;
+  RatingValue: number | null;
+  ReviewValue: string | null;
+  Timestamp: string;
+  TrackingRule: {
+    Id: number;
+    Name: string;
+  };
 }
