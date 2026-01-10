@@ -67,6 +67,10 @@ export interface CreateReturnMethod {
   ReturnType: ReturnType;
   Value: string;
   OperatorId: number;
+  Layout: any;          
+  Style: any;
+  Customizing: any;
+  Duration?: number;
 }
 
 export interface ReturnMethodResponse {
@@ -75,7 +79,12 @@ export interface ReturnMethodResponse {
   Operator: string;
   Value: string;
   ReturnType: string;
+  Layout?: any;
+  Style?: any;
+  Customizing?: any;
+  Duration?: number;
 }
+
 
 // ==================== RULE TYPES ====================
 

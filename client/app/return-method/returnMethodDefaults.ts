@@ -89,7 +89,6 @@ export const DEFAULT_POPUP_LAYOUT: LayoutJson = {
             position: "center",
             widthMode: "fixed",
             width: 500,
-            overlay: true 
         },
     },
 
@@ -136,8 +135,6 @@ export const DEFAULT_STYLE_CONFIG: StyleJson = {
             success: "#16A34A",
             danger: "#DC2626",
             warning: "#F59E0B",
-            // QUAN TRỌNG: Thêm overlay cho Popup
-            overlay: "rgba(0, 0, 0, 0.5)" 
         },
 
         radius: {

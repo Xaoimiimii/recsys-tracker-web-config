@@ -78,6 +78,7 @@
     border-color: #dc2626 !important;
 }
 
+
 .inputError:focus {
     outline: none;
     border-color: #dc2626 !important;
@@ -444,6 +445,10 @@
     cursor: pointer;
     text-align: center;
     transition: all 0.2s;
+    display: flex;           
+    flex-direction: column;  
+    align-items: center;    
+    justify-content: center;
 }
 
 .displayTypeCard:hover:not(:disabled) {
@@ -1014,7 +1019,7 @@ input[type="color"]::-webkit-color-swatch {
 }
 
 /* --- TOGGLE & CHECKBOXES --- */
-.toggleWrapper {
+/* .toggleWrapper {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -1068,7 +1073,7 @@ input[type="color"]::-webkit-color-swatch {
 .toggleLabel {
     font-size: 0.875rem;
     font-weight: 500;
-}
+} */
 
 /* --- TYPOGRAPHY PANEL --- */
 .typographyList {
@@ -1305,7 +1310,7 @@ input[type="color"]::-webkit-color-swatch {
 }
 
 /* --- BUTTONS & ACTIONS --- */
-.addButton {
+/* .addButton {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
@@ -1318,7 +1323,7 @@ input[type="color"]::-webkit-color-swatch {
     font-weight: 600;
     cursor: pointer;
     transition: background-color 0.2s;
-}
+} */
 
 .closeButton {
     color: var(--color-text-tertiary);

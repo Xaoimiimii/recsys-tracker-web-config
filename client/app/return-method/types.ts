@@ -64,7 +64,6 @@ export interface PopupWrapperConfig {
     position: 'center' | 'bottom-right' | 'bottom-left' | 'top-center';
     widthMode: 'fixed' | 'responsive';
     width?: number;
-    overlay?: boolean;
 }
 
 export interface ModeConfig {
@@ -82,7 +81,7 @@ export interface ModeConfig {
 
 export interface LayoutJson {
     displayMode: DisplayType;
-    contentMode?: string; // grid | list | carousel
+    contentMode?: string; 
     
     wrapper?: {
         popup?: PopupWrapperConfig;
@@ -123,7 +122,6 @@ export interface StyleTokens {
         success: string;
         danger: string;
         warning: string;
-        overlay?: string; // Bắt buộc phải có cho Popup
     };
     radius: {
         card: number;
@@ -254,13 +252,13 @@ export interface StyleJson {
 }
 
 export interface FieldConfig {
-    label?: string;
+    key: string;
     position: number;
     isEnabled: boolean;
 }
 
 export interface CustomizingFields {
-    [fieldKey: string]: FieldConfig;
+    fields: FieldConfig[];
 }
 
 export interface DisplayConfiguration {
@@ -273,5 +271,5 @@ export interface DisplayConfiguration {
     layoutJson: LayoutJson;
     styleJson: StyleJson;
     customizingFields: CustomizingFields;
-    delayedDuration: number;
+    Duration: number;
 }

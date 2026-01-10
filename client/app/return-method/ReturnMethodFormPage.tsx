@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Container } from '../../types';
-import { Save, Layers, Monitor, ArrowLeft, ArrowUp, ArrowDown, Trash2, Plus, Check, BookOpen } from 'lucide-react';
+import { Save, Layers, Monitor, Puzzle, ArrowLeft, ArrowUp, ArrowDown, Trash2, Plus, Check, BookOpen } from 'lucide-react';
 import styles from './returnMethodPage.module.css';
 import { DisplayType, LayoutJson, StyleJson, CustomizingFields, FieldConfig } from './types';
 import { useDataCache } from '../../contexts/DataCacheContext';
@@ -15,11 +15,13 @@ interface ReturnMethodFormPageProps {
 }
 
 const DEFAULT_CUSTOM_FIELDS: CustomizingFields = {
-    "product_name": { position: 1, isEnabled: true, label: "Tên sản phẩm" },
-    "price": { position: 2, isEnabled: true, label: "Giá bán" },
-    "image": { position: 0, isEnabled: true, label: "Ảnh sản phẩm" },
-    "rating": { position: 3, isEnabled: true, label: "Đánh giá" },
-    "description": { position: 4, isEnabled: false, label: "Mô tả ngắn" }
+    fields: [
+        { key: "image", position: 0, isEnabled: true },
+        { key: "product_name", position: 1, isEnabled: true },
+        { key: "price", position: 2, isEnabled: true },
+        { key: "rating", position: 3, isEnabled: true },
+        { key: "description", position: 4, isEnabled: false }
+    ]
 };
 
 export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ container, mode }) => {
@@ -40,13 +42,12 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
     const [layoutJson, setLayoutJson] = useState<LayoutJson>(DEFAULT_POPUP_LAYOUT);
     const [styleJson, setStyleJson] = useState<StyleJson>(DEFAULT_STYLE_CONFIG);
     const [customFields, setCustomFields] = useState<CustomizingFields>(DEFAULT_CUSTOM_FIELDS);
-    const [delayDuration, setDelayDuration] = useState<number>(0);
+    const [delayedDuration, setDelayedDuration] = useState<number>(0);
 
     const { operators } = useDataCache();
 
-    const sortedFieldEntries = useMemo(() => {
-        return Object.entries(customFields)
-            .sort((a, b) => (a[1] as FieldConfig).position - (b[1] as FieldConfig).position);
+    const sortedFields = useMemo(() => {
+        return [...customFields.fields].sort((a, b) => a.position - b.position);
     }, [customFields]);
 
     // --- EFFECT: LOAD DATA ---
@@ -55,6 +56,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
             // Mock implementation
             setName('Campaign Popup 2024');
             setValue('/khuyen-mai');
+            setOperatorId(1); // Default or load from API
         }
     }, [mode, id]);
 
@@ -126,87 +128,106 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
     };
 
     // Field Handlers
-    const toggleField = (key: string) => {
+    const toggleField = (targetKey: string) => {
         setCustomFields(prev => ({
-            ...prev, [key]: { ...prev[key], isEnabled: !prev[key].isEnabled }
+            fields: prev.fields.map(f => 
+                f.key === targetKey ? { ...f, isEnabled: !f.isEnabled } : f
+            )
         }));
     };
 
-    const updateFieldLabel = (key: string, newLabel: string) => {
-        setCustomFields(prev => ({
-            ...prev, [key]: { ...prev[key], label: newLabel }
-        }));
-    };
-
-    const moveField = (key: string, direction: 'up' | 'down') => {
-        const sortedKeys = Object.keys(customFields).sort((a, b) => customFields[a].position - customFields[b].position);
-        const currentIndex = sortedKeys.indexOf(key);
-        if (currentIndex === -1) return;
-        const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-        if (targetIndex < 0 || targetIndex >= sortedKeys.length) return;
-        const targetKey = sortedKeys[targetIndex];
-
-        setCustomFields(prev => ({
-            ...prev,
-            [key]: { ...prev[key], position: prev[targetKey].position },
-            [targetKey]: { ...prev[targetKey], position: prev[key].position }
-        }));
+    const moveField = (targetKey: string, direction: 'up' | 'down') => {
+        setCustomFields(prev => {
+            const sortedList = [...prev.fields]
+                .sort((a, b) => a.position - b.position)
+                .map(field => ({ ...field })); 
+            const index = sortedList.findIndex(f => f.key === targetKey);
+            if (index === -1) return prev;
+            const targetIndex = direction === 'up' ? index - 1 : index + 1;
+            if (targetIndex < 0 || targetIndex >= sortedList.length) return prev;
+            const temp = sortedList[index];
+            sortedList[index] = sortedList[targetIndex];
+            sortedList[targetIndex] = temp;
+            const reindexedList = sortedList.map((field, i) => ({
+                ...field,
+                position: i
+            }));
+            return { fields: reindexedList };
+        });
     };
 
     const [newFieldKey, setNewFieldKey] = useState('');
-    const [newFieldLabel, setNewFieldLabel] = useState('');
 
     const addNewField = () => {
         if (!newFieldKey.trim()) return;
-        const maxPos = Math.max(...Object.values(customFields).map((f: FieldConfig) => f.position), 0);
+        if (customFields.fields.some(f => f.key === newFieldKey)) {
+            alert("Key already exists.");
+            return;
+        }
+        const maxPos = Math.max(...customFields.fields.map(f => f.position), 0);
         setCustomFields(prev => ({
-            ...prev,
-            [newFieldKey]: { position: maxPos + 1, isEnabled: true, label: newFieldLabel || newFieldKey }
+            fields: [
+                ...prev.fields,
+                { key: newFieldKey, position: maxPos + 1, isEnabled: true }
+            ]
         }));
         setNewFieldKey('');
-        setNewFieldLabel('');
     };
 
-    const removeField = (key: string) => {
-        const newFields = { ...customFields };
-        delete newFields[key];
-        setCustomFields(newFields);
+    const removeField = (targetKey: string) => {
+        setCustomFields(prev => ({
+            fields: prev.fields.filter(f => f.key !== targetKey)
+        }));
     };
 
     // Save Handler
     const handleSave = async () => {
-        setErrors({});
-        const newErrors: typeof errors = {};
-        if (!name.trim()) newErrors.name = 'Required';
-        if (!value.trim()) newErrors.value = 'Required';
-        if (Object.keys(newErrors).length > 0) {
-            setErrors(newErrors);
-            return;
-        }
+        // setErrors({});
+        // const newErrors: typeof errors = {};
+        // if (!name.trim()) newErrors.name = 'Required';
+        // if (!value.trim()) newErrors.value = 'Required';
+        // if (Object.keys(newErrors).length > 0) {
+        //     setErrors(newErrors);
+        //     return;
+        // }
 
-        setIsSaving(true);
-        try {
-            const requestData = {
-                DomainID: container?.uuid,
-                ConfigurationName: name,
-                ReturnType: displayType === 'popup' ? ReturnType.POPUP : ReturnType.INLINE_INJECTION,
-                OperatorId: operatorId,
-                Value: value,
-                DelayedDuration: delayDuration,
-                IsEnabled: true,
-                LayoutJson: { ...layoutJson, displayMode: displayType },
-                StyleJson: styleJson,
-                CustomizingFields: customFields
-            };
+        // setIsSaving(true);
+        // try {
+        //     const requestData = {
+        //         DomainID: container?.uuid,
+        //         ConfigurationName: name,
+        //         ReturnType: displayType === 'popup' ? ReturnType.POPUP : ReturnType.INLINE_INJECTION,
+        //         OperatorId: operatorId,
+        //         Value: value,
+        //         Duration: delayedDuration,
+        //         IsEnabled: true,
+        //         Layout: { ...layoutJson, displayMode: displayType },
+        //         Style: styleJson,
+        //         Customizing: customFields
+        //     };
             
-            if (mode === 'create') await returnMethodApi.create(requestData as any);
-            navigate('/dashboard/recommendation-display');
-        } catch (error) {
-            console.error(error);
-            setErrors({ general: 'Failed to save.' });
-        } finally {
-            setIsSaving(false);
-        }
+        //     if (mode === 'create') await returnMethodApi.create(requestData as any);
+        //     navigate('/dashboard/recommendation-display');
+        // } catch (error) {
+        //     console.error(error);
+        //     setErrors({ general: 'Failed to save.' });
+        // } finally {
+        //     setIsSaving(false);
+        // }
+        const requestData = {
+            key: container?.uuid,
+            ConfigurationName: name,
+            ReturnType: displayType === 'popup' ? ReturnType.POPUP : ReturnType.INLINE_INJECTION,
+            OperatorId: operatorId,
+            Value: value,
+            Duration: delayedDuration,
+            IsEnabled: true,
+            LayoutJson: { ...layoutJson, displayMode: displayType },
+            StyleJson: styleJson,
+            Customizing: customFields,
+            DelayDuration: delayedDuration
+        };
+        console.log("Save Data:", requestData);
     };
 
     // --- UI CONFIG PANELS ---
@@ -219,36 +240,12 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                 </div>
                 
                 <div className={styles.formRow}>
-                     <div className={styles.formCol}>
-                        <label className={styles.inputLabel}>Overlay Backdrop</label>
-                        <div className={styles.toggleWrapper}>
-                            <label className={styles.statusToggle}>
-                                <input 
-                                    type="checkbox"
-                                    checked={layoutJson.wrapper?.popup?.overlay ?? true}
-                                    onChange={(e) => updatePopupWrapper('overlay', e.target.checked)}
-                                    disabled={isReadOnly}
-                                />
-                                <span className={styles.toggleSlider}></span>
-                                <span className={styles.toggleLabel}>Enable Overlay</span>
-                            </label>
-
-                            {(layoutJson.wrapper?.popup?.overlay ?? true) && (
-                                <input 
-                                    type="color" className={styles.colorPickerFull} style={{width: '60px'}}
-                                    value={styleJson.tokens.colors.overlay?.slice(0, 7) || '#000000'}
-                                    onChange={(e) => updateColorToken('overlay', e.target.value)}
-                                    disabled={isReadOnly}
-                                />
-                            )}
-                        </div>
-                    </div>
                     <div className={styles.formCol}>
                         <label className={styles.inputLabel}>Popup Delay (sec)</label>
                         <input 
                             type="number" className={styles.textInput}
-                            value={delayDuration}
-                            onChange={(e) => setDelayDuration(Number(e.target.value))}
+                            value={delayedDuration}
+                            onChange={(e) => setDelayedDuration(Number(e.target.value))}
                             disabled={isReadOnly}
                         />
                     </div>
@@ -292,7 +289,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                 </div>
                 <div className={styles.formRow}>
                     <div className={styles.formCol}>
-                        <label className={styles.inputLabel}>Target Selector <span className={styles.required}>*</span></label>
+                        <label className={styles.inputLabel}>Target Selector (DOM)</label>
                         <input 
                             type="text" className={styles.textInput}
                             placeholder="#product-recommendations"
@@ -300,6 +297,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                             onChange={(e) => updateInlineWrapper('selector', e.target.value)}
                             disabled={isReadOnly}
                         />
+                         <p className={styles.helperText}>Use the top "Selector Value" to trigger, use this for placement logic if different.</p>
                     </div>
                     <div className={styles.formCol}>
                         <label className={styles.inputLabel}>Injection Mode</label>
@@ -536,32 +534,23 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                 {renderFieldInstructions()}
                 
                 <div className={styles.fieldList}>
-                    {sortedFieldEntries.map(([key, config], index) => {
-                        const fieldConfig = config as FieldConfig;
-
+                    {sortedFields.map((fieldConfig, index) => {
                         return (
-                            <div key={key} className={styles.fieldItem}>
+                            <div key={fieldConfig.key} className={styles.fieldItem}>
                                 <button 
-                                    onClick={() => toggleField(key)} 
+                                    onClick={() => toggleField(fieldConfig.key)} 
                                     className={`${styles.checkboxButton} ${fieldConfig.isEnabled ? styles.checkboxActive : styles.checkboxInactive}`}
                                 >
                                     {fieldConfig.isEnabled && <Check size={14} color="white" />}
                                 </button>
 
                                 <div className={styles.fieldInfo}>
-                                    <span className={styles.fieldKey}>{key}</span>
-                                    <input 
-                                        type="text" 
-                                        value={fieldConfig.label}
-                                        onChange={(e) => updateFieldLabel(key, e.target.value)}
-                                        className={`${styles.textInput} ${styles.smallInput}`}
-                                        placeholder="Nhãn hiển thị"
-                                    />
+                                    <span className={styles.fieldKey}>{fieldConfig.key}</span>
                                 </div>
 
                                 <div className={styles.actionButtons}>
                                     <button 
-                                        onClick={() => moveField(key, 'up')} 
+                                        onClick={() => moveField(fieldConfig.key, 'up')} 
                                         disabled={index === 0}
                                         className={styles.actionButtonSmall}
                                         title="Move Up"
@@ -569,8 +558,8 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                         <ArrowUp size={14} />
                                     </button>
                                     <button 
-                                        onClick={() => moveField(key, 'down')}
-                                        disabled={index === sortedFieldEntries.length - 1}
+                                        onClick={() => moveField(fieldConfig.key, 'down')}
+                                        disabled={index === sortedFields.length - 1}
                                         className={styles.actionButtonSmall}
                                         title="Move Down"
                                     >
@@ -578,7 +567,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                     </button>
 
                                     <button 
-                                            onClick={() => removeField(key)}
+                                            onClick={() => removeField(fieldConfig.key)}
                                             className={styles.deleteButtonSmall}
                                             title="Remove Field"
                                         >
@@ -596,11 +585,6 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                 value={newFieldKey} onChange={e => setNewFieldKey(e.target.value)}
                                 className={styles.textInput} 
                                 style={{ marginBottom: '8px' }}
-                            />
-                            <input 
-                                placeholder="Label (Ex: Discount)" 
-                                value={newFieldLabel} onChange={e => setNewFieldLabel(e.target.value)}
-                                className={styles.textInput} 
                             />
                         </div>
                         <button 
@@ -629,13 +613,10 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
         const secondaryColor = styleJson.tokens.colors.textSecondary;
         const primaryColor = styleJson.tokens.colors.primary;
         const borderColor = styleJson.tokens.colors.border;
-        const overlayColor = (layoutJson.wrapper?.popup?.overlay ?? true) 
-            ? (styleJson.tokens.colors.overlay || 'rgba(0,0,0,0.5)') 
-            : 'transparent';
 
         const typoTitle = styleJson.tokens.typography.title;
         const typoBody = styleJson.tokens.typography.body;
-        const previewBg = theme === 'dark' ? '#1f2937' : '#f3f4f6';
+        const previewBg = '#f3f4f6';
 
         // Dynamic container styles
         const dynamicPreviewContainer = {
@@ -667,10 +648,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
         };
 
         const MockProduct = ({ id }: { id: number }) => {
-            const activeTextFields = sortedFieldEntries.filter(([key, config]) => {
-                const fieldConfig = config as FieldConfig;
-                return fieldConfig.isEnabled && key !== 'image';
-            });
+            const activeTextFields = sortedFields.filter(f => f.isEnabled && f.key !== 'image');
             const showImage = customFields['image']?.isEnabled ?? true;
 
             return (
@@ -692,57 +670,20 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
 
                     {/* KHỐI TEXT DYNAMIC */}
                     <div className={styles.mockProductContent}>
-                        {activeTextFields.map(([key, config]) => {
-                            const fieldConfig = config as FieldConfig;
-                            
-                            // 1. Xử lý các trường đặc biệt (Cần style riêng)
+                        {activeTextFields.map((fieldConfig) => {
+                            const key = fieldConfig.key;
                             if (key === 'product_name') {
-                                return (
-                                    <div key={key} style={{ 
-                                        fontSize: `${typoBody.fontSize}px`, 
-                                        fontWeight: typoBody.fontWeight, 
-                                        lineHeight: typoBody.lineHeight,
-                                        color: textColor, marginBottom: '4px' 
-                                    }}>
-                                        {fieldConfig.label || `Product Sample ${id}`}
-                                    </div>
-                                );
+                                return <div key={key} style={{fontWeight:'bold'}}>Product Sample {id}</div>;
                             }
-
                             if (key === 'price') {
-                                return (
-                                    <div key={key} style={{ fontSize: '13px', color: primaryColor, fontWeight: 'bold' }}>
-                                        {fieldConfig.label ? `${fieldConfig.label}: ` : ''}$129.00
-                                    </div>
-                                );
+                                return <div key={key} style={{color: 'blue'}}>$100.00</div>;
                             }
-
                             if (key === 'rating') {
-                                return (
-                                    <div key={key} style={{ fontSize: '11px', color: secondaryColor, marginTop: '2px' }}>
-                                        {fieldConfig.label ? `${fieldConfig.label}: ` : ''}
-                                        <span style={{ color: '#fbbf24' }}>★★★★★</span> (45)
-                                    </div>
-                                );
+                                return <div key={key} style={{color: 'orange'}}>★★★★★</div>;
                             }
-
-                            // 2. Xử lý GENERIC (Cho tất cả các field người dùng tự thêm)
-                            // Bất kể Key là gì, nó sẽ render theo format chuẩn
                             return (
-                                <div key={key} style={{ 
-                                    fontSize: '11px', 
-                                    color: secondaryColor, 
-                                    marginTop: '2px',
-                                    display: 'flex',
-                                    gap: '4px'
-                                }}>
-                                    {/* Luôn hiển thị Label (in đậm nhẹ) */}
-                                    <span style={{ fontWeight: 600, opacity: 0.9 }}>
-                                        {fieldConfig.label || key}:
-                                    </span>
-                                    
-                                    {/* Giá trị giả tự sinh */}
-                                    <span>{getDynamicMockValue(key)}</span>
+                                <div key={key} style={{ fontSize: '11px', color: '#6B7280', marginTop: '2px' }}>
+                                    Sample Value
                                 </div>
                             );
                         })}
@@ -770,6 +711,8 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                     <div style={{ display: 'grid', gridTemplateColumns: layoutJson.contentMode === 'list' ? '1fr' : '1fr 1fr', gap: '10px' }}>
                                         <MockProduct id={1} />
                                         <MockProduct id={2} />
+                                        <MockProduct id={3} />
+                                        <MockProduct id={4} />
                                     </div>
                                 </div>
                             </div>
@@ -779,11 +722,9 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
 
                     {isPopup && (
                         <div className={styles.popupOverlayLayer} style={{
-                            backgroundColor: overlayColor,
                             alignItems: layoutJson.wrapper?.popup?.position?.includes('center') ? 'center' : 'flex-end',
                             justifyContent: layoutJson.wrapper?.popup?.position?.includes('right') ? 'flex-end' : 
-                                            layoutJson.wrapper?.popup?.position?.includes('left') ? 'flex-start' : 'center',
-                            pointerEvents: (layoutJson.wrapper?.popup?.overlay ?? true) ? 'auto' : 'none'
+                                            layoutJson.wrapper?.popup?.position?.includes('left') ? 'flex-start' : 'center'
                         }}>
                             <div className={styles.widgetCard} style={{ ...dynamicWidgetCard, pointerEvents: 'auto' }}>
                                 <div className={styles.widgetHeader} style={{ borderBottom: `1px solid ${borderColor}` }}>
@@ -801,7 +742,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                     )}
                 </div>
                 <p className={styles.helperText} style={{ textAlign: 'center', marginTop: '12px' }}>
-                    *Preview shows layout structure and colors. Actual content will vary by product.
+                    *Preview shows layoutJson structure and colors. Actual content will vary by product.
                 </p>
             </div>
         );
@@ -840,7 +781,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                             onClick={() => handleTypeChange('inline-injection')}
                             disabled={isReadOnly}
                         >
-                            <Monitor className={styles.displayTypeIcon} />
+                            <Puzzle className={styles.displayTypeIcon} />
                             <div className={styles.displayTypeTitle}>Inline Injection</div>
                             <div className={styles.displayTypeDescription}>Embeds into page layout</div>
                         </button>
@@ -849,25 +790,63 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
             )}
 
             <div className={styles.sectionCard}>
-                <div className={styles.formRow}>
+                <div className={styles.formRow} style={{ marginBottom: '1rem' }}>
                     <div className={styles.formCol}>
                         <label className={styles.fieldLabel}>Configuration Name <span className={styles.required}>*</span></label>
                         <input 
                             type="text" className={`${styles.textInput} ${errors.name ? styles.inputError : ''}`}
                             value={name} onChange={e => setName(e.target.value)} 
                             disabled={isReadOnly}
+                            placeholder="e.g. Homepage Recommendations"
                         />
                         {errors.name && <span className={styles.errorText}>{errors.name}</span>}
                     </div>
+                </div>
+
+                <div className={styles.formRow}>
                     <div className={styles.formCol}>
-                        <label className={styles.fieldLabel}>Trigger URL <span className={styles.required}>*</span></label>
+                        <label className={styles.fieldLabel}>Match Operator</label>
+                        <select 
+                            className={styles.selectInput}
+                            value={operatorId}
+                            onChange={(e) => setOperatorId(Number(e.target.value))}
+                            disabled={isReadOnly}
+                        >
+                            {operators.length > 0 ? (
+                                operators.map(op => (
+                                    <option key={op.Id} value={op.Id}>
+                                        {op.Name}
+                                    </option>
+                                ))
+                            ) : (
+                                <>
+                                    <option value="1">Contains</option>
+                                    <option value="2">Equals</option>
+                                    <option value="3">Starts with</option>
+                                    <option value="4">Ends with</option>
+                                </>
+                            )}
+                        </select>
+                    </div>
+                    <div className={styles.formCol} style={{ flex: 2 }}>
+                        <label className={styles.fieldLabel}>
+                             {displayType === 'inline-injection' ? 'Target Selector Value' : 'Trigger URL'} <span className={styles.required}>*</span>
+                        </label>
                         <input 
                             type="text" className={`${styles.textInput} ${errors.value ? styles.inputError : ''}`}
                             value={value} onChange={e => setValue(e.target.value)} 
                             disabled={isReadOnly}
+                            placeholder={displayType === 'inline-injection' ? 'e.g., product-detail' : 'e.g., /product'}
                         />
                         {errors.value && <span className={styles.errorText}>{errors.value}</span>}
                     </div>
+                </div>
+                <div className={styles.formRow} style={{ marginTop: '0.5rem' }}>
+                    <p className={styles.helperText}>
+                        {displayType === 'inline-injection' 
+                            ? `The widget will appear inside elements where the class/id ${operators.find(op => op.Id === operatorId)?.Name || 'contains'} this value.` 
+                            : `The popup will appear when the page URL ${operators.find(op => op.Id === operatorId)?.Name || 'contains'} this value.`}
+                    </p>
                 </div>
             </div>
 

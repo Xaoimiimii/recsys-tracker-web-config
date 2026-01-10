@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, JSX } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Container } from '../../types';
-import { Plus, Eye, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Eye, Edit2, Trash2, Layers, Puzzle } from 'lucide-react';
 import styles from './returnMethodPage.module.css';
 import { DisplayConfiguration, DisplayType } from './types';
 import { returnMethodApi } from '../../lib/api/return-method';
 import type { ReturnMethodResponse } from '../../lib/api/types';
 import { useDataCache } from '../../contexts/DataCacheContext';
+import { DEFAULT_POPUP_LAYOUT, DEFAULT_STYLE_CONFIG } from './returnMethodDefaults';
 
 interface ReturnMethodPageProps {
     container: Container | null;
@@ -17,11 +18,15 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const [configurations, setConfigurations] = useState<DisplayConfiguration[]>([]);
+    
+    // State lưu tên Operator để hiển thị
+    const [operatorNames, setOperatorNames] = useState<Record<string, string>>({});
+    
     const [filterType, setFilterType] = useState<DisplayType | 'all'>('all');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     
-    const { getReturnMethodsByDomain, setReturnMethodsByDomain } = useDataCache();
+    const { getReturnMethodsByDomain, setReturnMethodsByDomain, operators } = useDataCache();
 
     // Fetch return methods from API
     useEffect(() => {
@@ -31,7 +36,6 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
                 return;
             }
 
-            // Check cache first
             const cachedReturnMethods = getReturnMethodsByDomain(container.uuid);
             if (cachedReturnMethods) {
                 transformAndSetConfigurations(cachedReturnMethods);
@@ -44,7 +48,6 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
             try {
                 const response = await returnMethodApi.getByDomainKey(container.uuid);
                 setReturnMethodsByDomain(container.uuid, response);
-                
                 transformAndSetConfigurations(response);
             } catch (err) {
                 console.error('Failed to fetch return methods:', err);
@@ -55,37 +58,49 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
         };
 
         const transformAndSetConfigurations = (response: ReturnMethodResponse[]) => {
-            // Transform API response to DisplayConfiguration format
             const transformedConfigs: DisplayConfiguration[] = response.map((item, index) => {
                 const displayType: DisplayType = item.ReturnType === 'POPUP' ? 'popup' : 'inline-injection';
                 
-                const config: DisplayConfiguration = {
-                    id: `${item.DomainID}-${index}`,
-                    configurationName: item.ConfigurationName,
-                    displayType,
-                    operator: item.Operator,
-                    value: item.Value,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                };
+                // --- QUAN TRỌNG: Xử lý ID ---
+                // Do ReturnMethodResponse trong types.ts hiện không có trường Id,
+                // ta tạo tạm một ID giả để React có thể render list (dùng index).
+                // Khi Backend cập nhật trả về Id, hãy sửa lại dòng này: const id = item.Id.toString();
+                const fakeId = `${item.DomainID || 'unknown'}-${index}`;
 
-                if (displayType !== 'popup') {
-                    config.widgetDesign = {
-                        layout: 'grid',
-                        theme: 'light',
-                        spacing: 'medium',
-                        size: 'medium'
-                    };
+                // Lưu tên Operator từ API vào map để hiển thị (vì API trả về string Operator, ví dụ "Contains")
+                if (item.Operator) {
+                    setOperatorNames(prev => ({...prev, [fakeId]: item.Operator}));
                 }
 
-                return config;
+                return {
+                    id: fakeId,
+                    configurationName: item.ConfigurationName,
+                    displayType,
+                    // Không có OperatorId từ API, dùng tạm 1 hoặc map từ tên nếu cần logic
+                    operator: 1, 
+                    value: item.Value,
+                    
+                    // --- MAPPING FIELD: Khớp với types.ts bạn cung cấp ---
+                    // API: Layout -> UI: layoutJson
+                    layoutJson: item.Layout || DEFAULT_POPUP_LAYOUT,
+                    // API: Style -> UI: styleJson
+                    styleJson: item.Style || DEFAULT_STYLE_CONFIG,
+                    // API: Customizing -> UI: customizingFields
+                    customizingFields: item.Customizing || {},
+                    // API: Duration -> UI: delayedDuration
+                    Duration: item.Duration || 0,
+                    
+                    // Fallback cho ngày tháng (API chưa có)
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
             });
 
             setConfigurations(transformedConfigs);
         };
 
         fetchReturnMethods();
-    }, [container?.uuid]);
+    }, [container?.uuid, getReturnMethodsByDomain, setReturnMethodsByDomain]);
 
     const filteredConfigurations = configurations.filter(config => {
         const typeMatch = filterType === 'all' || config.displayType === filterType;
@@ -105,18 +120,48 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
     };
 
     const handleDelete = async (id: string) => {
-        if (confirm('Are you sure you want to delete this configuration?')) {
-            setConfigurations(prev => prev.filter(config => config.id !== id));
-        }
+        // Cảnh báo: ID hiện tại là ID giả, lệnh delete này sẽ thất bại nếu gửi lên server
+        // Trừ khi bạn sửa lại logic lấy ID thực từ response
+        // if (confirm('Are you sure you want to delete this configuration?')) {
+        //     try {
+        //          await returnMethodApi.delete(id); 
+        //         setConfigurations(prev => prev.filter(config => config.id !== id));
+        //         if (container?.uuid) {
+        //             // Logic clear cache nếu cần
+        //         }
+        //     } catch (e) {
+        //         console.error("Delete failed", e);
+        //         alert("Failed to delete (ID might be invalid)");
+        //     }
+        // }
     };
 
-    const getSummary = (config: DisplayConfiguration): string => {
+    const getSummary = (config: DisplayConfiguration): JSX.Element => {
+        // Lấy tên Operator từ map (ưu tiên) hoặc tìm trong context
+        const opName = operatorNames[config.id] || 
+                       operators.find(op => op.Id === config.operator)?.Name || 
+                       'Contains';
+        
+        const operatorText = `[${opName}]`;
+        
         if (config.displayType === 'inline-injection') {
-            return `Div: ${config.value}`;
-        } else if (config.displayType === 'popup') {
-            return `URL: ${config.value}`;
+            return (
+                <div>
+                    <span style={{color: '#6b7280', fontSize: '0.8em'}}>Target Div: </span>
+                    <span style={{fontWeight: 500}}>{config.value}</span>
+                    <div style={{fontSize: '0.75em', color: '#9ca3af'}}>
+                        Inside element matching selector
+                    </div>
+                </div>
+            );
+        } else {
+            return (
+                <div>
+                     <span style={{color: '#6b7280', fontSize: '0.8em'}}>Trigger URL {operatorText}: </span>
+                     <span style={{fontWeight: 500}}>{config.value}</span>
+                </div>
+            );
         }
-        return `${config.value}`;
     };
 
     return (
@@ -184,10 +229,21 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
                                 {filteredConfigurations.map((config, index) => (
                                     <tr key={config.id}>
                                         <td>#{index + 1}</td>
-                                        <td className={styles.nameCell}>{config.configurationName}</td>
+                                        <td className={styles.nameCell}>
+                                            <div style={{fontWeight: 'bold'}}>{config.configurationName}</div>
+                                            {/* Ẩn ID giả đi vì nó không có ý nghĩa với người dùng */}
+                                            {/* <div style={{fontSize: '0.75rem', color: '#9ca3af'}}>ID: {config.id}</div> */}
+                                        </td>
                                         <td>
-                                            <span className={styles.typeTag}>
-                                                {config.displayType === 'popup' ? 'Popup' : 'Inline Injection'}
+                                            <span className={styles.typeTag} style={{
+                                                backgroundColor: config.displayType === 'popup' ? '#e0f2fe' : '#f3e8ff',
+                                                color: config.displayType === 'popup' ? '#0284c7' : '#9333ea',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '4px'
+                                            }}>
+                                                {config.displayType === 'popup' ? <Layers size={12}/> : <Puzzle size={12}/>}
+                                                {config.displayType === 'popup' ? 'Popup' : 'Inline'}
                                             </span>
                                         </td>
                                         <td className={styles.summaryCell}>
