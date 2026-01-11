@@ -30,13 +30,13 @@ export class RatingService {
                 }
 
                 let user = await tx.user.findFirst({
-                    where: { Username: rating.userId }
+                    where: { UserId: rating.userId }
                 });
 
                 if (!user) {
                     user = await tx.user.create({
                         data: {
-                            Username: rating.userId,
+                            UserId: rating.userId,
                             Domain: { connect: { Id: domain.Id } }
                         }
                     });
