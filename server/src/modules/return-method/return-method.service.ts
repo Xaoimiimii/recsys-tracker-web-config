@@ -1,12 +1,12 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/modules/prisma/prisma.service';
 import { ReturnType } from 'src/generated/prisma/enums';
-import { CustomizingFieldValueDto } from './dto/create-return-method.dto';
+import { CustomizingFieldDto } from './dto/create-return-method.dto';
 
 @Injectable()
 export class ReturnMethodService {
     constructor(private prisma: PrismaService) { }
-    
+
     async getReturnMethodsByDomainKey(key: string) {
         const domain = await this.prisma.domain.findUnique({
             where: {
@@ -31,7 +31,7 @@ export class ReturnMethodService {
         value: string,
         operatorId: number,
         delayDuration: number,
-        customizingFields: Record<string, CustomizingFieldValueDto>[],
+        customizingFields: CustomizingFieldDto[],
         layoutJson: Record<string, any>,
         styleJson: Record<string, any>,
     ) {
@@ -39,47 +39,28 @@ export class ReturnMethodService {
             throw new BadRequestException('Delay duration must be a non-negative number');
         }
 
+        const usedKeys = new Set<string>();
         const usedPositions = new Set<number>();
-        const usedNames = new Set<string>();
-        
-        for (const fieldObj of customizingFields) {
-            if (!fieldObj || typeof fieldObj !== 'object' || Array.isArray(fieldObj)) {
-                throw new BadRequestException('Each customizing field must be a valid object');
-            }
 
-            const entries = Object.entries(fieldObj);
-            if (entries.length !== 1) {
-                throw new BadRequestException('Each customizing field object must have exactly one key');
-            }
+        if (customizingFields?.length) {
+            for (const field of customizingFields) {
+                const currentKey = field.key.trim();
 
-            const [fieldName, fieldValue] = entries[0];
-            
-            if (!fieldName || fieldName.trim() === '') {
-                throw new BadRequestException('Field name cannot be empty');
-            }
-
-            if (usedNames.has(fieldName)) {
-                throw new BadRequestException(`Customizing field name "${fieldName}" cannot be duplicated`);
-            }
-            usedNames.add(fieldName);
-
-            if (!fieldValue || typeof fieldValue !== 'object' || Array.isArray(fieldValue)) {
-                throw new BadRequestException(`Customizing field "${fieldName}" must have a valid value object`);
-            }
-
-            if (typeof fieldValue.position !== 'number' || fieldValue.position < 0) {
-                throw new BadRequestException(`Customizing field "${fieldName}".position must be a number >= 0`);
-            }
-
-            if (fieldValue.position !== 0) {
-                if (usedPositions.has(fieldValue.position)) {
-                    throw new BadRequestException(`Customizing field position value "${fieldValue.position}" cannot be duplicated`);
+                if (usedKeys.has(currentKey)) {
+                    throw new BadRequestException(`Customizing field key "${currentKey}" cannot be duplicated`);
                 }
-                usedPositions.add(fieldValue.position);
-            }
+                usedKeys.add(currentKey);
 
-            if (typeof fieldValue.isEnabled !== 'boolean') {
-                throw new BadRequestException(`Customizing field "${fieldName}".isEnabled must be boolean`);
+                if (field.position < 0) {
+                    throw new BadRequestException(`Customizing field "${currentKey}" position must be >= 0`);
+                }
+
+                if (field.position !== 0) {
+                    if (usedPositions.has(field.position)) {
+                        throw new BadRequestException(`Position "${field.position}" is duplicated at field "${currentKey}"`);
+                    }
+                    usedPositions.add(field.position);
+                }
             }
         }
 
@@ -121,7 +102,7 @@ export class ReturnMethodService {
         configurationName?: string,
         operatorId?: number,
         value?: string,
-        customizingFields?: Record<string, CustomizingFieldValueDto>[],
+        customizingFields?: CustomizingFieldDto[],
         layoutJson?: Record<string, any>,
         styleJson?: Record<string, any>,
         delayDuration?: number,
@@ -146,55 +127,28 @@ export class ReturnMethodService {
         }
 
         if (customizingFields && customizingFields.length > 0) {
+            const usedKeys = new Set<string>();
             const usedPositions = new Set<number>();
-            const usedNames = new Set<string>();
-            
-            for (const fieldObj of customizingFields) {
-                if (!fieldObj || typeof fieldObj !== 'object' || Array.isArray(fieldObj)) {
-                    throw new BadRequestException('Each customizing field must be a valid object');
-                }
 
-                const entries = Object.entries(fieldObj);
-                if (entries.length !== 1) {
-                    throw new BadRequestException('Each customizing field object must have exactly one key');
-                }
+            if (customizingFields?.length) {
+                for (const field of customizingFields) {
+                    const currentKey = field.key.trim();
 
-                const [fieldName, fieldValue] = entries[0];
-                
-                if (!fieldName || fieldName.trim() === '') {
-                    throw new BadRequestException('Field name cannot be empty');
-                }
-
-                if (usedNames.has(fieldName)) {
-                    throw new BadRequestException(`Customizing field name "${fieldName}" cannot be duplicated`);
-                }
-                usedNames.add(fieldName);
-
-                if (!fieldValue || typeof fieldValue !== 'object' || Array.isArray(fieldValue)) {
-                    throw new BadRequestException(`Customizing field "${fieldName}" must have a valid value object`);
-                }
-
-                if (!('position' in fieldValue)) {
-                    throw new BadRequestException(`Customizing field "${fieldName}" must have position property`);
-                }
-
-                if (typeof fieldValue.position !== 'number' || fieldValue.position < 0) {
-                    throw new BadRequestException(`Customizing field "${fieldName}".position must be a number >= 0`);
-                }
-
-                if (fieldValue.position !== 0) {
-                    if (usedPositions.has(fieldValue.position)) {
-                        throw new BadRequestException(`Customizing field position value "${fieldValue.position}" cannot be duplicated`);
+                    if (usedKeys.has(currentKey)) {
+                        throw new BadRequestException(`Customizing field key "${currentKey}" cannot be duplicated`);
                     }
-                    usedPositions.add(fieldValue.position);
-                }
+                    usedKeys.add(currentKey);
 
-                if (!('isEnabled' in fieldValue)) {
-                    throw new BadRequestException(`Customizing field "${fieldName}" must have isEnabled property`);
-                }
-                
-                if (typeof fieldValue.isEnabled !== 'boolean') {
-                    throw new BadRequestException(`Customizing field "${fieldName}".isEnabled must be boolean`);
+                    if (field.position < 0) {
+                        throw new BadRequestException(`Customizing field "${currentKey}" position must be >= 0`);
+                    }
+
+                    if (field.position !== 0) {
+                        if (usedPositions.has(field.position)) {
+                            throw new BadRequestException(`Position "${field.position}" is duplicated at field "${currentKey}"`);
+                        }
+                        usedPositions.add(field.position);
+                    }
                 }
             }
         }

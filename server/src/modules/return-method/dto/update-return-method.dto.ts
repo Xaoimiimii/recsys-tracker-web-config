@@ -1,13 +1,14 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsArray, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString } from "class-validator";
-import { CustomizingFieldValueDto } from "./create-return-method.dto";
+import { IsArray, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString, ValidateNested } from "class-validator";
+import { CustomizingFieldDto } from "./create-return-method.dto";
+import { Type } from "class-transformer";
 
 export class UpdateReturnMethodDto {
     @IsNumber()
     @IsNotEmpty()
     @ApiProperty({ example: 1 })
     Id: number;
-    
+
     @IsString()
     @IsOptional()
     @ApiProperty({ example: 'Return Method Configuration Name' })
@@ -25,24 +26,16 @@ export class UpdateReturnMethodDto {
 
     @IsOptional()
     @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => CustomizingFieldDto)
     @ApiProperty({
-        type: 'array',
-        items: {
-            type: 'object',
-            additionalProperties: {
-                type: 'object',
-                properties: {
-                    position: { type: 'number' },
-                    isEnabled: { type: 'boolean' }
-                }
-            }
-        },
+        type: [CustomizingFieldDto],
         example: [
-            { album: { position: 1, isEnabled: true } },
-            { theme: { position: 2, isEnabled: false } }
+            { key: 'album', position: 1, isEnabled: true },
+            { key: 'theme', position: 2, isEnabled: false }
         ]
     })
-    CustomizingFields?: Record<string, CustomizingFieldValueDto>[];
+    CustomizingFields?: CustomizingFieldDto[];
 
     @IsOptional()
     @IsObject()
