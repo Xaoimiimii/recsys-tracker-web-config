@@ -1,13 +1,23 @@
-import { IsArray, IsEnum, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString, ValidateNested } from "class-validator";
+import { IsArray, IsBoolean, IsEnum, IsInt, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString, Min, ValidateNested } from "class-validator";
 import { ReturnType } from "src/generated/prisma/enums";
 import { ApiProperty } from "@nestjs/swagger";
 import { Type, Transform } from "class-transformer";
 
-export class CustomizingFieldValueDto {
+export class CustomizingFieldDto {
+    @IsString()
+    @ApiProperty({ example: 'album' })
+    @IsNotEmpty()
+    key: string;
+
     @ApiProperty({ example: 1 })
+    @IsInt()
+    @Min(0)
+    @IsNotEmpty()
     position: number;
 
     @ApiProperty({ example: true })
+    @IsBoolean()
+    @IsNotEmpty()
     isEnabled: boolean;
 }
 
@@ -39,28 +49,16 @@ export class CreateReturnMethodDto {
 
     @IsOptional()
     @IsArray()
-    @Transform(({ value }) => {
-        if (!value) return [];
-        return value;
-    })
+    @ValidateNested({ each: true })
+    @Type(() => CustomizingFieldDto)
     @ApiProperty({
-        type: 'array',
-        items: {
-            type: 'object',
-            additionalProperties: {
-                type: 'object',
-                properties: {
-                    position: { type: 'number' },
-                    isEnabled: { type: 'boolean' }
-                }
-            }
-        },
+        type: [CustomizingFieldDto],
         example: [
-            { album: { position: 1, isEnabled: true } },
-            { theme: { position: 2, isEnabled: false } }
+            { key: 'album', position: 1, isEnabled: true },
+            { key: 'theme', position: 2, isEnabled: false }
         ]
     })
-    CustomizingFields?: Record<string, CustomizingFieldValueDto>[];
+    CustomizingFields?: CustomizingFieldDto[];
 
     @IsNotEmpty()
     @IsObject()

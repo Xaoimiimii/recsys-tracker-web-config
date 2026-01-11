@@ -84,11 +84,11 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
                     // API: Layout -> UI: layoutJson
                     layoutJson: item.Layout || DEFAULT_POPUP_LAYOUT,
                     // API: Style -> UI: styleJson
-                    styleJson: item.Style || DEFAULT_STYLE_CONFIG,
+                    styleJson: item.StyleJson || DEFAULT_STYLE_CONFIG,
                     // API: Customizing -> UI: customizingFields
-                    customizingFields: item.Customizing || {},
+                    customizingFields: item.CustomizingFields || {},
                     // API: Duration -> UI: delayedDuration
-                    Duration: item.Duration || 0,
+                    Duration: item.DelayDuration || 0,
                     
                     // Fallback cho ngày tháng (API chưa có)
                     createdAt: new Date().toISOString(),

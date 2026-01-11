@@ -182,55 +182,56 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
 
     // Save Handler
     const handleSave = async () => {
-        // setErrors({});
-        // const newErrors: typeof errors = {};
-        // if (!name.trim()) newErrors.name = 'Required';
-        // if (!value.trim()) newErrors.value = 'Required';
-        // if (Object.keys(newErrors).length > 0) {
-        //     setErrors(newErrors);
-        //     return;
-        // }
+        setErrors({});
+        const newErrors: typeof errors = {};
+        if (!name.trim()) newErrors.name = 'Required';
+        if (!value.trim()) newErrors.value = 'Required';
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
 
-        // setIsSaving(true);
-        // try {
-        //     const requestData = {
-        //         DomainID: container?.uuid,
-        //         ConfigurationName: name,
-        //         ReturnType: displayType === 'popup' ? ReturnType.POPUP : ReturnType.INLINE_INJECTION,
-        //         OperatorId: operatorId,
-        //         Value: value,
-        //         Duration: delayedDuration,
-        //         IsEnabled: true,
-        //         Layout: { ...layoutJson, displayMode: displayType },
-        //         Style: styleJson,
-        //         Customizing: customFields
-        //     };
+        setIsSaving(true);
+        try {
+            const requestData = {
+                key: container?.uuid,
+                ConfigurationName: name,
+                ReturnType: displayType === 'popup' ? ReturnType.POPUP : ReturnType.INLINE_INJECTION,
+                OperatorId: operatorId,
+                Value: value,
+                Duration: delayedDuration,
+                LayoutJson: { ...layoutJson, displayMode: displayType },
+                StyleJson: styleJson,
+                Customizing: customFields,
+                DelayDuration: delayedDuration
+            };
             
-        //     if (mode === 'create') await returnMethodApi.create(requestData as any);
-        //     navigate('/dashboard/recommendation-display');
-        // } catch (error) {
-        //     console.error(error);
-        //     setErrors({ general: 'Failed to save.' });
-        // } finally {
-        //     setIsSaving(false);
-        // }
-        const requestData = {
-            key: container?.uuid,
-            ConfigurationName: name,
-            ReturnType: displayType === 'popup' ? ReturnType.POPUP : ReturnType.INLINE_INJECTION,
-            OperatorId: operatorId,
-            Value: value,
-            Duration: delayedDuration,
-            IsEnabled: true,
-            LayoutJson: { ...layoutJson, displayMode: displayType },
-            StyleJson: styleJson,
-            Customizing: customFields,
-            DelayDuration: delayedDuration
-        };
-        console.log("Save Data:", requestData);
+            if (mode === 'create') await returnMethodApi.create(requestData as any);
+            navigate('/dashboard/recommendation-display');
+        } catch (error) {
+            console.error(error);
+            setErrors({ general: 'Failed to save.' });
+        } finally {
+            setIsSaving(false);
+        }
+        // const requestData = {
+        //     key: container?.uuid,
+        //     ConfigurationName: name,
+        //     ReturnType: displayType === 'popup' ? ReturnType.POPUP : ReturnType.INLINE_INJECTION,
+        //     OperatorId: operatorId,
+        //     Value: value,
+        //     Duration: delayedDuration,
+        //     IsEnabled: true,
+        //     LayoutJson: { ...layoutJson, displayMode: displayType },
+        //     StyleJson: styleJson,
+        //     Customizing: customFields,
+        //     DelayDuration: delayedDuration
+        // };
+        // console.log("Save Data:", requestData);
     };
 
     // --- UI CONFIG PANELS ---
+
     const renderPopupConfigPanel = () => (
         <div className={styles.formContent}>
              <div className={styles.formGroup}>

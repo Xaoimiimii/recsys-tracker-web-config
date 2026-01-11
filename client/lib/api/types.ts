@@ -67,22 +67,22 @@ export interface CreateReturnMethod {
   ReturnType: ReturnType;
   Value: string;
   OperatorId: number;
-  Layout: any;          
-  Style: any;
-  Customizing: any;
-  Duration?: number;
+  LayoutJson: any;          
+  StyleJson: any;
+  CustomizingFields: any;
+  DelayDuration?: number;
 }
 
 export interface ReturnMethodResponse {
-  DomainID: number;
+  Key: string;
   ConfigurationName: string;
-  Operator: string;
+  OperatorId: string;
   Value: string;
   ReturnType: string;
-  Layout?: any;
-  Style?: any;
-  Customizing?: any;
-  Duration?: number;
+  LayoutJson?: any;
+  StyleJson?: any;
+  CustomizingFields?: any;
+  DelayDuration?: number;
 }
 
 

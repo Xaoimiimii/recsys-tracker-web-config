@@ -6,7 +6,7 @@ export const returnMethodApi = {
         apiFetch<ReturnMethodResponse[]>(`/domain/return-method/${domainKey}`, undefined, true),
 
     create: (data: CreateReturnMethod) => 
-        apiFetch<ReturnMethodResponse>('/domain/return-method', {
+        apiFetch<ReturnMethodResponse>('/return-method', {
             method: 'POST',
             body: JSON.stringify(data),
         }, true),
