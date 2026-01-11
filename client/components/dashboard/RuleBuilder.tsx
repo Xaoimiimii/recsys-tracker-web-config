@@ -3,7 +3,6 @@ import { Lightbulb, X, Fingerprint, Target, Filter, Plus, Trash2, Database, Aler
 import styles from './RuleBuilder.module.css';
 import { ruleApi } from '../../lib/api/rule';
 import { useDataCache } from '../../contexts/DataCacheContext';
-import { request } from 'http';
 
 // ==================== TYPES ====================
 export enum EventType {
@@ -21,7 +20,7 @@ export enum MappingSource {
   COOKIE = 'cookie',
   LOCAL_STORAGE = 'local_storage',
   SESSION_STORAGE = 'session_storage',
-  URL = 'page_url',
+  // URL = 'page_url',
 }
 
 export interface Condition {
@@ -45,17 +44,20 @@ export interface PayloadMapping {
   urlPartValue?: string;
 }
 
-export enum IntentLevel {
-  NORMAL = 'Normal',
-  MEDIUM = 'Medium',
-  HIGH = 'High'
+export enum ActionType {
+  VIEW = 'view',
+  ADD_TO_FAVORITES = 'add_to_favorites',
+  ADD_TO_WISHLIST = 'add_to_wishlist',
+  ADD_TO_CART = 'add_to_cart',
+  PURCHASE = 'purchase',
+  SUBMIT = 'submit'
 }
 
 export interface TrackingRule {
   id: string;
   name: string;
   eventType: EventType;
-  intentLevel?: IntentLevel;
+  actionType?: ActionType;
   targetElement?: {
     operator: string;
     value: string;
@@ -89,54 +91,6 @@ export const CONDITION_SUGGESTIONS: Record<EventType, string> = {
   [EventType.REVIEW]: "Suggested: Use 'URL Path' to target page clicks or 'CSS Selector' to check element presence.",
   [EventType.SCROLL]: "Suggested: Use 'URL Path' to target page clicks or 'CSS Selector' to check element presence.",
   [EventType.PAGE_VIEW]: "Suggested: Use 'URL Path' to target page clicks or 'CSS Selector' to check element presence."
-};
-
-export const INTENT_LEVEL_INFO = {
-  [IntentLevel.NORMAL]: {
-    label: 'Normal (Low)',
-    description: 'Normal web browsing behavior, no intention to buy.',
-    examples: [
-      'View product details',
-      'Open filters / menus',
-      'Click loads more items'
-    ],
-    color: '#10B981',
-    impact: {
-      recommendation: 'Low weight in recommendation algorithm',
-      funnel: 'Tracked as early-stage engagement',
-      conversion: 'Not counted toward conversion metrics'
-    }
-  },
-  [IntentLevel.MEDIUM]: {
-    label: 'Medium (Mid)',
-    description: 'Intermediate purchase intent, consideration phase actions.',
-    examples: [
-      'Add to wishlist',
-      'Add to cart',
-      'View reviews'
-    ],
-    color: '#F59E0B',
-    impact: {
-      recommendation: 'Moderate weight in recommendation algorithm',
-      funnel: 'Tracked as mid-funnel consideration',
-      conversion: 'Contributes to engagement scoring'
-    }
-  },
-  [IntentLevel.HIGH]: {
-    label: 'High (Critical)',
-    description: 'High purchase intent, critical conversion actions.',
-    examples: [
-      'Add to cart',
-      'Click "Buy Now"',
-      'Checkout'
-    ],
-    color: '#EF4444',
-    impact: {
-      recommendation: 'High weight in recommendation algorithm',
-      funnel: 'Tracked as conversion attempt',
-      conversion: 'Counted toward conversion rate metrics'
-    }
-  }
 };
 
 export interface SectionExample {
@@ -281,7 +235,7 @@ export const SOURCE_TO_BACKEND: Record<MappingSource, string> = {
   [MappingSource.COOKIE]: 'Cookie',
   [MappingSource.LOCAL_STORAGE]: 'LocalStorage',
   [MappingSource.SESSION_STORAGE]: 'SessionStorage',
-  [MappingSource.URL]: 'Url'
+  // [MappingSource.URL]: 'Url'
 };
 
 export const FIELD_TO_BACKEND: Record<string, string> = {
@@ -325,7 +279,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     id: 'new-rule-' + Date.now(),
     name: '',
     eventType: EventType.CLICK,
-    intentLevel: IntentLevel.NORMAL,
+    actionType: ActionType.VIEW,
     targetElement: { selector: '', operator: 'contains', value: '' },
     conditions: [],
     payloadMappings: [
@@ -354,7 +308,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
           'Cookie': MappingSource.COOKIE,
           'LocalStorage': MappingSource.LOCAL_STORAGE,
           'SessionStorage': MappingSource.SESSION_STORAGE,
-          'Url': MappingSource.URL
+          // 'Url': MappingSource.URL
         };
         return sourceMap[source] || MappingSource.ELEMENT;
       };
@@ -410,10 +364,11 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
           result.requestMethod = mapping.RequestMethod || 'POST';
           result.value = mapping.Value || '';
         }
-        else if (source === MappingSource.URL) {
-          result.urlPart = mapping.UrlPart || 'PathName';
-          result.urlPartValue = mapping.UrlPartValue || '';
-        } else {
+        // else if (source === MappingSource.URL) {
+        //   result.urlPart = mapping.UrlPart || 'PathName';
+        //   result.urlPartValue = mapping.UrlPartValue || '';
+        // } 
+        else {
           result.value = mapping.Value || '';
         }
 
@@ -455,19 +410,15 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     // Only reset payloadMappings when not in view mode or when ruleDetails is not available
     if (!isViewMode || !ruleDetails) {
       setRule(prev => {
-        // Determine intentLevel based on event type
-        let intentLevel = prev.intentLevel;
-        if (rule.eventType === EventType.RATING || rule.eventType === EventType.REVIEW) {
-          intentLevel = IntentLevel.HIGH;
-        } else if (rule.eventType === EventType.PAGE_VIEW || rule.eventType === EventType.SCROLL) {
-          intentLevel = IntentLevel.NORMAL;
-        } else if (rule.eventType === EventType.CLICK) {
-          intentLevel = prev.intentLevel || IntentLevel.NORMAL;
+        // Determine actionType based on event type
+        let actionType = prev.actionType;
+        if (rule.eventType !== EventType.CLICK) {
+          actionType = null;
         }
 
         return {
           ...prev,
-          intentLevel: intentLevel,
+          actionType: actionType,
           // Set targetElement to NULL for Scroll and Page view
           targetElement: (rule.eventType === EventType.SCROLL || rule.eventType === EventType.PAGE_VIEW) 
             ? undefined 
@@ -545,15 +496,17 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
           pathname: undefined,
           queryString: undefined
         };
-      } else if (updates.source === MappingSource.URL) {
-        updatedMapping = {
-          ...updatedMapping,
-          value: undefined,
-          requestUrlPattern: undefined,
-          requestMethod: undefined,
-          requestBodyPath: undefined
-        };
-      } else if ([MappingSource.ELEMENT, MappingSource.COOKIE, MappingSource.LOCAL_STORAGE, MappingSource.SESSION_STORAGE].includes(updates.source)) {
+      } 
+      // else if (updates.source === MappingSource.URL) {
+      //   updatedMapping = {
+      //     ...updatedMapping,
+      //     value: undefined,
+      //     requestUrlPattern: undefined,
+      //     requestMethod: undefined,
+      //     requestBodyPath: undefined
+      //   };
+      // } 
+      else if ([MappingSource.ELEMENT, MappingSource.COOKIE, MappingSource.LOCAL_STORAGE, MappingSource.SESSION_STORAGE].includes(updates.source)) {
         updatedMapping = {
           ...updatedMapping,
           requestUrlPattern: undefined,
@@ -630,11 +583,13 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
           } else if (!mapping.value?.trim()) {
             payloadErrors[idx] = 'Body Path is required when source is Request Body.';
           }
-        } else if (mapping.source === MappingSource.URL) {
-          if (!mapping.urlPartValue?.trim()) {
-            payloadErrors[idx] = 'URL Part Value is required when source is URL.';
-          }
-        } else {
+        } 
+        // else if (mapping.source === MappingSource.URL) {
+        //   if (!mapping.urlPartValue?.trim()) {
+        //     payloadErrors[idx] = 'URL Part Value is required when source is URL.';
+        //   }
+        // }
+        else {
           // Element, Cookie, LocalStorage, SessionStorage
           if (!mapping.value?.trim()) {
             payloadErrors[idx] = 'Path/Value is required.';
@@ -648,11 +603,13 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
           if (!mapping.requestUrlPattern?.trim() || !mapping.value?.trim()) {
             payloadErrors[idx] = 'URL Pattern and Body Path are required when source is Request Body.';
           }
-        } else if (mapping.source === MappingSource.URL) {
-          if (!mapping.urlPartValue?.trim()) {
-            payloadErrors[idx] = 'URL Part and its value are required when source is URL.';
-          }
-        } else {
+        } 
+        // else if (mapping.source === MappingSource.URL) {
+        //   if (!mapping.urlPartValue?.trim()) {
+        //     payloadErrors[idx] = 'URL Part and its value are required when source is URL.';
+        //   }
+        // } 
+        else {
           if (!mapping.value?.trim()) {
             payloadErrors[idx] = 'Path/Value is required.';
           }
@@ -665,11 +622,13 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
           if (!mapping.requestUrlPattern?.trim() || !mapping.value?.trim()) {
             payloadErrors[idx] = 'URL Pattern and Body Path are required when source is Request Body.';
           }
-        } else if (mapping.source === MappingSource.URL) {
-          if (!mapping.urlPartValue?.trim()) {
-            payloadErrors[idx] = 'URL Part and its value are required when source is URL.';
-          }
-        } else {
+        } 
+        // else if (mapping.source === MappingSource.URL) {
+        //   if (!mapping.urlPartValue?.trim()) {
+        //     payloadErrors[idx] = 'URL Part and its value are required when source is URL.';
+        //   }
+        // } 
+        else {
           if (!mapping.value?.trim()) {
             payloadErrors[idx] = 'Path/Value is required.';
           }
@@ -725,14 +684,16 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
           backendMapping.Value = mapping.value || null;
           backendMapping.UrlPart = null;
           backendMapping.UrlPartValue = null;
-        } else if (mapping.source === MappingSource.URL) {
-          backendMapping.UrlPart = mapping.urlPart || 'PathName';
-          backendMapping.UrlPartValue = mapping.urlPartValue || null;
-          backendMapping.Value = null;
-          backendMapping.RequestUrlPattern = null;
-          backendMapping.RequestMethod = null;
-          backendMapping.RequestBodyPath = null;
-        } else {
+        } 
+        // else if (mapping.source === MappingSource.URL) {
+        //   backendMapping.UrlPart = mapping.urlPart || 'PathName';
+        //   backendMapping.UrlPartValue = mapping.urlPartValue || null;
+        //   backendMapping.Value = null;
+        //   backendMapping.RequestUrlPattern = null;
+        //   backendMapping.RequestMethod = null;
+        //   backendMapping.RequestBodyPath = null;
+        // } 
+        else {
           // Element, Cookie, LocalStorage, SessionStorage
           backendMapping.Value = mapping.value || null;
           backendMapping.RequestUrlPattern = null;
@@ -760,7 +721,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
         Name: rule.name,
         DomainKey: domainKey,
         EventTypeId: EVENT_TYPE_TO_ID[rule.eventType],
-        IntentLevel: rule.intentLevel || IntentLevel.NORMAL,
+        ActionType: rule.actionType || ActionType.VIEW,
         Conditions: conditions,
         PayloadMappings: payloadMappings,
         TrackingTarget: trackingTarget
@@ -893,96 +854,31 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
           </div>
         </div>
 
-        {/* 2. Intent Level */}
-        {(rule.eventType === EventType.CLICK || rule.eventType === EventType.RATING || rule.eventType === EventType.REVIEW) && (
+        {/* 2. Action Type */}
+        {(rule.eventType === EventType.CLICK) && (
           <div className={styles.card}>
             <SectionHeader 
-              title="Intent Level" 
+              title="Action Type" 
               icon={<Target size={14} />} 
               required 
             />
             
-            {/* Segmented Buttons */}
-            <div className={styles.intentLevelContainer}>
-              {Object.values(IntentLevel)
-                .filter(level => {
-                  // For Rating/Review: only show HIGH
-                  if (rule.eventType === EventType.RATING || rule.eventType === EventType.REVIEW) {
-                    return level === IntentLevel.HIGH;
-                  }
-                  // For Click: show all 3 levels
-                  return true;
-                })
-                .map((level) => {
-                  const info = INTENT_LEVEL_INFO[level];
-                  const isSelected = rule.intentLevel === level;
-                  
-                  return (
-                    <button
-                      key={level}
-                      type="button"
-                      disabled={isViewMode || (rule.eventType === EventType.RATING || rule.eventType === EventType.REVIEW)}
-                      className={`${styles.intentCard} ${isSelected ? styles.intentCardSelected : ''}`}
-                      style={{
-                        borderColor: isSelected ? info.color : 'var(--color-border)',
-                        backgroundColor: isSelected ? `${info.color}15` : 'transparent'
-                      }}
-                      onClick={() => setRule({...rule, intentLevel: level})}
-                    >
-                      <div className={styles.intentCardHeader}>
-                        <div 
-                          className={styles.intentBadge}
-                          style={{ backgroundColor: info.color }}
-                        >
-                          {info.label}
-                        </div>
-                      </div>
-                      
-                      <p className={styles.intentDescription}>
-                        {info.description}
-                      </p>
-                      
-                      <div className={styles.intentExamples}>
-                        <ul className={styles.intentExamplesList}>
-                          {info.examples.map((example, idx) => (
-                            <li key={idx}>{example}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    </button>
-                  );
-                })}
+            <div>
+              <label className={styles.label}>Choose click action:</label>
+              <select
+                className={styles.input}
+                value={rule.actionType || ActionType.VIEW}
+                disabled={isViewMode}
+                onChange={e => setRule({...rule, actionType: e.target.value as ActionType})}
+              >
+                <option key={ActionType.VIEW} value={ActionType.VIEW}>Click to view</option>
+                <option key={ActionType.ADD_TO_FAVORITES} value={ActionType.ADD_TO_FAVORITES}>Add to favorites / Save / Bookmark </option>
+                <option key={ActionType.ADD_TO_WISHLIST} value={ActionType.ADD_TO_WISHLIST}>Add to wishlist</option>
+                <option key={ActionType.ADD_TO_CART} value={ActionType.ADD_TO_CART}>Add to cart</option>
+                <option key={ActionType.PURCHASE} value={ActionType.PURCHASE}>Purchase / Checkout</option>
+                <option key={ActionType.SUBMIT} value={ActionType.SUBMIT}>Submit form</option>
+              </select>
             </div>
-
-            {/* Preview Section */}
-            {rule.intentLevel && (
-              <div className={styles.intentPreview}>
-                <h4 className={styles.intentPreviewTitle}>
-                  <AlertCircle size={16} />
-                  Impact Preview: How {INTENT_LEVEL_INFO[rule.intentLevel].label} affects your data
-                </h4>
-                <div className={styles.intentPreviewGrid}>
-                  <div className={styles.intentPreviewItem}>
-                    <span className={styles.intentPreviewLabel}>Recommendation:</span>
-                    <span className={styles.intentPreviewValue}>
-                      {INTENT_LEVEL_INFO[rule.intentLevel].impact.recommendation}
-                    </span>
-                  </div>
-                  <div className={styles.intentPreviewItem}>
-                    <span className={styles.intentPreviewLabel}>Funnel Trigger:</span>
-                    <span className={styles.intentPreviewValue}>
-                      {INTENT_LEVEL_INFO[rule.intentLevel].impact.funnel}
-                    </span>
-                  </div>
-                  <div className={styles.intentPreviewItem}>
-                    <span className={styles.intentPreviewLabel}>Conversion Tracking:</span>
-                    <span className={styles.intentPreviewValue}>
-                      {INTENT_LEVEL_INFO[rule.intentLevel].impact.conversion}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -1202,9 +1098,9 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                               </p>
                             )}
                             <div fieldNote className={styles.fieldNote}>
-                              Specify the JSON path within the request body to extract the desired value. 
+                              Specify the JSON path within the request/response body to extract the desired value. 
                               <br />
-                              For example, for a request body like <code>{'{"content": {"id": "12345"}}'}</code>, the path to extract the ID would be <strong>content.id</strong>.
+                              For example, for a request/response body like <code>{'{"content": {"id": "12345"}}'}</code>, the path to extract the ID would be <strong>content.id</strong>.
                             </div>
                           </div>
                         )}
@@ -1236,7 +1132,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                               </select>
                             </div>
                             <input 
-                              type="number" placeholder="Path Index (e.g. 4 for :id)" 
+                              type="number" placeholder="Path Index (e.g. 3 for :id)" 
                               className={`${styles.input} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                               value={mapping.value || ''}
                               disabled={isViewMode}
@@ -1258,12 +1154,12 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                             <div fieldNote className={styles.fieldNote}>
                               Specify the path index from the URL to extract the desired value.
                               <br />
-                              For example, in request URL <strong>www.example.com/api/products/:id</strong>, the path index for <strong>:id</strong> is <strong>4</strong>.
+                              For example, in request URL <strong>www.example.com/api/products/:id</strong>, the path index for <strong>:id</strong> is <strong>3</strong>.
                             </div>
                           </div>
                         )}
 
-                        {mapping.source === MappingSource.URL && (
+                        {/* {mapping.source === MappingSource.URL && (
                           <div className={styles.urlParsingContainer}>
                             <input 
                               type="text" placeholder="Enter full URL to parse..." className={styles.input}
@@ -1347,7 +1243,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                             </div>
                           )}
                         </div>
-                        )}
+                        )} */}
 
                         {mapping.source === MappingSource.ELEMENT && (
                           <div>
@@ -1380,7 +1276,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                           </div>
                         )}
                     
-                        {mapping.source !== MappingSource.REQUEST_BODY && mapping.source !== MappingSource.REQUEST_URL && mapping.source !== MappingSource.URL && mapping.source !== MappingSource.ELEMENT && (
+                        {mapping.source !== MappingSource.REQUEST_BODY && mapping.source !== MappingSource.REQUEST_URL && mapping.source !== MappingSource.ELEMENT && (
                           <div>
                             <input 
                               type="text"
