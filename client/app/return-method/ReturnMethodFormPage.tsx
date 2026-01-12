@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Container } from '../../types';
-import { Save, Layers, Monitor, Puzzle, ArrowLeft, ArrowUp, ArrowDown, Trash2, Plus, Check, BookOpen } from 'lucide-react';
+import { Save, Layers, Monitor, Puzzle, ArrowLeft, ArrowUp, ArrowDown, Trash2, Plus, Check, BookOpen, Construction } from 'lucide-react';
 import styles from './returnMethodPage.module.css';
 import { DisplayType, LayoutJson, StyleJson, CustomizingFields, FieldConfig } from './types';
 import { useDataCache } from '../../contexts/DataCacheContext';
@@ -57,6 +57,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
             setName('Campaign Popup 2024');
             setValue('/khuyen-mai');
             setOperatorId(1); // Default or load from API
+            
         }
     }, [mode, id]);
 
@@ -191,10 +192,12 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
             return;
         }
 
+        console.log(customFields);
+
         setIsSaving(true);
         try {
             const requestData = {
-                key: container?.uuid,
+                Key: container?.uuid,
                 ConfigurationName: name,
                 ReturnType: displayType === 'popup' ? ReturnType.POPUP : ReturnType.INLINE_INJECTION,
                 OperatorId: operatorId,
@@ -202,8 +205,8 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                 Duration: delayedDuration,
                 LayoutJson: { ...layoutJson, displayMode: displayType },
                 StyleJson: styleJson,
-                Customizing: customFields,
-                DelayDuration: delayedDuration
+                CustomizingFields: customFields.fields,
+                DelayDuration: delayedDuration || 0
             };
             
             if (mode === 'create') await returnMethodApi.create(requestData as any);

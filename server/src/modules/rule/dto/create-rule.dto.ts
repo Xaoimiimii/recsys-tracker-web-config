@@ -1,5 +1,5 @@
-import { IntentLevel } from './../../../generated/prisma/enums';
-import { IsArray, IsInt, IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
+import { ActionType } from './../../../generated/prisma/enums';
+import { IsArray, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
 import { Type } from "class-transformer";
 import { ApiProperty } from "@nestjs/swagger";
 import { ConditionDto } from "./condition.dto";
@@ -83,7 +83,8 @@ export class CreateRuleDto {
     @Type(() => TrackingTargetDto)
     TrackingTarget: TrackingTargetDto;
 
-    @ApiProperty({ example: IntentLevel.Normal, enum: IntentLevel })
-    @IsNotEmpty()        
-    IntentLevel: IntentLevelDto;
+    @ApiProperty({ example: ActionType.View, enum: ActionType })
+    @IsOptional()     
+    @IsEnum(ActionType)
+    ActionType: ActionType;
 }
