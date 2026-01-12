@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Container } from '../../types';
 import { Save, X } from 'lucide-react';
 import styles from './returnMethodPage.module.css';
-import { SearchInputConfiguration } from './types';
 import { useDataCache } from '../../contexts/DataCacheContext';
 import { searchInputApi } from '../../lib/api/search-input';
 
@@ -29,21 +28,7 @@ export const SearchInputFormPage: React.FC<SearchInputFormPageProps> = ({ contai
     }>({});
 
     // Get cached operators from context
-    const { operators, clearReturnMethodsByDomain } = useDataCache();
-
-    useEffect(() => {
-        if (mode !== 'create' && id) {
-            // TODO: Load existing configuration from API
-            const mockConfig: SearchInputConfiguration = {
-                id: id,
-                name: 'Header Search Bar',
-                selector: '#search-input'
-            };
-
-            setName(mockConfig.name);
-            setSelector(mockConfig.selector);
-        }
-    }, [mode, id]);
+    const { operators, clearSearchInputsByDomain } = useDataCache();
 
     const handleSave = async () => {
         // Reset errors
@@ -80,7 +65,7 @@ export const SearchInputFormPage: React.FC<SearchInputFormPageProps> = ({ contai
 
             await searchInputApi.create(requestData);
             // Clear cache để trang danh sách sẽ fetch lại data mới
-            clearReturnMethodsByDomain(container.uuid);
+            clearSearchInputsByDomain(container.uuid);
             navigate('/dashboard/recommendation-display');
         } catch (error) {
             console.error('Error saving configuration:', error);

@@ -221,3 +221,12 @@ export interface TrackedEvent {
     Name: string;
   };
 }
+
+// ==================== SEARCH INPUT TYPES ====================
+
+export interface SearchInputResponse {
+  Id: number;
+  DomainID: number;
+  ConfigurationName: string;
+  InputSelector: string;
+}

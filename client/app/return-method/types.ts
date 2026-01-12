@@ -14,8 +14,3 @@ export interface DisplayConfiguration {
     };
 }
 
-export interface SearchInputConfiguration {
-    id: string;
-    name: string;
-    selector: string;
-}

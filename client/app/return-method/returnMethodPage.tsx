@@ -3,9 +3,10 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Container } from '../../types';
 import { Plus, Eye, Edit2, Trash2 } from 'lucide-react';
 import styles from './returnMethodPage.module.css';
-import { DisplayConfiguration, DisplayType, SearchInputConfiguration } from './types';
+import { DisplayConfiguration, DisplayType } from './types';
 import { returnMethodApi } from '../../lib/api/return-method';
-import type { ReturnMethodResponse } from '../../lib/api/types';
+import { searchInputApi } from '../../lib/api/search-input';
+import type { ReturnMethodResponse, SearchInputResponse } from '../../lib/api/types';
 import { useDataCache } from '../../contexts/DataCacheContext';
 
 type TabType = 'display-method' | 'search-input';
@@ -20,12 +21,17 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
     const [searchParams] = useSearchParams();
     const [activeTab, setActiveTab] = useState<TabType>('display-method');
     const [configurations, setConfigurations] = useState<DisplayConfiguration[]>([]);
-    const [searchInputConfigs, setSearchInputConfigs] = useState<SearchInputConfiguration[]>([]);
+    const [searchInputConfigs, setSearchInputConfigs] = useState<SearchInputResponse[]>([]);
     const [filterType, setFilterType] = useState<DisplayType | 'all'>('all');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     
-    const { getReturnMethodsByDomain, setReturnMethodsByDomain } = useDataCache();
+    const { 
+        getReturnMethodsByDomain, 
+        setReturnMethodsByDomain,
+        getSearchInputsByDomain,
+        setSearchInputsByDomain 
+    } = useDataCache();
 
     // Fetch return methods from API
     useEffect(() => {
@@ -94,22 +100,36 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
         const fetchSearchInputs = async () => {
             if (!container?.uuid) return;
             
-            // TODO: Replace with actual API call
-            // Mock data for now
-            const mockData: SearchInputConfiguration[] = [
-                {
-                    id: '1',
-                    name: 'Header Search Bar',
-                    selector: '#search-input'
-                }
-            ];
-            setSearchInputConfigs(mockData);
+            // Check cache first
+            const cachedSearchInputs = getSearchInputsByDomain(container.uuid);
+            if (cachedSearchInputs) {
+                transformAndSetSearchInputs(cachedSearchInputs);
+                return;
+            }
+
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                const response = await searchInputApi.getByDomainKey(container.uuid);
+                setSearchInputsByDomain(container.uuid, response);
+                transformAndSetSearchInputs(response);
+            } catch (err) {
+                console.error('Failed to fetch search inputs:', err);
+                setError('Failed to load search inputs. Please try again.');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        const transformAndSetSearchInputs = (response: SearchInputResponse[]) => {
+            setSearchInputConfigs(response);
         };
 
         if (activeTab === 'search-input') {
             fetchSearchInputs();
         }
-    }, [container?.uuid, activeTab]);
+    }, [container?.uuid, activeTab, getSearchInputsByDomain, setSearchInputsByDomain]);
 
     const filteredConfigurations = configurations.filter(config => {
         const typeMatch = filterType === 'all' || config.displayType === filterType;
@@ -145,7 +165,7 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
             if (activeTab === 'display-method') {
                 setConfigurations(prev => prev.filter(config => config.id !== id));
             } else {
-                setSearchInputConfigs(prev => prev.filter(config => config.id !== id));
+                setSearchInputConfigs(prev => prev.filter(config => config.Id.toString() !== id));
             }
         }
     };
@@ -311,28 +331,28 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
                                     </thead>
                                     <tbody>
                                         {searchInputConfigs.map((config, index) => (
-                                            <tr key={config.id}>
+                                            <tr key={config.Id}>
                                                 <td>#{index + 1}</td>
-                                                <td className={styles.nameCell}>{config.name}</td>
-                                                <td className={styles.summaryCell}>{config.selector}</td>
+                                                <td className={styles.nameCell}>{config.ConfigurationName}</td>
+                                                <td className={styles.summaryCell}>{config.InputSelector}</td>
                                                 <td className={styles.actionsCell}>
                                                     <button 
                                                         className={styles.actionButton}
-                                                        onClick={() => handleView(config.id)}
+                                                        onClick={() => handleView(config.Id.toString())}
                                                         title="View details"
                                                     >
                                                         <Eye size={16} />
                                                     </button>
                                                     <button 
                                                         className={styles.actionButton}
-                                                        onClick={() => handleEdit(config.id)}
+                                                        onClick={() => handleEdit(config.Id.toString())}
                                                         title="Edit configuration"
                                                     >
                                                         <Edit2 size={16} />
                                                     </button>
                                                     <button 
                                                         className={styles.deleteButton}
-                                                        onClick={() => handleDelete(config.id)}
+                                                        onClick={() => handleDelete(config.Id.toString())}
                                                         title="Delete configuration"
                                                     >
                                                         <Trash2 size={16} />

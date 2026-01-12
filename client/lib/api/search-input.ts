@@ -1,4 +1,5 @@
 import { apiFetch } from './client';
+import type { SearchInputResponse } from './types';
 
 export interface CreateSearchInputDto {
     DomainKey: string;
@@ -6,24 +7,15 @@ export interface CreateSearchInputDto {
     InputSelector: string;
 }
 
-export interface SearchInputResponse {
-    Id: number;
-    DomainID: number;
-    Name: string;
-    Selector: string;
-    CreatedAt: string;
-    UpdatedAt: string;
-}
-
 export const searchInputApi = {
     getByDomainKey: (domainKey: string) => 
-        apiFetch<SearchInputResponse[]>(`/search-input/${domainKey}`, undefined, false, true),
+        apiFetch<SearchInputResponse[]>(`/search-keyword-config?domainKey=${domainKey}`, undefined, false),
 
     create: (data: CreateSearchInputDto) => 
         apiFetch<SearchInputResponse>('/search-keyword-config', {
             method: 'POST',
             body: JSON.stringify(data),
-        }, false),
+        }, true),
 
     update: (id: number, data: CreateSearchInputDto) => 
         apiFetch<SearchInputResponse>(`/search-input/${id}`, {
@@ -31,8 +23,4 @@ export const searchInputApi = {
             body: JSON.stringify(data),
         }, true),
 
-    delete: (id: number) => 
-        apiFetch<void>(`/search-input/${id}`, {
-            method: 'DELETE',
-        }, true),
 };
