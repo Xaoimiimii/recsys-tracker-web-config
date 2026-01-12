@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Container } from '../../types';
-import { Save, Copy } from 'lucide-react';
+import { Save, X } from 'lucide-react';
 import styles from './returnMethodPage.module.css';
 import { DisplayConfiguration, DisplayType } from './types';
 import { useDataCache } from '../../contexts/DataCacheContext';
@@ -166,6 +166,13 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
             <div className={styles.sectionCard}>
                 <div className={styles.sectionHeader}>
                     <h2 className={styles.sectionTitle}>Create Display Method Configuration</h2>
+                    <button 
+                        className={styles.closeButton}
+                        onClick={() => navigate('/dashboard/recommendation-display')}
+                        aria-label="Close"
+                    >
+                        <X size={20} />
+                    </button>
                 </div>
                 <div className={styles.sectionContent}>
                     {errors.general && (
@@ -444,7 +451,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                 onChange={(e) => setSelectedSearchConfigId(e.target.value)}
                                 disabled={isReadOnly}
                             >
-                                <option value="">Select a configuration...</option>
+                                <option value="">Select a search keyword configuration...</option>
                                 {searchInputConfigs.map(config => (
                                     <option key={config.id} value={config.id}>
                                         {config.name}
@@ -493,12 +500,6 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
             {/* Action Buttons */}
             {!isReadOnly && (
                 <div className={styles.formActions}>
-                    <button 
-                        className={styles.cancelButton} 
-                        onClick={() => navigate('/dashboard/recommendation-display')}
-                    >
-                        Cancel
-                    </button>
                     <button 
                         className={styles.saveButton} 
                         onClick={handleSave}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Container } from '../../types';
-import { Save } from 'lucide-react';
+import { Save, X } from 'lucide-react';
 import styles from './returnMethodPage.module.css';
 import { SearchInputConfiguration } from './types';
 import { useDataCache } from '../../contexts/DataCacheContext';
@@ -97,6 +97,13 @@ export const SearchInputFormPage: React.FC<SearchInputFormPageProps> = ({ contai
             <div className={styles.sectionCard}>
                 <div className={styles.sectionHeader}>
                     <h2 className={styles.sectionTitle}>Create Search Input Configuration</h2>
+                    <button 
+                        className={styles.closeButton}
+                        onClick={() => navigate('/dashboard/recommendation-display')}
+                        aria-label="Close"
+                    >
+                        <X size={20} />
+                    </button>
                 </div>
                 <div className={styles.sectionContent}>
                     {errors.general && (
@@ -192,12 +199,6 @@ export const SearchInputFormPage: React.FC<SearchInputFormPageProps> = ({ contai
             {/* Action Buttons */}
             {!isReadOnly && (
                 <div className={styles.formActions}>
-                    <button 
-                        className={styles.cancelButton} 
-                        onClick={() => navigate('/dashboard/recommendation-display')}
-                    >
-                        Cancel
-                    </button>
                     <button 
                         className={styles.saveButton} 
                         onClick={handleSave}

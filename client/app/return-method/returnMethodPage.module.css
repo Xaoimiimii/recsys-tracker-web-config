@@ -40,6 +40,7 @@
 
 .sectionHeader {
     margin-bottom: 1.5rem;
+    display: flex;
 }
 
 .sectionTitle {
@@ -47,6 +48,16 @@
     font-weight: bold;
     color: var(--color-text-main);
     margin: 0;
+}
+
+.closeButton {
+    margin-left: auto;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    color: var(--color-text-secondary);
+    transition: color 0.2s;
 }
 
 .sectionContent {
