@@ -6,7 +6,8 @@ import styles from './returnMethodPage.module.css';
 import { DisplayConfiguration, DisplayType } from './types';
 import { useDataCache } from '../../contexts/DataCacheContext';
 import { returnMethodApi } from '../../lib/api/return-method';
-import { ReturnType } from '../../lib/api/types';
+import { searchInputApi } from '../../lib/api/search-input';
+import { ReturnType, SearchInputResponse } from '../../lib/api/types';
 
 interface ReturnMethodFormPageProps {
     container: Container | null;
@@ -34,8 +35,8 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
     
     // Search keyword signals
     const [enableSearchKeyword, setEnableSearchKeyword] = useState(false);
-    const [selectedSearchConfigId, setSelectedSearchConfigId] = useState<string>('');
-    const [searchInputConfigs, setSearchInputConfigs] = useState<Array<{ id: string; name: string }>>([]);
+    const [selectedSearchConfigId, setSelectedSearchConfigId] = useState<number | null>(null);
+    const [searchInputConfigs, setSearchInputConfigs] = useState<SearchInputResponse[]>([]);
     
     // Error states
     const [errors, setErrors] = useState<{
@@ -45,24 +46,38 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
     }>({});
     
     // Get cached operators from context
-    const { operators, clearReturnMethodsByDomain } = useDataCache();
+    const { 
+        operators, 
+        clearReturnMethodsByDomain,
+        getSearchInputsByDomain,
+        setSearchInputsByDomain 
+    } = useDataCache();
 
     // Fetch search input configurations
     useEffect(() => {
         const fetchSearchInputs = async () => {
             if (!container?.uuid) return;
             
-            // TODO: Replace with actual API call
-            // Mock data for now
-            const mockData = [
-                { id: '1', name: 'Header Search Bar' },
-                { id: '2', name: 'Sidebar Search Box' },
-            ];
-            setSearchInputConfigs(mockData);
+            // Check cache first
+            const cachedSearchInputs = getSearchInputsByDomain(container.uuid);
+            if (cachedSearchInputs) {
+                setSearchInputConfigs(cachedSearchInputs);
+                return;
+            }
+
+            // Fetch from API if not in cache
+            try {
+                const response = await searchInputApi.getByDomainKey(container.uuid);
+                setSearchInputsByDomain(container.uuid, response);
+                setSearchInputConfigs(response);
+            } catch (error) {
+                console.error('Failed to fetch search inputs:', error);
+                setSearchInputConfigs([]);
+            }
         };
 
         fetchSearchInputs();
-    }, [container?.uuid]);
+    }, [container?.uuid, getSearchInputsByDomain, setSearchInputsByDomain]);
 
     useEffect(() => {
         if (mode !== 'create' && id) {
@@ -130,13 +145,18 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
         setIsSaving(true);
         
         try {
-            const requestData = {
+            const requestData: any = {
                 Key: container.uuid,
                 ConfigurationName: name,
                 ReturnType: displayType === 'popup' ? ReturnType.POPUP : ReturnType.INLINE_INJECTION,
                 Value: value,
                 OperatorId: operatorId
             };
+
+            // Add SearchKeywordConfigId if enabled and selected
+            if (enableSearchKeyword && selectedSearchConfigId) {
+                requestData.SearchKeywordConfigId = selectedSearchConfigId;
+            }
 
             await returnMethodApi.create(requestData);
             // Clear cache để trang danh sách sẽ fetch lại data mới
@@ -430,7 +450,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                     onChange={(e) => {
                                         setEnableSearchKeyword(e.target.checked);
                                         if (!e.target.checked) {
-                                            setSelectedSearchConfigId('');
+                                            setSelectedSearchConfigId(null);
                                         }
                                     }}
                                     disabled={isReadOnly}
@@ -447,14 +467,14 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                             </label>
                             <select 
                                 className={styles.selectInput}
-                                value={selectedSearchConfigId}
-                                onChange={(e) => setSelectedSearchConfigId(e.target.value)}
+                                value={selectedSearchConfigId || ''}
+                                onChange={(e) => setSelectedSearchConfigId(e.target.value ? Number(e.target.value) : null)}
                                 disabled={isReadOnly}
                             >
                                 <option value="">Select a search keyword configuration...</option>
                                 {searchInputConfigs.map(config => (
-                                    <option key={config.id} value={config.id}>
-                                        {config.name}
+                                    <option key={config.Id} value={config.Id}>
+                                        {config.ConfigurationName}
                                     </option>
                                 ))}
                             </select>
