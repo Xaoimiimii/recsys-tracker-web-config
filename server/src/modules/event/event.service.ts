@@ -30,8 +30,8 @@ export class EventService {
             select: {
                 Id: true,
                 EventTypeId: true,
-                UserField: true,
-                UserValue: true,
+                UserId: true,
+                AnonymousId: true,
                 ItemField: true,
                 ItemValue: true,
                 RatingValue: true,
@@ -61,8 +61,8 @@ export class EventService {
             select: {
                 Id: true,
                 EventTypeId: true,
-                UserField: true,
-                UserValue: true,
+                UserId: true,
+                AnonymousId: true,
                 ItemField: true,
                 ItemValue: true,
                 RatingValue: true,

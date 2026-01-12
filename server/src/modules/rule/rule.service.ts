@@ -97,7 +97,7 @@ export class RuleService {
                         }
                     }))
                 },
-                IntentLevel: rule.IntentLevel
+                ActionType: rule.ActionType,
             },
             include: {
                 PayloadMappings: true,

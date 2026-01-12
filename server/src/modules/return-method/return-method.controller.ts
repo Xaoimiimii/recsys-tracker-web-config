@@ -39,7 +39,7 @@ export class ReturnMethodController {
             dto.Value,
             dto.OperatorId,
             dto.DelayDuration,
-            dto.CustomizingFields || {},
+            dto.CustomizingFields || [],
             dto.LayoutJson,
             dto.StyleJson,
         );

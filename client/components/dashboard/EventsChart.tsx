@@ -73,6 +73,8 @@ export const EventsChart: React.FC<EventsChartProps> = ({
             user: event.UserValue,
             item: event.ItemValue,
             eventType: event.EventTypeId,
+            ratingValue: event.RatingValue,
+            reviewValue: event.ReviewValue,
             fullTimestamp: new Date(event.Timestamp).toLocaleString(),
             timestampMs: new Date(event.Timestamp).getTime()
         }));
@@ -97,6 +99,12 @@ export const EventsChart: React.FC<EventsChartProps> = ({
                     <p className={styles.tooltipItem}>Event type: {getEventTypeName(data.eventType)}</p>
                     <p className={styles.tooltipItem}>User: {data.user}</p>
                     <p className={styles.tooltipItem}>Item: {data.item}</p>
+                    {data.eventType === 2 && data.ratingValue !== null && (
+                        <p className={styles.tooltipItem}>Rating: {data.ratingValue}</p>
+                    )}
+                    {data.eventType === 3 && data.reviewValue !== null && (
+                        <p className={styles.tooltipItem}>Review: {data.reviewValue}</p>
+                    )}
                     <p className={styles.tooltipItem}>Timestamp: {data.fullTimestamp}</p>
                     
                 </div>
@@ -205,9 +213,6 @@ export const EventsChart: React.FC<EventsChartProps> = ({
                                         onClick={() => onRuleSelect(ruleId as number)}
                                     >
                                         {ruleNameMap.get(ruleId as number) || `Rule #${ruleId}`}
-                                        <span className={styles.eventCount}>
-                                            ({dataByRule.get(ruleId as number)?.length || 0} events)
-                                        </span>
                                     </button>
                                 ))}
                             </div>

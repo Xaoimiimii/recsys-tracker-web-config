@@ -1,12 +1,12 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/modules/prisma/prisma.service';
 import { ReturnType } from 'src/generated/prisma/enums';
-import { CustomizingFieldValueDto } from './dto/create-return-method.dto';
+import { CustomizingFieldDto } from './dto/create-return-method.dto';
 
 @Injectable()
 export class ReturnMethodService {
     constructor(private prisma: PrismaService) { }
-    
+
     async getReturnMethodsByDomainKey(key: string) {
         const domain = await this.prisma.domain.findUnique({
             where: {
@@ -31,7 +31,7 @@ export class ReturnMethodService {
         value: string,
         operatorId: number,
         delayDuration: number,
-        customizingFields: Record<string, CustomizingFieldValueDto>,
+        customizingFields: CustomizingFieldDto[],
         layoutJson: Record<string, any>,
         styleJson: Record<string, any>,
     ) {
@@ -39,28 +39,28 @@ export class ReturnMethodService {
             throw new BadRequestException('Delay duration must be a non-negative number');
         }
 
+        const usedKeys = new Set<string>();
         const usedPositions = new Set<number>();
-        for (const [key, value] of Object.entries(customizingFields)) {
-            if (!value || typeof value !== 'object' || Array.isArray(value)) {
-                throw new BadRequestException(`Customizing field "${key}" must be a valid object`);
-            }
 
-            if ('position' in value) {
-                const pos = value.position;
-                if (typeof pos !== 'number' || pos < 0) {
-                    throw new BadRequestException(`Customizing field "${key}".position must be a number >= 0`);
+        if (customizingFields?.length) {
+            for (const field of customizingFields) {
+                const currentKey = field.key.trim();
+
+                if (usedKeys.has(currentKey)) {
+                    throw new BadRequestException(`Customizing field key "${currentKey}" cannot be duplicated`);
+                }
+                usedKeys.add(currentKey);
+
+                if (field.position < 0) {
+                    throw new BadRequestException(`Customizing field "${currentKey}" position must be >= 0`);
                 }
 
-                if (pos !== 0) {
-                    if (usedPositions.has(pos)) {
-                        throw new BadRequestException(`Customizing field position value "${pos}" cannot be duplicated`);
+                if (field.position !== 0) {
+                    if (usedPositions.has(field.position)) {
+                        throw new BadRequestException(`Position "${field.position}" is duplicated at field "${currentKey}"`);
                     }
-                    usedPositions.add(pos);
+                    usedPositions.add(field.position);
                 }
-            }
-
-            if ('isEnabled' in value && typeof value.isEnabled !== 'boolean') {
-                throw new BadRequestException(`Customizing field "${key}".isEnabled must be boolean`);
             }
         }
 
@@ -102,7 +102,7 @@ export class ReturnMethodService {
         configurationName?: string,
         operatorId?: number,
         value?: string,
-        customizingFields?: Record<string, any>[],
+        customizingFields?: CustomizingFieldDto[],
         layoutJson?: Record<string, any>,
         styleJson?: Record<string, any>,
         delayDuration?: number,
@@ -127,31 +127,28 @@ export class ReturnMethodService {
         }
 
         if (customizingFields && customizingFields.length > 0) {
+            const usedKeys = new Set<string>();
             const usedPositions = new Set<number>();
-            for (const [key, value] of Object.entries(customizingFields)) {
-                if (!value || typeof value !== 'object' || Array.isArray(value)) {
-                    throw new BadRequestException(`Customizing field "${key}" must be a valid object`);
-                }
 
-                if ('position' in value) {
-                    const pos = value.position;
-                    if (typeof pos !== 'number' || pos < 0) {
-                        throw new BadRequestException(`Customizing field "${key}".position must be a number >= 0`);
+            if (customizingFields?.length) {
+                for (const field of customizingFields) {
+                    const currentKey = field.key.trim();
+
+                    if (usedKeys.has(currentKey)) {
+                        throw new BadRequestException(`Customizing field key "${currentKey}" cannot be duplicated`);
+                    }
+                    usedKeys.add(currentKey);
+
+                    if (field.position < 0) {
+                        throw new BadRequestException(`Customizing field "${currentKey}" position must be >= 0`);
                     }
 
-                    if (pos !== 0) {
-                        if (usedPositions.has(pos)) {
-                            throw new BadRequestException(`Customizing field position value "${pos}" cannot be duplicated`);
+                    if (field.position !== 0) {
+                        if (usedPositions.has(field.position)) {
+                            throw new BadRequestException(`Position "${field.position}" is duplicated at field "${currentKey}"`);
                         }
-                        usedPositions.add(pos);
+                        usedPositions.add(field.position);
                     }
-                }
-                if (!('isEnabled' in value)) {
-                    throw new BadRequestException(`Customizing field "${key}" must have isEnabled property`);
-                }
-                
-                if (typeof value.isEnabled !== 'boolean') {
-                    throw new BadRequestException(`Customizing field "${key}".isEnabled must be boolean`);
                 }
             }
         }
@@ -162,7 +159,7 @@ export class ReturnMethodService {
                 ConfigurationName: configurationName,
                 OperatorID: operatorId,
                 Value: value,
-                Customizing: customizingFields,
+                Customizing: customizingFields as any,
                 Layout: layoutJson,
                 Style: styleJson,
                 Delay: delayDuration,
