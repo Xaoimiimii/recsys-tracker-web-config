@@ -209,8 +209,8 @@ export interface CreateItem {
 export interface TrackedEvent {
   Id: number;
   EventTypeId: number;
-  UserField: string;
-  UserValue: string;
+  UserId?: string;
+  AnonymousId: string;
   ItemField: string;
   ItemValue: string;
   RatingValue: number | null;

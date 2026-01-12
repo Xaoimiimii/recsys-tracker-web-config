@@ -45,12 +45,12 @@ export interface PayloadMapping {
 }
 
 export enum ActionType {
-  VIEW = 'view',
-  ADD_TO_FAVORITES = 'add_to_favorites',
-  ADD_TO_WISHLIST = 'add_to_wishlist',
-  ADD_TO_CART = 'add_to_cart',
-  PURCHASE = 'purchase',
-  SUBMIT = 'submit'
+  VIEW = 'View',
+  ADD_TO_FAVORITE = 'AddToFavorite',
+  ADD_TO_WISHLIST = 'AddToWishlist',
+  ADD_TO_CART = 'AddToCart',
+  PURCHASE = 'Purchase',
+  SUBMIT = 'Submit'
 }
 
 export interface TrackingRule {
@@ -872,7 +872,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                 onChange={e => setRule({...rule, actionType: e.target.value as ActionType})}
               >
                 <option key={ActionType.VIEW} value={ActionType.VIEW}>Click to view</option>
-                <option key={ActionType.ADD_TO_FAVORITES} value={ActionType.ADD_TO_FAVORITES}>Add to favorites / Save / Bookmark </option>
+                <option key={ActionType.ADD_TO_FAVORITE} value={ActionType.ADD_TO_FAVORITE}>Add to favorites / Save / Bookmark </option>
                 <option key={ActionType.ADD_TO_WISHLIST} value={ActionType.ADD_TO_WISHLIST}>Add to wishlist</option>
                 <option key={ActionType.ADD_TO_CART} value={ActionType.ADD_TO_CART}>Add to cart</option>
                 <option key={ActionType.PURCHASE} value={ActionType.PURCHASE}>Purchase / Checkout</option>
