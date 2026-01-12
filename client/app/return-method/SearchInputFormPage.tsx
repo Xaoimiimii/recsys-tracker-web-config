@@ -5,6 +5,7 @@ import { Save, X } from 'lucide-react';
 import styles from './returnMethodPage.module.css';
 import { SearchInputConfiguration } from './types';
 import { useDataCache } from '../../contexts/DataCacheContext';
+import { searchInputApi } from '../../lib/api/search-input';
 
 interface SearchInputFormPageProps {
     container: Container | null;
@@ -71,15 +72,13 @@ export const SearchInputFormPage: React.FC<SearchInputFormPageProps> = ({ contai
         setIsSaving(true);
         
         try {
-            // TODO: Call API to save search input configuration
             const requestData = {
-                Key: container.uuid,
-                Name: name,
-                Selector: selector
+                DomainKey: container.uuid,
+                ConfigurationName: name,
+                InputSelector: selector
             };
 
-            // await searchInputApi.create(requestData);
-            console.log('Saving search input config:', requestData);
+            await searchInputApi.create(requestData);
             
             // Navigate back after successful save
             navigate('/dashboard/recommendation-display');
@@ -169,19 +168,19 @@ export const SearchInputFormPage: React.FC<SearchInputFormPageProps> = ({ contai
                                 </label>
                                 <input
                                     type="text"
-                                    className={`${styles.textInput} ${errors.value ? styles.inputError : ''}`}
+                                    className={`${styles.textInput} ${errors.selector ? styles.inputError : ''}`}
                                     value={selector}
                                     onChange={(e) => {
                                         setSelector(e.target.value);
-                                        if (errors.value) {
-                                            setErrors(prev => ({ ...prev, value: undefined }));
+                                        if (errors.selector) {
+                                            setErrors(prev => ({ ...prev, selector: undefined }));
                                         }
                                     }}
                                     placeholder='e.g., .search-input, #search-box'
                                     disabled={isReadOnly}
                                 />
-                                {errors.value && (
-                                    <span className={styles.errorText}>{errors.value}</span>
+                                {errors.selector && (
+                                    <span className={styles.errorText}>{errors.selector}</span>
                                 )}
                             </div>
                         </div>
