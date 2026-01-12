@@ -21,4 +21,17 @@ export class SearchKeywordConfigService {
         });
         return newConfig;
     }
+
+    async getSearchKeywordConfigs(domainKey: string) {
+        const domain = await this.prisma.domain.findUnique({
+            where: { Key: domainKey },
+        });
+        if (!domain) throw new BadRequestException('Domain not found');
+        
+        const configs = await this.prisma.searchKeywordConfig.findMany({
+            where: { DomainID: domain.Id },
+        });
+
+        return configs;
+    }
 }
