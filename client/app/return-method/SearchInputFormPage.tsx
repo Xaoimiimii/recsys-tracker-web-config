@@ -79,8 +79,8 @@ export const SearchInputFormPage: React.FC<SearchInputFormPageProps> = ({ contai
             };
 
             await searchInputApi.create(requestData);
-            
-            // Navigate back after successful save
+            // Clear cache để trang danh sách sẽ fetch lại data mới
+            clearReturnMethodsByDomain(container.uuid);
             navigate('/dashboard/recommendation-display');
         } catch (error) {
             console.error('Error saving configuration:', error);
