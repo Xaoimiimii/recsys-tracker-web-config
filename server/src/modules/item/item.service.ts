@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateItemDto } from './dto/create-items.dto';
 import { Item } from 'src/generated/prisma/client';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
+import { SearchService } from '../search/search.service';
 
 @Injectable()
 export class ItemService {
@@ -10,8 +11,8 @@ export class ItemService {
     private readonly INDEX_NAME = 'items';
 
     constructor(
-        private prisma: PrismaService,
-        private elasticsearchService: ElasticsearchService,
+        private readonly prisma: PrismaService,
+        private readonly searchService: SearchService,
     ) {}
 
     async createBulk(items: CreateItemDto[]) {
@@ -69,6 +70,7 @@ export class ItemService {
                                     })),
                                 },
                                 ImageUrl: item.ImageUrl || null,
+                                Attributes: item.Attributes || undefined,
                             },
                         });
                     });
@@ -82,7 +84,7 @@ export class ItemService {
             );
 
             if (batchResults.length > 0) {
-                await this.indexBulkToElastic(batchResults, domain.Id);
+                await this.searchService.createItemInBulk(batchResults, domain.Id);
             }
 
             results.push(...batchResults);
@@ -91,45 +93,4 @@ export class ItemService {
         return results;
     }
 
-    private async indexBulkToElastic(items: Item[], domainId: number) {
-        try {
-            const operations = items.flatMap((item) => [
-                {
-                    index: { _index: this.INDEX_NAME, _id: item.Id.toString() },
-                },
-                {
-                    id: item.Id,
-                    domainId: domainId,
-                    title: item.Title,
-                    description: item.Description,
-                },
-            ]);
-
-            const bulkResponse = await this.elasticsearchService.bulk({
-                operations: operations,
-            });
-
-            if (bulkResponse.errors) {
-                const erroredItems: any[] = [];
-
-                bulkResponse.items.forEach((action: any, i) => {
-                    const operation = Object.keys(action)[0];
-
-                    if (action[operation].error) {
-                        erroredItems.push({
-                            status: action[operation].status,
-                            error: action[operation].error,
-                            itemId: items[i].Id,
-                        });
-                    }
-                });
-
-                this.logger.error(`Bulk index errors: ${JSON.stringify(erroredItems)}`,);
-            } else {
-                this.logger.log(`Indexed ${items.length} items to Elastic successfully.`,);
-            }
-        } catch (error) {
-            this.logger.error(`Failed to bulk index: ${error.message}`);
-        }
-    }
 }

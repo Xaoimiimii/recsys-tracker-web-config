@@ -288,3 +288,135 @@
   background: var(--color-border);
   cursor: not-allowed;
 }
+/* Custom Fields Section */
+.customFieldsSection {
+  background: var(--color-bg-light);
+  border: 2px dashed var(--color-border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.sectionTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-main);
+  margin-bottom: 0.5rem;
+}
+
+.sectionDescription {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 1rem;
+}
+
+.customFieldsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.customFieldItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  transition: box-shadow 0.2s;
+}
+
+.customFieldItem:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.fieldInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.fieldLabel {
+  font-weight: 600;
+  color: var(--color-text-main);
+  font-size: 0.9375rem;
+}
+
+.fieldSample {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.removeFieldBtn {
+  padding: 0.5rem;
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.removeFieldBtn:hover {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+.addFieldForm {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.fieldInput {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 0.9375rem;
+  transition: border-color 0.2s;
+}
+
+.fieldInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.fieldInput::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.addFieldBtn {
+  padding: 0.75rem 1.5rem;
+  background: var(--color-primary);
+  color: var(--color-white);
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.addFieldBtn:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.addFieldBtn:disabled {
+  background: var(--color-border);
+  cursor: not-allowed;
+  color: var(--color-text-tertiary);
+}
+
+.fieldDivider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 0.75rem 0;
+}

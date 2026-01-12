@@ -7,6 +7,7 @@ export interface CreateItemInput {
   Categories?: string[];
   ImageUrl?: string;
   DomainKey: string;
+  Attributes?: Record<string, any>;
 }
 
 export interface CreateReviewInput {

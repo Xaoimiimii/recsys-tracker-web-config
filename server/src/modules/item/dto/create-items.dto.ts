@@ -1,4 +1,4 @@
-import { IsArray, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsArray, IsNotEmpty, IsObject, IsOptional, IsString } from "class-validator";
 
 export class CreateItemDto {
     @IsString()
@@ -25,4 +25,8 @@ export class CreateItemDto {
     @IsString()
     @IsOptional()
     ImageUrl?: string;
+
+    @IsObject()
+    @IsOptional()
+    Attributes?: Record<string, any>;
 }

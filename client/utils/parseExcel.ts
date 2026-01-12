@@ -9,6 +9,7 @@ export interface ProductImportData {
   categories: string[];
   description: string;
   imageUrl?: string;
+  customAttributes?: Record<string, any>;
 }
 
 export interface ReviewImportData {
@@ -18,7 +19,7 @@ export interface ReviewImportData {
   review: string;
 }
 
-export const parseItemImportExcelFile = async (file: File): Promise<ProductImportData[]> => {
+export const parseItemImportExcelFile = async (file: File, customFieldNames: string[] = []): Promise<ProductImportData[]> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -93,12 +94,25 @@ export const parseItemImportExcelFile = async (file: File): Promise<ProductImpor
           const imageRaw = getValue('Image');
           const imageUrl = imageRaw ? imageRaw.toString().trim() : '';
 
+          // Parse custom fields
+          const customAttributes: Record<string, any> = {};
+          customFieldNames.forEach(fieldName => {
+            const fieldValue = getValue(fieldName);
+            if (fieldValue !== null && fieldValue !== undefined) {
+              const valueStr = fieldValue.toString().trim();
+              if (valueStr !== '') {
+                customAttributes[fieldName] = valueStr;
+              }
+            }
+          });
+
           processedData.push({
             sku: sku.toString().trim(),
             name: name.toString().trim(),
             categories: categoriesList,
             description: description,
             imageUrl: imageUrl,
+            customAttributes: Object.keys(customAttributes).length > 0 ? customAttributes : undefined,
           });
         });
 
