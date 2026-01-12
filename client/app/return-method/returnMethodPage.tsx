@@ -65,32 +65,17 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
                 // Do ReturnMethodResponse trong types.ts hiện không có trường Id,
                 // ta tạo tạm một ID giả để React có thể render list (dùng index).
                 // Khi Backend cập nhật trả về Id, hãy sửa lại dòng này: const id = item.Id.toString();
-                const fakeId = `${item.DomainID || 'unknown'}-${index}`;
-
-                // Lưu tên Operator từ API vào map để hiển thị (vì API trả về string Operator, ví dụ "Contains")
-                if (item.Operator) {
-                    setOperatorNames(prev => ({...prev, [fakeId]: item.Operator}));
-                }
 
                 return {
-                    id: fakeId,
+                    id: item.Key,
                     configurationName: item.ConfigurationName,
                     displayType,
-                    // Không có OperatorId từ API, dùng tạm 1 hoặc map từ tên nếu cần logic
                     operator: 1, 
                     value: item.Value,
-                    
-                    // --- MAPPING FIELD: Khớp với types.ts bạn cung cấp ---
-                    // API: Layout -> UI: layoutJson
-                    layoutJson: item.Layout || DEFAULT_POPUP_LAYOUT,
-                    // API: Style -> UI: styleJson
+                    layoutJson: item.LayoutJson || DEFAULT_POPUP_LAYOUT,
                     styleJson: item.StyleJson || DEFAULT_STYLE_CONFIG,
-                    // API: Customizing -> UI: customizingFields
                     customizingFields: item.CustomizingFields || {},
-                    // API: Duration -> UI: delayedDuration
                     Duration: item.DelayDuration || 0,
-                    
-                    // Fallback cho ngày tháng (API chưa có)
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString()
                 };
