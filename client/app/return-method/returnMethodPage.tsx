@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, JSX } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Container } from '../../types';
-import { Plus, Eye, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Eye, Edit2, Trash2, Layers, Puzzle } from 'lucide-react';
 import styles from './returnMethodPage.module.css';
 import { DisplayConfiguration, DisplayType } from './types';
 import { returnMethodApi } from '../../lib/api/return-method';
 import { searchInputApi } from '../../lib/api/search-input';
 import type { ReturnMethodResponse, SearchInputResponse } from '../../lib/api/types';
 import { useDataCache } from '../../contexts/DataCacheContext';
+import { DEFAULT_POPUP_LAYOUT, DEFAULT_STYLE_CONFIG } from './returnMethodDefaults';
 
 type TabType = 'display-method' | 'search-input';
 
@@ -22,6 +23,10 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
     const [activeTab, setActiveTab] = useState<TabType>('display-method');
     const [configurations, setConfigurations] = useState<DisplayConfiguration[]>([]);
     const [searchInputConfigs, setSearchInputConfigs] = useState<SearchInputResponse[]>([]);
+    
+    // State lưu tên Operator để hiển thị
+    const [operatorNames, setOperatorNames] = useState<Record<string, string>>({});
+    
     const [filterType, setFilterType] = useState<DisplayType | 'all'>('all');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -41,7 +46,6 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
                 return;
             }
 
-            // Check cache first
             const cachedReturnMethods = getReturnMethodsByDomain(container.uuid);
             if (cachedReturnMethods) {
                 transformAndSetConfigurations(cachedReturnMethods);
@@ -54,7 +58,6 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
             try {
                 const response = await returnMethodApi.getByDomainKey(container.uuid);
                 setReturnMethodsByDomain(container.uuid, response);
-                
                 transformAndSetConfigurations(response);
             } catch (err) {
                 console.error('Failed to fetch return methods:', err);
@@ -65,35 +68,34 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
         };
 
         const transformAndSetConfigurations = (response: ReturnMethodResponse[]) => {
-            // Transform API response to DisplayConfiguration format
             const transformedConfigs: DisplayConfiguration[] = response.map((item, index) => {
                 const displayType: DisplayType = item.ReturnType === 'POPUP' ? 'popup' : 'inline-injection';
                 
-                const config: DisplayConfiguration = {
-                    id: `${item.DomainID}-${index}`,
+                // --- QUAN TRỌNG: Xử lý ID ---
+                // Do ReturnMethodResponse trong types.ts hiện không có trường Id,
+                // ta tạo tạm một ID giả để React có thể render list (dùng index).
+                // Khi Backend cập nhật trả về Id, hãy sửa lại dòng này: const id = item.Id.toString();
+
+                return {
+                    id: item.Key,
                     configurationName: item.ConfigurationName,
                     displayType,
-                    operator: item.Operator,
-                    value: item.Value
+                    operator: parseInt(item.OperatorId),
+                    value: item.Value,
+                    layoutJson: item.LayoutJson || DEFAULT_POPUP_LAYOUT,
+                    styleJson: item.StyleJson || DEFAULT_STYLE_CONFIG,
+                    customizingFields: item.CustomizingFields || {},
+                    Duration: item.DelayDuration || 0,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
                 };
-
-                if (displayType !== 'popup') {
-                    config.widgetDesign = {
-                        layout: 'grid',
-                        theme: 'light',
-                        spacing: 'medium',
-                        size: 'medium'
-                    };
-                }
-
-                return config;
             });
 
             setConfigurations(transformedConfigs);
         };
 
         fetchReturnMethods();
-    }, [container?.uuid]);
+    }, [container?.uuid, getReturnMethodsByDomain, setReturnMethodsByDomain]);
 
     // Fetch search input configurations
     useEffect(() => {
@@ -161,13 +163,20 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
     };
 
     const handleDelete = async (id: string) => {
-        if (confirm('Are you sure you want to delete this configuration?')) {
-            if (activeTab === 'display-method') {
-                setConfigurations(prev => prev.filter(config => config.id !== id));
-            } else {
-                setSearchInputConfigs(prev => prev.filter(config => config.Id.toString() !== id));
-            }
-        }
+        // Cảnh báo: ID hiện tại là ID giả, lệnh delete này sẽ thất bại nếu gửi lên server
+        // Trừ khi bạn sửa lại logic lấy ID thực từ response
+        // if (confirm('Are you sure you want to delete this configuration?')) {
+        //     try {
+        //          await returnMethodApi.delete(id); 
+        //         setConfigurations(prev => prev.filter(config => config.id !== id));
+        //         if (container?.uuid) {
+        //             // Logic clear cache nếu cần
+        //         }
+        //     } catch (e) {
+        //         console.error("Delete failed", e);
+        //         alert("Failed to delete (ID might be invalid)");
+        //     }
+        // }
     };
 
     const getSummary = (config: DisplayConfiguration): string => {

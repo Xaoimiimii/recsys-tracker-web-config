@@ -89,6 +89,7 @@
     border-color: #dc2626 !important;
 }
 
+
 .inputError:focus {
     outline: none;
     border-color: #dc2626 !important;
@@ -414,7 +415,7 @@
 .formContent {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 0.5rem;
 }
 
 .formSection {
@@ -484,6 +485,10 @@
     cursor: pointer;
     text-align: center;
     transition: all 0.2s;
+    display: flex;           
+    flex-direction: column;  
+    align-items: center;    
+    justify-content: center;
 }
 
 .displayTypeCard:hover:not(:disabled) {
@@ -583,7 +588,6 @@
     transform: translateX(1.5rem);
 }
 
-/* Preview Styles */
 .previewBox {
     padding: 1.5rem;
     background-color: #f9fafb;
@@ -970,4 +974,646 @@ input:disabled + .slider {
     .displayTypeGrid {
         grid-template-columns: 1fr;
     }
+}
+
+/* Layout 2 cột cho trang config Popup */
+.configGrid {
+    display: flex;
+    flex-direction: column; 
+    gap: 2rem;
+    width: 100%;
+}
+/* Responsive: Trên mobile thì xếp chồng lên nhau
+@media (max-width: 1024px) {
+    .configGrid {
+        grid-template-columns: 1fr;
+    }
+} */
+
+input[type="color"] {
+    -webkit-appearance: none;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    padding: 0;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    cursor: pointer;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 4px;
+}
+
+.previewBox {
+    min-height: 400px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- LAYOUT CONTAINER --- */
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding-bottom: 80px; /* Space for footer */
+}
+
+.pageHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.headerGroup {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* --- CARDS & SECTIONS --- */
+.sectionCard {
+    background-color: var(--color-white);
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--color-border);
+    padding: 1.5rem;
+    animation: fadeInSlideUp 0.3s ease-out;
+}
+
+.sectionHeader {
+    margin-bottom: 1.5rem;
+}
+
+.sectionTitle {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: var(--color-text-main);
+    margin: 0;
+}
+
+.sectionLabelWithIcon {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.separatorTop {
+    margin-top: 2rem;
+    border-top: 1px solid var(--color-border);
+    padding-top: 1.5rem;
+}
+
+/* --- FORMS & INPUTS --- */
+.formContent {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.formRow {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.formCol {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.inputLabel {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+
+.tinyLabel {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+}
+
+.textInput,
+.selectInput {
+    width: 100%;
+    padding: 0.625rem 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    color: var(--color-text-main);
+    background-color: var(--color-white);
+}
+
+.smallInput {
+    padding: 4px 8px;
+    font-size: 0.9rem;
+    height: 32px;
+}
+
+.tinyInput {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    height: 30px;
+}
+
+.rangeInput {
+    width: 100%;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+}
+
+.colorPickerFull {
+    height: 30px;
+    width: 100%;
+    border: none;
+    padding: 0;
+    background: none;
+    cursor: pointer;
+}
+
+.colorSwatchWrapper {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* --- TOGGLE & CHECKBOXES --- */
+/* .toggleWrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.statusToggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    position: relative;
+}
+
+.statusToggle input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggleSlider {
+    position: relative;
+    display: inline-block;
+    width: 2.5rem;
+    height: 1.25rem;
+    background-color: #e5e7eb;
+    border-radius: 1rem;
+    transition: background-color 0.2s;
+}
+
+.toggleSlider::before {
+    content: '';
+    position: absolute;
+    height: 1rem;
+    width: 1rem;
+    left: 0.125rem;
+    bottom: 0.125rem;
+    background-color: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+}
+
+.statusToggle input:checked + .toggleSlider {
+    background-color: var(--color-success);
+}
+
+.statusToggle input:checked + .toggleSlider::before {
+    transform: translateX(1.25rem);
+}
+
+.toggleLabel {
+    font-size: 0.875rem;
+    font-weight: 500;
+} */
+
+/* --- TYPOGRAPHY PANEL --- */
+.typographyList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.typographyItem {
+    padding: 10px;
+    background: #f9fafb;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+}
+
+.typographyItemHeader {
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-bottom: 8px;
+    text-transform: capitalize;
+    color: var(--color-text-main);
+}
+
+.typographyItemGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 40px;
+    gap: 8px;
+    align-items: end;
+}
+
+/* --- FIELDS CONFIG PANEL --- */
+.fieldList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.fieldItem {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+}
+
+.checkboxButton {
+    border-radius: 4px;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+
+.checkboxActive {
+    background: var(--color-primary);
+    border: 1px solid var(--color-primary);
+}
+
+.checkboxInactive {
+    background: white;
+    border: 1px solid #d1d5db;
+}
+
+.fieldInfo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.fieldKey {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.actionButtons {
+    display: flex;
+    gap: 4px;
+}
+
+.actionButtonSmall {
+    padding: 6px;
+    cursor: pointer;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    background: white;
+    color: #374151;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.actionButtonSmall:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.deleteButtonSmall {
+    padding: 6px;
+    cursor: pointer;
+    border: 1px solid #fee2e2;
+    border-radius: 4px;
+    background: #fef2f2;
+    color: #dc2626;
+    margin-left: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.addFieldForm {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 12px;
+    border: 1px dashed #d1d5db;
+    border-radius: 6px;
+    background-color: #f9fafb;
+}
+
+/* --- PREVIEW SECTION --- */
+.previewBox {
+    padding: 1.5rem;
+    background-color: #f9fafb;
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    height: 100%;
+}
+
+.previewLabel {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    margin: 0 0 1rem 0;
+}
+
+.previewContainer {
+    position: relative;
+    height: 600px;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #e5e7eb;
+}
+
+.previewFakeHeader {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+    background: #fff;
+    color: #333;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.previewFakeBody {
+    padding: 20px;
+    flex: 1;
+    overflow-y: auto;
+    position: relative;
+}
+
+.placeholderBar {
+    background: rgba(150, 150, 150, 0.2);
+    border-radius: 4px;
+}
+
+.placeholderBarSm {
+    background: rgba(150, 150, 150, 0.1);
+    border-radius: 4px;
+}
+
+.placeholderBlock {
+    height: 200px;
+    background: rgba(150, 150, 150, 0.1);
+    border-radius: 4px;
+}
+
+/* Widget Specifics inside Preview */
+.widgetWrapperInline {
+    margin: 20px 0;
+    border: 2px dashed #3b82f6;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.widgetCard {
+    /* Dynamic styles (radius, shadow, color) will be inline */
+    transition: all 0.3s ease;
+}
+
+.widgetHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+}
+
+.popupOverlayLayer {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    padding: 24px;
+    z-index: 50;
+}
+
+.mockProductCard {
+    display: flex;
+    padding: 8px;
+    border-style: solid;
+    border-width: 1px;
+    /* Other dynamic props are inline */
+}
+
+.mockProductImage {
+    background: #e5e7eb;
+    flex-shrink: 0;
+}
+
+.mockProductContent {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* --- BUTTONS & ACTIONS --- */
+/* .addButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 1rem;
+    background-color: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+} */
+
+.closeButton {
+    color: var(--color-text-tertiary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.2s;
+}
+
+.formActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border);
+}
+
+.cancelButton {
+    padding: 0.75rem 1.5rem;
+    background-color: white;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.saveButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background-color: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.saveButton:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* --- DISPLAY TYPE SELECTOR --- */
+.displayTypeGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.displayTypeCard {
+    padding: 1.5rem;
+    border: 2px solid var(--color-border);
+    border-radius: 0.5rem;
+    background-color: var(--color-white);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.displayTypeCardActive {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary-light);
+}
+
+.displayTypeIcon {
+    margin-bottom: 0.5rem;
+    width: 32px;
+    height: 32px;
+}
+
+.displayTypeTitle {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.displayTypeDescription {
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+}
+
+.required { color: #dc2626; }
+.helperText { font-size: 0.8125rem; color: var(--color-text-secondary); margin: 0; }
+.errorText { color: #dc2626; font-size: 0.8rem; margin-top: 4px; }
+.inputError { border-color: #dc2626; }
+.errorAlert { padding: 1rem; background: #fee2e2; color: #dc2626; border-radius: 6px; }
+
+/* --- CONFIG GRID (LAYOUT) --- */
+.configGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    width: 100%;
+}
+
+@keyframes fadeInSlideUp {
+    from { opacity: 0; transform: translateY(1rem); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- INSTRUCTION BOX (Hướng dẫn tích hợp) --- */
+.instructionBox {
+    background-color: #f8fafc; /* Nền xám xanh nhạt */
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    font-family: inherit; /* Kế thừa font của trang */
+}
+
+.instructionHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    color: #1e293b; /* Màu chữ đậm cho tiêu đề */
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.stepList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem; /* Khoảng cách giữa các bước */
+}
+
+.stepItem {
+    font-size: 1rem;
+    color: #475569; /* Màu chữ nội dung hơi nhạt */
+    line-height: 1.6;
+}
+
+.stepLabel {
+    color: #0d9488; /* Màu xanh Teal giống ảnh */
+    font-weight: 700;
+    margin-right: 0.35rem;
+}
+
+.codeTag {
+    background-color: #fce7f3; /* Nền hồng nhạt */
+    color: #db2777; /* Chữ hồng đậm */
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.25rem;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.85em;
+    font-weight: 600;
+    border: 1px solid #fbcfe8;
+}
+
+.subNote {
+    display: block;
+    margin-top: 0.4rem;
+    margin-left: 1.5rem; /* Thụt đầu dòng */
+    color: #64748b;
+    font-size: 0.9rem;
 }
