@@ -30,8 +30,12 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
     const [size, setSize] = useState('large');
     
     // Popup fields
-    const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    
+    // Search keyword signals
+    const [enableSearchKeyword, setEnableSearchKeyword] = useState(false);
+    const [selectedSearchConfigId, setSelectedSearchConfigId] = useState<string>('');
+    const [searchInputConfigs, setSearchInputConfigs] = useState<Array<{ id: string; name: string }>>([]);
     
     // Error states
     const [errors, setErrors] = useState<{
@@ -42,6 +46,23 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
     
     // Get cached operators from context
     const { operators, clearReturnMethodsByDomain } = useDataCache();
+
+    // Fetch search input configurations
+    useEffect(() => {
+        const fetchSearchInputs = async () => {
+            if (!container?.uuid) return;
+            
+            // TODO: Replace with actual API call
+            // Mock data for now
+            const mockData = [
+                { id: '1', name: 'Header Search Bar' },
+                { id: '2', name: 'Sidebar Search Box' },
+            ];
+            setSearchInputConfigs(mockData);
+        };
+
+        fetchSearchInputs();
+    }, [container?.uuid]);
 
     useEffect(() => {
         if (mode !== 'create' && id) {
@@ -57,9 +78,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                     theme: 'light',
                     spacing: 'medium',
                     size: 'large'
-                },
-                createdAt: '2025-12-15T10:00:00Z',
-                updatedAt: '2025-12-15T10:00:00Z'
+                }
             };
 
             setName(mockConfig.configurationName);
@@ -143,10 +162,10 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
 
     return (
         <div className={styles.container}>
-            {/* Section 1: Create New Configuration */}
+            {/* Section 1: Create Display Method Configuration */}
             <div className={styles.sectionCard}>
                 <div className={styles.sectionHeader}>
-                    <h2 className={styles.sectionTitle}>Create New Configuration</h2>
+                    <h2 className={styles.sectionTitle}>Create Display Method Configuration</h2>
                 </div>
                 <div className={styles.sectionContent}>
                     {errors.general && (
@@ -216,11 +235,6 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                         <label className={styles.fieldLabel}>
                             {displayType === 'inline-injection' ? 'Target CSS Selector' : 'URL Trigger'}
                         </label>
-                        <p className={styles.helperText}>
-                            {displayType === 'inline-injection' 
-                                ? 'Define where the widget should be rendered on your page'
-                                : 'Define where the popup should appear'}
-                        </p>
                         
                         <div className={styles.formRow}>
                             <div className={styles.formCol}>
@@ -390,6 +404,61 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                     </div>
                 </div>
             )}
+
+            {/* Section: Search Keyword Signals */}
+            <div className={styles.sectionCard}>
+                <div className={styles.sectionHeader}>
+                    <h2 className={styles.sectionTitle}>Search Keyword Signals</h2>
+                </div>
+                <div className={styles.sectionContent}>
+                    <div className={styles.formGroup}>
+                        <div className={styles.switchContainer}>
+                            <label className={styles.switchLabel}>
+                                Apply search keyword to this display rule
+                            </label>
+                            <label className={styles.switch}>
+                                <input
+                                    type="checkbox"
+                                    checked={enableSearchKeyword}
+                                    onChange={(e) => {
+                                        setEnableSearchKeyword(e.target.checked);
+                                        if (!e.target.checked) {
+                                            setSelectedSearchConfigId('');
+                                        }
+                                    }}
+                                    disabled={isReadOnly}
+                                />
+                                <span className={styles.slider}></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    {enableSearchKeyword && (
+                        <div className={styles.formGroup}>
+                            <label className={styles.fieldLabel}>
+                                Choose search keyword configuration
+                            </label>
+                            <select 
+                                className={styles.selectInput}
+                                value={selectedSearchConfigId}
+                                onChange={(e) => setSelectedSearchConfigId(e.target.value)}
+                                disabled={isReadOnly}
+                            >
+                                <option value="">Select a configuration...</option>
+                                {searchInputConfigs.map(config => (
+                                    <option key={config.id} value={config.id}>
+                                        {config.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    <div className={styles.helperBox}>
+                        When enabled, the system will use the keywords entered in the search bar (if any) to filter/rearrange the recommended results.
+                    </div>
+                </div>
+            </div>
 
             {/* Section 3: Instructions */}
             <div className={styles.sectionCard}>
