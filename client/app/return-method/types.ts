@@ -12,6 +12,10 @@ export interface DisplayConfiguration {
         spacing: string;
         size: string;
     };
-    createdAt: string;
-    updatedAt: string;
+}
+
+export interface SearchInputConfiguration {
+    id: string;
+    name: string;
+    selector: string;
 }

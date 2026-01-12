@@ -8,6 +8,7 @@ import { LoaderScriptPage } from './app/loader-script/LoaderScriptPage';
 import { ItemUploadPage } from './app/item-upload/ItemUploadPage';
 import { ReturnMethodPage } from './app/return-method/returnMethodPage';
 import { ReturnMethodFormPage } from './app/return-method/ReturnMethodFormPage';
+import { SearchInputFormPage } from './app/return-method/SearchInputFormPage';
 import { DomainSelectionPage } from './app/domain-selection/DomainSelectionPage';
 import { OnboardingPage } from './app/onboarding/OnboardingPage';
 import { MainLayout } from './components/layout/MainLayout';
@@ -164,6 +165,15 @@ function AppContent() {
             path="recommendation-display/create" 
             element={
               <ReturnMethodFormPage 
+                container={container} 
+                mode="create"
+              />
+            } 
+          />
+          <Route 
+            path="recommendation-display/search-input/create" 
+            element={
+              <SearchInputFormPage 
                 container={container} 
                 mode="create"
               />
