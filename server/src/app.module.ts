@@ -12,7 +12,9 @@ import { RatingModule } from './modules/rating/rating.module';
 import { TaskModule } from './modules/task/task.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { RecommendationModule } from './modules/recommendation/recommendation.module';
-import { ElasticsearchModule } from '@nestjs/elasticsearch';
+import { SearchModule } from './modules/search/search.module';
+import { ElasticConfigModule } from './common/elastic/elastic-config.module';
+import { SearchKeywordConfigModule } from './modules/search-keyword-config/search-keyword-config.module';
 
 @Module({
   imports: [
@@ -30,16 +32,9 @@ import { ElasticsearchModule } from '@nestjs/elasticsearch';
     TaskModule,
     ScheduleModule.forRoot(),
     RecommendationModule,
-    ElasticsearchModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        node: configService.getOrThrow<string>('ELASTIC_ENDPOINT'),
-        auth: {
-          apiKey: configService.getOrThrow<string>('ELASTIC_API_KEY'),
-        },
-      }),
-      inject: [ConfigService],
-    })
+    ElasticConfigModule,
+    SearchModule,
+    SearchKeywordConfigModule
   ],
   controllers: [UserController],
 })

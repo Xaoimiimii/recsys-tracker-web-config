@@ -1,3 +1,4 @@
+import { SearchKeywordConfig } from './../../../generated/prisma/browser';
 import { IsArray, IsBoolean, IsEnum, IsInt, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString, Min, ValidateNested } from "class-validator";
 import { ReturnType } from "src/generated/prisma/enums";
 import { ApiProperty } from "@nestjs/swagger";
@@ -114,4 +115,9 @@ export class CreateReturnMethodDto {
     @IsNotEmpty()
     @ApiProperty({ example: 60 })
     DelayDuration: number;
+
+    @IsOptional()
+    @IsNumber()
+    @ApiProperty({ example: 1 })
+    SearchKeywordConfigId?: number;
 }
