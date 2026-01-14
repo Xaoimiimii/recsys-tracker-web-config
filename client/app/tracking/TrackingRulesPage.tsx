@@ -335,7 +335,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                                     <div className={styles.exampleDivider}></div>
                                     
                                     <p className={styles.exampleConfigTitle}>Config sample:</p>
-                                    <code className={`${styles.exampleCode} ${styles.exampleCodeNoMargin}`}>
+                                    <code className={`${styles.exampleCode} ${styles.noMargin}`}>
                                         {example.config}
                                     </code>
                                     {example.config2 && (
@@ -353,10 +353,10 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
             {!isEditingRule ? (
                 <div className={styles.contentWrapper}>
                     <div className={styles.rulesCard}>
-                        <div className={styles.cardHeader}>
+                        <div className={`${styles.cardHeader} ${styles.noMargin}`}>
                             <div className={styles.userConfigHeader}>
                                 <h3 className={styles.rulesTitle} style={{ cursor: 'pointer', flex: 1 }} onClick={() => setIsUserConfigExpanded(!isUserConfigExpanded)}>
-                                    User Identity Configuration
+                                    Identify Current User
                                 </h3>
                                 <Lightbulb 
                                     size={18} 
