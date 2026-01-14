@@ -283,6 +283,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
             ) : (
                 <RuleBuilder 
                     domainKey={container?.uuid || ''} 
+                    domainType={container?.domainType}
                     initialRule={currentRule}
                     ruleDetails={currentRuleDetails}
                     isViewMode={isViewMode}

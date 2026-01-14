@@ -5,6 +5,62 @@ import { ruleApi } from '../../lib/api/rule';
 import { useDataCache } from '../../contexts/DataCacheContext';
 
 // ==================== TYPES ====================
+
+// Interaction Type Definition
+export interface InteractionTypeOption {
+  label: string;
+  actionType: ActionType | null;
+  eventTypeId: number;
+}
+
+export const DOMAIN_INTERACTION_TYPES: Record<string, InteractionTypeOption[]> = {
+  'Music Streaming': [
+    { label: 'Play song', actionType: 'View' as ActionType, eventTypeId: 1 },
+    { label: 'Add song to favorite', actionType: 'AddToFavorite' as ActionType, eventTypeId: 1 },
+    { label: 'Add song to playlist', actionType: 'AddToWishlist' as ActionType, eventTypeId: 1 },
+    { label: 'Download song', actionType: 'AddToCart' as ActionType, eventTypeId: 1 },
+    { label: 'Buy/Unlock song', actionType: 'Purchase' as ActionType, eventTypeId: 1 },
+    { label: 'Rating song', actionType: null, eventTypeId: 2 },
+    { label: 'Review song', actionType: null, eventTypeId: 3 },
+  ],
+  'Movies & Video': [
+    { label: 'Play video', actionType: 'View' as ActionType, eventTypeId: 1 },
+    { label: 'Add video to favorite', actionType: 'AddToFavorite' as ActionType, eventTypeId: 1 },
+    { label: 'Add video to watchlist / watch later', actionType: 'AddToWishlist' as ActionType, eventTypeId: 1 },
+    { label: 'Download video', actionType: 'AddToCart' as ActionType, eventTypeId: 1 },
+    { label: 'Buy/Unlock video', actionType: 'Purchase' as ActionType, eventTypeId: 1 },
+    { label: 'Rating movie / video', actionType: null, eventTypeId: 2 },
+    { label: 'Review movie / video', actionType: null, eventTypeId: 3 },
+  ],
+  'E-Commerce': [
+    { label: 'View product', actionType: 'View' as ActionType, eventTypeId: 1 },
+    { label: 'Add product to favorite', actionType: 'AddToFavorite' as ActionType, eventTypeId: 1 },
+    { label: 'Add product to wishlist', actionType: 'AddToWishlist' as ActionType, eventTypeId: 1 },
+    { label: 'Add product to cart', actionType: 'AddToCart' as ActionType, eventTypeId: 1 },
+    { label: 'Purchase / Checkout', actionType: 'Purchase' as ActionType, eventTypeId: 1 },
+    { label: 'Rating product', actionType: null, eventTypeId: 2 },
+    { label: 'Review product', actionType: null, eventTypeId: 3 },
+  ],
+  'News & Media': [
+    { label: 'View article', actionType: 'View' as ActionType, eventTypeId: 1 },
+    { label: 'Save/Bookmark article', actionType: 'AddToFavorite' as ActionType, eventTypeId: 1 },
+    { label: 'Add to read later', actionType: 'AddToWishlist' as ActionType, eventTypeId: 1 },
+    { label: 'Download article', actionType: 'AddToCart' as ActionType, eventTypeId: 1 },
+    { label: 'Buy/Unlock paywall', actionType: 'Purchase' as ActionType, eventTypeId: 1 },
+    { label: 'Rating article', actionType: null, eventTypeId: 2 },
+    { label: 'Review article', actionType: null, eventTypeId: 3 },
+  ],
+  'General': [
+    { label: 'View product', actionType: 'View' as ActionType, eventTypeId: 1 },
+    { label: 'Add to favorite', actionType: 'AddToFavorite' as ActionType, eventTypeId: 1 },
+    { label: 'Add to wishlist', actionType: 'AddToWishlist' as ActionType, eventTypeId: 1 },
+    { label: 'Add to cart', actionType: 'AddToCart' as ActionType, eventTypeId: 1 },
+    { label: 'Purchase / Checkout', actionType: 'Purchase' as ActionType, eventTypeId: 1 },
+    { label: 'Rating product', actionType: null, eventTypeId: 2 },
+    { label: 'Review product', actionType: null, eventTypeId: 3 },
+  ],
+};
+
 export enum EventType {
   CLICK = 'Click',
   RATING = 'Rating',
@@ -21,13 +77,6 @@ export enum MappingSource {
   LOCAL_STORAGE = 'local_storage',
   SESSION_STORAGE = 'session_storage',
   // URL = 'page_url',
-}
-
-export interface Condition {
-  id: string;
-  pattern: 'CSS Selector' | 'URL' | 'Data Attribute';
-  operator: 'Contains' | 'Equals' | 'Starts with' | 'Ends with';
-  value: string;
 }
 
 export interface PayloadMapping {
@@ -49,8 +98,7 @@ export enum ActionType {
   ADD_TO_FAVORITE = 'AddToFavorite',
   ADD_TO_WISHLIST = 'AddToWishlist',
   ADD_TO_CART = 'AddToCart',
-  PURCHASE = 'Purchase',
-  SUBMIT = 'Submit'
+  PURCHASE = 'Purchase'
 }
 
 export interface TrackingRule {
@@ -62,7 +110,6 @@ export interface TrackingRule {
     operator: string;
     value: string;
   };
-  conditions: Condition[];
   payloadMappings: PayloadMapping[];
 }
 
@@ -85,18 +132,11 @@ export const TARGET_SUGGESTIONS: Record<EventType, string> = {
   [EventType.PAGE_VIEW]: ""
 };
 
-export const CONDITION_SUGGESTIONS: Record<EventType, string> = {
-  [EventType.CLICK]: "Suggested: Use 'URL Path' to target page clicks or 'CSS Selector' to check element presence.",
-  [EventType.RATING]: "Suggested: Use 'URL Path' to target page clicks or 'CSS Selector' to check element presence.",
-  [EventType.REVIEW]: "Suggested: Use 'URL Path' to target page clicks or 'CSS Selector' to check element presence.",
-  [EventType.SCROLL]: "Suggested: Use 'URL Path' to target page clicks or 'CSS Selector' to check element presence.",
-  [EventType.PAGE_VIEW]: "Suggested: Use 'URL Path' to target page clicks or 'CSS Selector' to check element presence."
-};
-
 export interface SectionExample {
   title: string;
   htmlContext?: string;
   config: string;
+  config2?: string;
 }
 
 const PAYLOAD_COMMON_EXAMPLES: SectionExample[] = [
@@ -148,57 +188,28 @@ export const SECTION_EXAMPLES: Record<string, Record<EventType, SectionExample[]
       { 
         title: "Buy Button Example", 
         htmlContext: '<button class="btn-buy" id="cart-add">Add to Cart</button>',
-        config: "Pattern: 'CSS Selector' | Match: 'equals' | Value: '.btn-buy'\n or\n Pattern: 'CSS Selector' | Match: 'equals' | Value: '#cart-add'" 
+        config: "Target Type: 'CSS Selector' | Match Condition: 'Contains' | Value: '.btn-buy'",
+        config2: "Target Type: 'CSS Selector' | Match Condition: 'Contains' | Value: '#cart-add'" 
       }
     ],
     [EventType.RATING]: [
       { 
         title: "Star Rating Component", 
         htmlContext: '<div class="rating-stars" data-value="5"></div>',
-        config: "Pattern: 'CSS Selector' | Match: 'contains' | Value: '.rating-stars'" 
+        config: "Target Type: 'CSS Selector' | Match Condition: 'Contains' | Value: '.submit-rating'",
+        config2: "Target Type: 'CSS Selector' | Match Condition: 'Contains' | Value: '#submit-rating'"
       }
     ],
     [EventType.REVIEW]: [
       { 
         title: "Submit Feedback Form", 
         htmlContext: '<form id="review-form">\n  <textarea name="review" placeholder="Write your review..."></textarea>\n  <button type="submit">Submit</button>\n</form>',
-        config: "Pattern: 'CSS Selector' | Match: 'contains' | Value: '#review-form'\n or\n Pattern: 'CSS Selector' | Match: 'contains' | Value: 'textarea[name=review]\n'" 
+        config: "Target Type: 'CSS Selector' | Match Condition: 'Contains' | Value: '#review-form'",
+        config2: "Target Type: 'CSS Selector' | Match Condition: 'Contains' | Value: 'textarea[name=review]'"
       }
     ],
     [EventType.SCROLL]: [],
     [EventType.PAGE_VIEW]: []
-  },
-  conditions: {
-    [EventType.CLICK]: [
-      { 
-        title: "Shop Page Filter", 
-        config: "Pattern: URL Path | Operator: contains | Value: /shop" 
-      }
-    ],
-    [EventType.SCROLL]: [
-      { 
-        title: "Item Detail Page Filter", 
-        config: "Pattern: URL Path | Operator: contains | Value: /item/" 
-      }
-    ],
-    [EventType.RATING]: [
-      { 
-        title: "Product Rating Page Filter", 
-        config: "Pattern: URL Path | Operator: contains | Value: /product/" 
-      }
-    ],
-    [EventType.REVIEW]: [
-      { 
-        title: "Product Rating Page Filter", 
-        config: "Pattern: URL Path | Operator: contains | Value: /product/" 
-      }
-    ],
-    [EventType.PAGE_VIEW]: [
-      { 
-        title: "Item Detail Page Filter", 
-        config: "Pattern: URL Path | Operator: contains | Value: /item/" 
-      }
-    ]
   },
   payload: {
     [EventType.CLICK]: PAYLOAD_COMMON_EXAMPLES,
@@ -263,6 +274,7 @@ interface RuleBuilderProps {
   onSave: (response: { statusCode: number; message: string }) => void;
   onCancel: () => void;
   domainKey: string;
+  domainType?: string;
 }
 
 export const RuleBuilder: React.FC<RuleBuilderProps> = ({ 
@@ -271,9 +283,9 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
   isViewMode = false, 
   onSave, 
   onCancel, 
-  domainKey 
+  domainKey,
+  domainType = 'General'
 }) => {
-  const { patterns, operators } = useDataCache();
   
   const [rule, setRule] = useState<TrackingRule>({
     id: 'new-rule-' + Date.now(),
@@ -281,7 +293,6 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     eventType: EventType.CLICK,
     actionType: ActionType.VIEW,
     targetElement: { selector: '', operator: 'contains', value: '' },
-    conditions: [],
     payloadMappings: [
       { field: 'userId', source: MappingSource.LOCAL_STORAGE, path: 'user.id', required: true },
       { field: 'itemId', source: MappingSource.ELEMENT, path: '.product-id', required: true }
@@ -295,6 +306,8 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     payloadMappings?: { [key: number]: string };
   }>({});
   const [modalContent, setModalContent] = useState<{title: string, examples: SectionExample[]} | null>(null);
+  const [selectedInteractionType, setSelectedInteractionType] = useState<string>('');
+  const interactionTypes = DOMAIN_INTERACTION_TYPES[domainType] || DOMAIN_INTERACTION_TYPES['General'];
 
   // Load data from ruleDetails when viewing a rule
   useEffect(() => {
@@ -334,18 +347,6 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
         '5': EventType.PAGE_VIEW
       };
 
-      // Map PatternId to pattern name from cached data
-      const patternIdToName: Record<number, string> = patterns.reduce((acc, p) => {
-        acc[p.Id] = p.Name;
-        return acc;
-      }, {} as Record<number, string>);
-
-      // Map OperatorId to operator name from cached data
-      const operatorIdToName: Record<number, string> = operators.reduce((acc, o) => {
-        acc[o.Id] = o.Name;
-        return acc;
-      }, {} as Record<number, string>);
-
       // Transform PayloadMappings
       const payloadMappings: PayloadMapping[] = ruleDetails.PayloadMappings.map((mapping: any) => {
         const source = convertSource(mapping.Source);
@@ -375,20 +376,12 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
         return result;
       });
 
-      // Transform Conditions
-      const conditions: Condition[] = ruleDetails.Conditions.map((cond: any) => ({
-        id: Math.random().toString(36).substr(2, 9),
-        pattern: patternIdToName[cond.PatternId] || 'URL',
-        operator: operatorIdToName[cond.OperatorID || cond.OperatorId] || 'Contains',
-        value: cond.Value || ''
-      }));
-
       // Transform TrackingTarget
       let targetElement = undefined;
       if (ruleDetails.TrackingTarget) {
         targetElement = {
           selector: ruleDetails.TrackingTarget.Value || '',
-          operator: operatorIdToName[ruleDetails.TrackingTarget.OperatorId] || 'Equals',
+          operator: 'contains',
           value: ruleDetails.TrackingTarget.Value || ''
         };
       }
@@ -397,63 +390,67 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
         id: ruleDetails.Id.toString(),
         name: ruleDetails.Name || '',
         eventType: eventTypeMap[ruleDetails.EventTypeID] || EventType.CLICK,
+        actionType: ruleDetails.ActionType || null,
         targetElement: targetElement,
-        conditions: conditions,
         payloadMappings: payloadMappings
       });
+      
+      // Set selectedInteractionType based on ruleDetails
+      const matchingInteraction = interactionTypes.find(
+        it => it.eventTypeId === ruleDetails.EventTypeID && 
+              (it.actionType === ruleDetails.ActionType || (it.actionType === null && !ruleDetails.ActionType))
+      );
+      if (matchingInteraction) {
+        setSelectedInteractionType(matchingInteraction.label);
+      }
     }
-  }, [ruleDetails, isViewMode]);
+  }, [ruleDetails, isViewMode, interactionTypes]);
 
+  // Effect to handle interaction type changes
   useEffect(() => {
-    const initialFields = INITIAL_MAPPINGS[rule.eventType] || [];
+    if (!selectedInteractionType || isViewMode) return;
     
-    // Only reset payloadMappings when not in view mode or when ruleDetails is not available
-    if (!isViewMode || !ruleDetails) {
-      setRule(prev => {
-        // Determine actionType based on event type
-        let actionType = prev.actionType;
-        if (rule.eventType !== EventType.CLICK) {
-          actionType = null;
-        }
-
-        return {
-          ...prev,
-          actionType: actionType,
-          // Set targetElement to NULL for Scroll and Page view
-          targetElement: (rule.eventType === EventType.SCROLL || rule.eventType === EventType.PAGE_VIEW) 
-            ? undefined 
-            : prev.targetElement || { selector: '', operator: 'equals', value: '' },
-          payloadMappings: initialFields.map(field => ({
-            field,
-            source: field.toLowerCase().includes('user') ? MappingSource.LOCAL_STORAGE : MappingSource.ELEMENT,
-            path: '',
-            required: true
-          }))
-        };
-      });
-    }
-  }, [rule.eventType, isViewMode, ruleDetails]);
-
-  const handleAddCondition = () => {
-    const newCondition: Condition = {
-      id: Math.random().toString(36).substr(2, 9),
-      pattern: 'URL',
-      operator: 'Contains',
-      value: ''
+    const selectedInteraction = interactionTypes.find(it => it.label === selectedInteractionType);
+    if (!selectedInteraction) return;
+    
+    // Map eventTypeId to EventType enum
+    const eventTypeMap: Record<number, EventType> = {
+      1: EventType.CLICK,
+      2: EventType.RATING,
+      3: EventType.REVIEW,
+      4: EventType.SCROLL,
+      5: EventType.PAGE_VIEW
     };
-    setRule(prev => ({ ...prev, conditions: [...prev.conditions, newCondition] }));
-  };
-
-  const handleRemoveCondition = (id: string) => {
-    setRule(prev => ({ ...prev, conditions: prev.conditions.filter(c => c.id !== id) }));
-  };
-
-  const handleUpdateCondition = (id: string, updates: Partial<Condition>) => {
+    
+    const eventType = eventTypeMap[selectedInteraction.eventTypeId] || EventType.CLICK;
+    const initialFields = INITIAL_MAPPINGS[eventType] || [];
+    
     setRule(prev => ({
       ...prev,
-      conditions: prev.conditions.map(c => c.id === id ? { ...c, ...updates } : c)
+      eventType: eventType,
+      actionType: selectedInteraction.actionType as any,
+      // Set targetElement to NULL for Scroll and Page view
+      targetElement: (eventType === EventType.SCROLL || eventType === EventType.PAGE_VIEW) 
+        ? undefined 
+        : prev.targetElement || { selector: '', operator: 'equals', value: '' },
+      payloadMappings: initialFields.map(field => ({
+        field,
+        source: field.toLowerCase().includes('user') ? MappingSource.LOCAL_STORAGE : MappingSource.ELEMENT,
+        value: '',
+        required: true
+      }))
     }));
-  };
+  }, [selectedInteractionType, isViewMode, interactionTypes]);
+  
+  // Initialize selectedInteractionType on mount
+  useEffect(() => {
+    if (!selectedInteractionType && !isViewMode && !ruleDetails) {
+      // Default to first interaction type
+      if (interactionTypes.length > 0) {
+        setSelectedInteractionType(interactionTypes[0].label);
+      }
+    }
+  }, []);
 
   const handleUpdateMapping = (index: number, updates: Partial<PayloadMapping>) => {
     const newMappings = [...rule.payloadMappings];
@@ -649,19 +646,6 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     setIsSaving(true);
     
     try {
-      // Create operator name to ID mapping from cache
-      const operatorNameToId: Record<string, number> = operators.reduce((acc, o) => {
-        acc[o.Name] = o.Id;
-        return acc;
-      }, {} as Record<string, number>);
-
-      // Transform conditions
-      const conditions = rule.conditions.map(cond => ({
-        PatternId: PATTERN_TO_ID[cond.pattern],
-        OperatorId: operatorNameToId[cond.operator] || 1,
-        Value: cond.value
-      }));
-
       // Transform payload mappings
       const payloadMappings = rule.payloadMappings.map(mapping => {
         const backendMapping: any = {
@@ -710,19 +694,24 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
       let trackingTarget = null;
       if (rule.eventType !== EventType.SCROLL && rule.eventType !== EventType.PAGE_VIEW && rule.targetElement) {
         trackingTarget = {
-          PatternId: 1, // Always "CSS Selector"
-          OperatorId: operatorNameToId[rule.targetElement.operator] || 1,
+          PatternId: 1,
+          OperatorId: 1,
           Value: rule.targetElement.selector || ''
         };
       }
+
+      // Get the selected interaction type details
+      const selectedInteraction = interactionTypes.find(it => it.label === selectedInteractionType);
+      const eventTypeId = selectedInteraction?.eventTypeId || EVENT_TYPE_TO_ID[rule.eventType];
+      const actionType = selectedInteraction?.actionType || null;
 
       // Prepare the payload
       const payload = {
         Name: rule.name,
         DomainKey: domainKey,
-        EventTypeId: EVENT_TYPE_TO_ID[rule.eventType],
-        ActionType: rule.actionType || ActionType.VIEW,
-        Conditions: conditions,
+        EventTypeId: eventTypeId,
+        ActionType: actionType,
+        Conditions: [],
         PayloadMappings: payloadMappings,
         TrackingTarget: trackingTarget
       };
@@ -744,7 +733,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
   const openExamples = (section: string) => {
     const examples = SECTION_EXAMPLES[section][rule.eventType] || [];
     setModalContent({
-      title: `Config Examples: ${section.charAt(0).toUpperCase() + section.slice(1)}`,
+      title: `Config Examples: ${section.toUpperCase()}`,
       examples: examples
     });
   };
@@ -802,6 +791,11 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                   <code className={`${styles.exampleCode} ${styles.exampleCodeNoMargin}`}>
                     {ex.config}
                   </code>
+                  {ex.config2 && (
+                    <code className={`${styles.exampleCode} ${styles.exampleCodeMargin}`}>
+                      {ex.config2}
+                    </code>
+                  )}
                 </div>
               ))
             )}
@@ -840,49 +834,29 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
               )}
             </div>
             <div>
-              <label className={styles.label}>Event Type</label>
+              <label className={styles.label}>Interaction Type</label>
               <select 
                 className={styles.input}
-                value={rule.eventType}
+                value={selectedInteractionType}
                 disabled={isViewMode}
-                onChange={e => setRule({...rule, eventType: e.target.value as EventType})}
+                onChange={e => setSelectedInteractionType(e.target.value)}
               >
-                {EVENT_TYPE_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                {interactionTypes.map(it => (
+                  <option key={it.label} value={it.label}>{it.label}</option>
+                ))}
               </select>
-              <p className={styles.description}>{EVENT_DESCRIPTIONS[rule.eventType]}</p>
+              <p className={styles.description}>
+                {rule.eventType === EventType.CLICK && "Tracks click behaviors on interface elements like Buttons or Icons."}
+                {rule.eventType === EventType.RATING && "Records user rating actions through score or star components."}
+                {rule.eventType === EventType.REVIEW && "Collects data when users submit text comments or detailed feedback."}
+                {rule.eventType === EventType.SCROLL && "Monitors page scroll depth to measure content engagement."}
+                {rule.eventType === EventType.PAGE_VIEW && "Measures page views or screen transitions within the application."}
+              </p>
             </div>
           </div>
         </div>
 
-        {/* 2. Action Type */}
-        {(rule.eventType === EventType.CLICK) && (
-          <div className={styles.card}>
-            <SectionHeader 
-              title="Action Type" 
-              icon={<Target size={14} />} 
-              required 
-            />
-            
-            <div>
-              <label className={styles.label}>Choose click action:</label>
-              <select
-                className={styles.input}
-                value={rule.actionType || ActionType.VIEW}
-                disabled={isViewMode}
-                onChange={e => setRule({...rule, actionType: e.target.value as ActionType})}
-              >
-                <option key={ActionType.VIEW} value={ActionType.VIEW}>Click to view</option>
-                <option key={ActionType.ADD_TO_FAVORITE} value={ActionType.ADD_TO_FAVORITE}>Add to favorites / Save / Bookmark </option>
-                <option key={ActionType.ADD_TO_WISHLIST} value={ActionType.ADD_TO_WISHLIST}>Add to wishlist</option>
-                <option key={ActionType.ADD_TO_CART} value={ActionType.ADD_TO_CART}>Add to cart</option>
-                <option key={ActionType.PURCHASE} value={ActionType.PURCHASE}>Purchase / Checkout</option>
-                <option key={ActionType.SUBMIT} value={ActionType.SUBMIT}>Submit form</option>
-              </select>
-            </div>
-          </div>
-        )}
-
-        {/* 3. Target Configuration */}
+        {/* 2. Target Configuration */}
         {rule.eventType !== EventType.SCROLL && rule.eventType !== EventType.PAGE_VIEW && (
           <div className={styles.card}>
             <SectionHeader 
@@ -893,7 +867,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
             />
             <div className={styles.grid3}>
               <div>
-                <label className={styles.label}>Pattern</label>
+                <label className={styles.label}>Target Type</label>
                 <input 
                   type="text"
                   disabled
@@ -902,21 +876,16 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                 />
               </div>
               <div>
-                <label className={styles.label}>Match Operator</label>
-                <select 
-                  className={styles.input}
-                  value={rule.targetElement?.operator || 'Equals'}
-                  disabled={isViewMode}
-                  onChange={e => setRule({...rule, targetElement: {...rule.targetElement, operator: e.target.value}})}
-                >
-                  <option value="Contains">Contains</option>
-                  <option value="Equals">Equals</option>
-                  <option value="Starts with">Starts with</option>
-                  <option value="Ends with">Ends with</option>
-                </select>
+                <label className={styles.label}>Match Condition</label>
+                <input 
+                  type="text"
+                  disabled
+                  className={`${styles.input} ${styles.disabledInput}`}
+                  value="Contains"
+                />
               </div>
               <div>
-                <label className={styles.label}>Value</label>
+                <label className={styles.label}>Selector Pattern</label>
                 <input 
                   type="text"
                   placeholder=".my-element"
@@ -942,57 +911,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
           </div>
         )}
 
-        {/* 4. Conditions */}
-        <div className={styles.card}>
-          <div className={styles.conditionsHeader}>
-            <SectionHeader title="Conditions" icon={<Filter size={14} />} sectionKey="conditions" />
-            <button onClick={handleAddCondition} className={styles.btnAdd} disabled={isViewMode}>
-              <Plus size={16} /> Add Condition
-            </button>
-          </div>
-          
-          <div className={styles.conditionsContainer}>
-            {rule.conditions.length === 0 && (
-              <div className={styles.emptyState}>
-                No conditions added. The rule will trigger for every occurrence.
-                <p className={`${styles.suggestion} ${styles.suggestionInEmptyState}`}>{CONDITION_SUGGESTIONS[rule.eventType]}</p>
-              </div>
-            )}
-            {rule.conditions.map((cond) => (
-              <div key={cond.id} className={styles.conditionRow}>
-                <select 
-                  className={`${styles.input} ${styles.conditionSelectFlex1}`}
-                  value={cond.pattern}
-                  disabled={isViewMode}
-                  onChange={e => handleUpdateCondition(cond.id, { pattern: e.target.value as any })}
-                >
-                  <option>URL</option>
-                  <option>CSS Selector</option>
-                  <option>Data Attribute</option>
-                </select>
-                <select 
-                  className={`${styles.input} ${styles.conditionSelectAuto}`}
-                  value={cond.operator}
-                  disabled={isViewMode}
-                  onChange={e => handleUpdateCondition(cond.id, { operator: e.target.value as any })}
-                >
-                  {OPERATORS.map(op => <option key={op} value={op}>{op}</option>)}
-                </select>
-                <input 
-                  type="text" placeholder="Filter value..." className={`${styles.input} ${styles.conditionInputFlex2}`}
-                  value={cond.value}
-                  disabled={isViewMode}
-                  onChange={e => handleUpdateCondition(cond.id, { value: e.target.value })}
-                />
-                <button onClick={() => handleRemoveCondition(cond.id)} className={styles.btnDelete} disabled={isViewMode}>
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* 5. Payload Mapping */}
+        {/* 3. Payload Mapping */}
         <div className={styles.card}>
           <SectionHeader title="Payload Mapping" icon={<Database size={14} />} sectionKey="payload" />
           <div className={styles.tableWrapper}>
