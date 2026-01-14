@@ -131,7 +131,6 @@ export interface CreateRule {
   DomainKey: string;
   EventTypeId: number;
   TrackingTarget?: TrackingTarget | null;
-  Conditions: Condition[];
   PayloadMappings: PayloadConfig[];
 }
 

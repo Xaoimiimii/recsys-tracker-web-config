@@ -79,13 +79,6 @@ export enum MappingSource {
   // URL = 'page_url',
 }
 
-export interface Condition {
-  id: string;
-  pattern: 'CSS Selector' | 'URL' | 'Data Attribute';
-  operator: 'Contains' | 'Equals' | 'Starts with' | 'Ends with';
-  value: string;
-}
-
 export interface PayloadMapping {
   field: string;
   source: MappingSource;
@@ -117,7 +110,6 @@ export interface TrackingRule {
     operator: string;
     value: string;
   };
-  conditions: Condition[];
   payloadMappings: PayloadMapping[];
 }
 
@@ -138,14 +130,6 @@ export const TARGET_SUGGESTIONS: Record<EventType, string> = {
   [EventType.REVIEW]: "Suggested: #review, #review-box, .review-box, .review-textarea, textarea[name*=review], textarea[placeholder*=review], .submit-review, .btn-submit-review",
   [EventType.SCROLL]: "",
   [EventType.PAGE_VIEW]: ""
-};
-
-export const CONDITION_SUGGESTIONS: Record<EventType, string> = {
-  [EventType.CLICK]: "Suggested: Use 'URL Path' to target page clicks or 'CSS Selector' to check element presence.",
-  [EventType.RATING]: "Suggested: Use 'URL Path' to target page clicks or 'CSS Selector' to check element presence.",
-  [EventType.REVIEW]: "Suggested: Use 'URL Path' to target page clicks or 'CSS Selector' to check element presence.",
-  [EventType.SCROLL]: "Suggested: Use 'URL Path' to target page clicks or 'CSS Selector' to check element presence.",
-  [EventType.PAGE_VIEW]: "Suggested: Use 'URL Path' to target page clicks or 'CSS Selector' to check element presence."
 };
 
 export interface SectionExample {
@@ -222,38 +206,6 @@ export const SECTION_EXAMPLES: Record<string, Record<EventType, SectionExample[]
     ],
     [EventType.SCROLL]: [],
     [EventType.PAGE_VIEW]: []
-  },
-  conditions: {
-    [EventType.CLICK]: [
-      { 
-        title: "Shop Page Filter", 
-        config: "Pattern: URL Path | Operator: contains | Value: /shop" 
-      }
-    ],
-    [EventType.SCROLL]: [
-      { 
-        title: "Item Detail Page Filter", 
-        config: "Pattern: URL Path | Operator: contains | Value: /item/" 
-      }
-    ],
-    [EventType.RATING]: [
-      { 
-        title: "Product Rating Page Filter", 
-        config: "Pattern: URL Path | Operator: contains | Value: /product/" 
-      }
-    ],
-    [EventType.REVIEW]: [
-      { 
-        title: "Product Rating Page Filter", 
-        config: "Pattern: URL Path | Operator: contains | Value: /product/" 
-      }
-    ],
-    [EventType.PAGE_VIEW]: [
-      { 
-        title: "Item Detail Page Filter", 
-        config: "Pattern: URL Path | Operator: contains | Value: /item/" 
-      }
-    ]
   },
   payload: {
     [EventType.CLICK]: PAYLOAD_COMMON_EXAMPLES,
@@ -338,7 +290,6 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     eventType: EventType.CLICK,
     actionType: ActionType.VIEW,
     targetElement: { selector: '', operator: 'contains', value: '' },
-    conditions: [],
     payloadMappings: [
       { field: 'userId', source: MappingSource.LOCAL_STORAGE, path: 'user.id', required: true },
       { field: 'itemId', source: MappingSource.ELEMENT, path: '.product-id', required: true }
@@ -434,14 +385,6 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
         return result;
       });
 
-      // Transform Conditions
-      const conditions: Condition[] = ruleDetails.Conditions.map((cond: any) => ({
-        id: Math.random().toString(36).substr(2, 9),
-        pattern: patternIdToName[cond.PatternId] || 'URL',
-        operator: operatorIdToName[cond.OperatorID || cond.OperatorId] || 'Contains',
-        value: cond.Value || ''
-      }));
-
       // Transform TrackingTarget
       let targetElement = undefined;
       if (ruleDetails.TrackingTarget) {
@@ -458,7 +401,6 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
         eventType: eventTypeMap[ruleDetails.EventTypeID] || EventType.CLICK,
         actionType: ruleDetails.ActionType || null,
         targetElement: targetElement,
-        conditions: conditions,
         payloadMappings: payloadMappings
       });
       
@@ -518,27 +460,6 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
       }
     }
   }, []);
-
-  const handleAddCondition = () => {
-    const newCondition: Condition = {
-      id: Math.random().toString(36).substr(2, 9),
-      pattern: 'URL',
-      operator: 'Contains',
-      value: ''
-    };
-    setRule(prev => ({ ...prev, conditions: [...prev.conditions, newCondition] }));
-  };
-
-  const handleRemoveCondition = (id: string) => {
-    setRule(prev => ({ ...prev, conditions: prev.conditions.filter(c => c.id !== id) }));
-  };
-
-  const handleUpdateCondition = (id: string, updates: Partial<Condition>) => {
-    setRule(prev => ({
-      ...prev,
-      conditions: prev.conditions.map(c => c.id === id ? { ...c, ...updates } : c)
-    }));
-  };
 
   const handleUpdateMapping = (index: number, updates: Partial<PayloadMapping>) => {
     const newMappings = [...rule.payloadMappings];
@@ -740,13 +661,6 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
         return acc;
       }, {} as Record<string, number>);
 
-      // Transform conditions
-      const conditions = rule.conditions.map(cond => ({
-        PatternId: PATTERN_TO_ID[cond.pattern],
-        OperatorId: operatorNameToId[cond.operator] || 1,
-        Value: cond.value
-      }));
-
       // Transform payload mappings
       const payloadMappings = rule.payloadMappings.map(mapping => {
         const backendMapping: any = {
@@ -812,7 +726,6 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
         DomainKey: domainKey,
         EventTypeId: eventTypeId,
         ActionType: actionType,
-        Conditions: conditions,
         PayloadMappings: payloadMappings,
         TrackingTarget: trackingTarget
       };
@@ -1012,57 +925,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
           </div>
         )}
 
-        {/* 3. Conditions */}
-        <div className={styles.card}>
-          <div className={styles.conditionsHeader}>
-            <SectionHeader title="Conditions" icon={<Filter size={14} />} sectionKey="conditions" />
-            <button onClick={handleAddCondition} className={styles.btnAdd} disabled={isViewMode}>
-              <Plus size={16} /> Add Condition
-            </button>
-          </div>
-          
-          <div className={styles.conditionsContainer}>
-            {rule.conditions.length === 0 && (
-              <div className={styles.emptyState}>
-                No conditions added. The rule will trigger for every occurrence.
-                <p className={`${styles.suggestion} ${styles.suggestionInEmptyState}`}>{CONDITION_SUGGESTIONS[rule.eventType]}</p>
-              </div>
-            )}
-            {rule.conditions.map((cond) => (
-              <div key={cond.id} className={styles.conditionRow}>
-                <select 
-                  className={`${styles.input} ${styles.conditionSelectFlex1}`}
-                  value={cond.pattern}
-                  disabled={isViewMode}
-                  onChange={e => handleUpdateCondition(cond.id, { pattern: e.target.value as any })}
-                >
-                  <option>URL</option>
-                  <option>CSS Selector</option>
-                  <option>Data Attribute</option>
-                </select>
-                <select 
-                  className={`${styles.input} ${styles.conditionSelectAuto}`}
-                  value={cond.operator}
-                  disabled={isViewMode}
-                  onChange={e => handleUpdateCondition(cond.id, { operator: e.target.value as any })}
-                >
-                  {OPERATORS.map(op => <option key={op} value={op}>{op}</option>)}
-                </select>
-                <input 
-                  type="text" placeholder="Filter value..." className={`${styles.input} ${styles.conditionInputFlex2}`}
-                  value={cond.value}
-                  disabled={isViewMode}
-                  onChange={e => handleUpdateCondition(cond.id, { value: e.target.value })}
-                />
-                <button onClick={() => handleRemoveCondition(cond.id)} className={styles.btnDelete} disabled={isViewMode}>
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* 4. Payload Mapping */}
+        {/* 3. Payload Mapping */}
         <div className={styles.card}>
           <SectionHeader title="Payload Mapping" icon={<Database size={14} />} sectionKey="payload" />
           <div className={styles.tableWrapper}>
