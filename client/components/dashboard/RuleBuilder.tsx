@@ -726,6 +726,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
         DomainKey: domainKey,
         EventTypeId: eventTypeId,
         ActionType: actionType,
+        Conditions: [],
         PayloadMappings: payloadMappings,
         TrackingTarget: trackingTarget
       };
