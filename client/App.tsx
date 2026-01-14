@@ -29,11 +29,11 @@ function AppContent() {
   // Map DomainResponse to Container type
   const mapDomainToContainer = (domain: DomainResponse): Container => {
     const domainTypeMap: Record<number, DomainType> = {
-      1: 'music',
-      2: 'movie',
-      3: 'news',
-      4: 'ecommerce',
-      5: 'general',
+      1: 'Music Streaming',
+      2: 'Movies & Video',
+      3: 'E-Commerce',
+      4: 'News & Media',
+      5: 'General',
     };
 
     return {
@@ -41,7 +41,7 @@ function AppContent() {
       uuid: domain.Key,
       name: new URL(domain.Url).hostname,
       url: domain.Url,
-      domainType: domainTypeMap[domain.Type] || 'general',
+      domainType: domainTypeMap[domain.Type] || 'General',
       rules: [],
       outputConfig: {
         displayMethods: [],
