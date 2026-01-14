@@ -136,6 +136,7 @@ export interface SectionExample {
   title: string;
   htmlContext?: string;
   config: string;
+  config2?: string;
 }
 
 const PAYLOAD_COMMON_EXAMPLES: SectionExample[] = [
@@ -187,21 +188,24 @@ export const SECTION_EXAMPLES: Record<string, Record<EventType, SectionExample[]
       { 
         title: "Buy Button Example", 
         htmlContext: '<button class="btn-buy" id="cart-add">Add to Cart</button>',
-        config: "Pattern: 'CSS Selector' | Match: 'equals' | Value: '.btn-buy'\n or\n Pattern: 'CSS Selector' | Match: 'equals' | Value: '#cart-add'" 
+        config: "Target Type: 'CSS Selector' | Match Condition: 'Contains' | Value: '.btn-buy'",
+        config2: "Target Type: 'CSS Selector' | Match Condition: 'Contains' | Value: '#cart-add'" 
       }
     ],
     [EventType.RATING]: [
       { 
         title: "Star Rating Component", 
         htmlContext: '<div class="rating-stars" data-value="5"></div>',
-        config: "Pattern: 'CSS Selector' | Match: 'contains' | Value: '.rating-stars'" 
+        config: "Target Type: 'CSS Selector' | Match Condition: 'Contains' | Value: '.submit-rating'",
+        config2: "Target Type: 'CSS Selector' | Match Condition: 'Contains' | Value: '#submit-rating'"
       }
     ],
     [EventType.REVIEW]: [
       { 
         title: "Submit Feedback Form", 
         htmlContext: '<form id="review-form">\n  <textarea name="review" placeholder="Write your review..."></textarea>\n  <button type="submit">Submit</button>\n</form>',
-        config: "Pattern: 'CSS Selector' | Match: 'contains' | Value: '#review-form'\n or\n Pattern: 'CSS Selector' | Match: 'contains' | Value: 'textarea[name=review]\n'" 
+        config: "Target Type: 'CSS Selector' | Match Condition: 'Contains' | Value: '#review-form'",
+        config2: "Target Type: 'CSS Selector' | Match Condition: 'Contains' | Value: 'textarea[name=review]'"
       }
     ],
     [EventType.SCROLL]: [],
@@ -282,7 +286,6 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
   domainKey,
   domainType = 'General'
 }) => {
-  const { patterns, operators } = useDataCache();
   
   const [rule, setRule] = useState<TrackingRule>({
     id: 'new-rule-' + Date.now(),
@@ -344,18 +347,6 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
         '5': EventType.PAGE_VIEW
       };
 
-      // Map PatternId to pattern name from cached data
-      const patternIdToName: Record<number, string> = patterns.reduce((acc, p) => {
-        acc[p.Id] = p.Name;
-        return acc;
-      }, {} as Record<number, string>);
-
-      // Map OperatorId to operator name from cached data
-      const operatorIdToName: Record<number, string> = operators.reduce((acc, o) => {
-        acc[o.Id] = o.Name;
-        return acc;
-      }, {} as Record<number, string>);
-
       // Transform PayloadMappings
       const payloadMappings: PayloadMapping[] = ruleDetails.PayloadMappings.map((mapping: any) => {
         const source = convertSource(mapping.Source);
@@ -390,7 +381,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
       if (ruleDetails.TrackingTarget) {
         targetElement = {
           selector: ruleDetails.TrackingTarget.Value || '',
-          operator: operatorIdToName[ruleDetails.TrackingTarget.OperatorId] || 'Equals',
+          operator: 'contains',
           value: ruleDetails.TrackingTarget.Value || ''
         };
       }
@@ -655,12 +646,6 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     setIsSaving(true);
     
     try {
-      // Create operator name to ID mapping from cache
-      const operatorNameToId: Record<string, number> = operators.reduce((acc, o) => {
-        acc[o.Name] = o.Id;
-        return acc;
-      }, {} as Record<string, number>);
-
       // Transform payload mappings
       const payloadMappings = rule.payloadMappings.map(mapping => {
         const backendMapping: any = {
@@ -709,8 +694,8 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
       let trackingTarget = null;
       if (rule.eventType !== EventType.SCROLL && rule.eventType !== EventType.PAGE_VIEW && rule.targetElement) {
         trackingTarget = {
-          PatternId: 1, // Always "CSS Selector"
-          OperatorId: operatorNameToId[rule.targetElement.operator] || 1,
+          PatternId: 1,
+          OperatorId: 1,
           Value: rule.targetElement.selector || ''
         };
       }
@@ -748,7 +733,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
   const openExamples = (section: string) => {
     const examples = SECTION_EXAMPLES[section][rule.eventType] || [];
     setModalContent({
-      title: `Config Examples: ${section.charAt(0).toUpperCase() + section.slice(1)}`,
+      title: `Config Examples: ${section.toUpperCase()}`,
       examples: examples
     });
   };
@@ -806,6 +791,11 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                   <code className={`${styles.exampleCode} ${styles.exampleCodeNoMargin}`}>
                     {ex.config}
                   </code>
+                  {ex.config2 && (
+                    <code className={`${styles.exampleCode} ${styles.exampleCodeMargin}`}>
+                      {ex.config2}
+                    </code>
+                  )}
                 </div>
               ))
             )}
@@ -877,7 +867,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
             />
             <div className={styles.grid3}>
               <div>
-                <label className={styles.label}>Pattern</label>
+                <label className={styles.label}>Target Type</label>
                 <input 
                   type="text"
                   disabled
@@ -886,21 +876,16 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                 />
               </div>
               <div>
-                <label className={styles.label}>Match Operator</label>
-                <select 
-                  className={styles.input}
-                  value={rule.targetElement?.operator || 'Equals'}
-                  disabled={isViewMode}
-                  onChange={e => setRule({...rule, targetElement: {...rule.targetElement, operator: e.target.value}})}
-                >
-                  <option value="Contains">Contains</option>
-                  <option value="Equals">Equals</option>
-                  <option value="Starts with">Starts with</option>
-                  <option value="Ends with">Ends with</option>
-                </select>
+                <label className={styles.label}>Match Condition</label>
+                <input 
+                  type="text"
+                  disabled
+                  className={`${styles.input} ${styles.disabledInput}`}
+                  value="Contains"
+                />
               </div>
               <div>
-                <label className={styles.label}>Value</label>
+                <label className={styles.label}>Selector Pattern</label>
                 <input 
                   type="text"
                   placeholder=".my-element"
