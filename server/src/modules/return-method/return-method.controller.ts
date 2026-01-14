@@ -104,4 +104,11 @@ export class ReturnMethodController {
     async getReturnMethodById(@Param('id', ParseIntPipe) id: number) {
         return this.returnMethodService.getReturnMethodById(id);
     }
+
+    // @UseGuards(JwtAuthGuard)
+    @Get('/item-attributes/:domainKey')
+    @ApiOperation({ summary: 'Get item attributes by domain key' })
+    async getItemAttributes(@Param('domainKey') domainKey: string) {
+        return this.returnMethodService.getItemAttributes(domainKey);
+    }
 }
