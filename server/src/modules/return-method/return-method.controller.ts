@@ -37,7 +37,6 @@ export class ReturnMethodController {
             dto.ConfigurationName,
             dto.ReturnType,
             dto.Value,
-            dto.OperatorId,
             dto.DelayDuration,
             dto.CustomizingFields || [],
             dto.LayoutJson,
@@ -65,7 +64,6 @@ export class ReturnMethodController {
         const result = await this.returnMethodService.updateReturnMethod(
             dto.Id,
             dto.ConfigurationName,
-            dto.OperatorId,
             dto.Value,
             dto.CustomizingFields,
             dto.LayoutJson,

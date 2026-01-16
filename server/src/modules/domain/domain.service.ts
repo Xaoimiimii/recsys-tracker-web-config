@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { randomBytes } from 'crypto';
+import { UserIdentityDto } from './dto';
+import { Prisma } from 'src/generated/prisma/client';
 
 @Injectable()
 export class DomainService {
@@ -18,7 +20,7 @@ export class DomainService {
         }
     }
 
-    async createDomain(ternantId: number, url: string, Type: number) {
+    async createDomain(ternantId: number, url: string, Type: number, userIdentity: UserIdentityDto) {
         if (!url.startsWith('http://') && !url.startsWith('https://')) return null;
 
         if (!this.prisma.ternant.findUnique({
@@ -39,6 +41,15 @@ export class DomainService {
             }
         });
 
+        await this.prisma.userIdentity.create({
+            data: {
+                Source: userIdentity.Source,
+                DomainId: domain.Id,
+                RequestConfig: userIdentity.RequestConfig as Prisma.InputJsonValue,
+                Value: userIdentity.Value
+            }
+        })
+
         return domain;
     }
 
@@ -54,6 +65,9 @@ export class DomainService {
         const domains = await this.prisma.domain.findMany({
             where: {
                 TernantID: ternantId
+            },
+            include: {
+                UserIdentities: true
             }
         });
         return domains;
