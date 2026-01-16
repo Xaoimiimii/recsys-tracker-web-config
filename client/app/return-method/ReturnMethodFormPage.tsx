@@ -891,11 +891,20 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
 
                 <div className={styles.formRow}>
                     <div className={styles.formCol}>
-                        <label className={styles.fieldLabel}>Match Operator</label>
+                        <label className={styles.fieldLabel}>Target Type</label>
                         <input 
                             className={styles.selectInput}
-                            value="contains"
-                            disabled={isReadOnly}
+                            value="Page URL"
+                            disabled
+                        >
+                        </input>
+                    </div>
+                    <div className={styles.formCol}>
+                        <label className={styles.fieldLabel}>Match Condition</label>
+                        <input 
+                            className={styles.selectInput}
+                            value="Contains"
+                            disabled
                         >
                         </input>
                     </div>

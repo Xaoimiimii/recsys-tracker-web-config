@@ -991,7 +991,6 @@ input:disabled + .slider {
 } */
 
 input[type="color"] {
-    -webkit-appearance: none;
     border: none;
     width: 40px;
     height: 40px;
@@ -1474,8 +1473,7 @@ input[type="color"]::-webkit-color-swatch {
     display: flex;
     justify-content: flex-end;
     gap: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--color-border);
+    padding-top: 0.5rem;
 }
 
 .cancelButton {
