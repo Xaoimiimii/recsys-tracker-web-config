@@ -33,7 +33,6 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
     // --- STATE ---
     const [displayType, setDisplayType] = useState<DisplayType>('popup');
     const [name, setName] = useState('');
-    const [operatorId, setOperatorId] = useState<number>(1);
     const [value, setValue] = useState('');
     
     // Custom Widget fields
@@ -63,9 +62,8 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
     const [customFields, setCustomFields] = useState<CustomizingFields>(DEFAULT_CUSTOM_FIELDS);
     const [delayedDuration, setDelayedDuration] = useState<number>(0);
 
-    // Get cached operators from context
+    // Get cached data from context
     const { 
-        operators, 
         clearReturnMethodsByDomain,
         getSearchInputsByDomain,
         setSearchInputsByDomain 
@@ -278,7 +276,6 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                 Key: container.uuid,
                 ConfigurationName: name,
                 ReturnType: displayType === 'popup' ? ReturnType.POPUP : ReturnType.INLINE_INJECTION,
-                OperatorId: operatorId,
                 Value: value,
                 Duration: delayedDuration,
                 LayoutJson: { ...layoutJson, displayMode: displayType },
@@ -895,27 +892,12 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                 <div className={styles.formRow}>
                     <div className={styles.formCol}>
                         <label className={styles.fieldLabel}>Match Operator</label>
-                        <select 
+                        <input 
                             className={styles.selectInput}
-                            value={operatorId}
-                            onChange={(e) => setOperatorId(Number(e.target.value))}
+                            value="contains"
                             disabled={isReadOnly}
                         >
-                            {operators.length > 0 ? (
-                                operators.map(op => (
-                                    <option key={op.Id} value={op.Id}>
-                                        {op.Name}
-                                    </option>
-                                ))
-                            ) : (
-                                <>
-                                    <option value="1">Contains</option>
-                                    <option value="2">Equals</option>
-                                    <option value="3">Starts with</option>
-                                    <option value="4">Ends with</option>
-                                </>
-                            )}
-                        </select>
+                        </input>
                     </div>
                     <div className={styles.formCol} style={{ flex: 2 }}>
                         <label className={styles.fieldLabel}>
@@ -933,8 +915,8 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                 <div className={styles.formRow} style={{ marginTop: '0.5rem' }}>
                     <p className={styles.helperText}>
                         {displayType === 'inline-injection' 
-                            ? `The widget will appear inside elements where the class/id ${operators.find(op => op.Id === operatorId)?.Name || 'contains'} this value.` 
-                            : `The popup will appear when the page URL ${operators.find(op => op.Id === operatorId)?.Name || 'contains'} this value.`}
+                            ? `The widget will appear inside elements where the class/id contains this value.` 
+                            : `The popup will appear when the page URL contains this value.`}
                     </p>
                 </div>
             </div>

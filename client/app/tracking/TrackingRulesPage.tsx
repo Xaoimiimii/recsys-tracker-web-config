@@ -39,7 +39,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
             setIsLoading(true);
             setFetchError(false);
             try {
-                // API now returns full details including PayloadMappings, Conditions, TrackingTarget, EventType
+                // API now returns full details including ItemIdentities, TrackingTarget, EventType
                 const rulesData = await ruleApi.getRulesByDomain(container.uuid);
                 setRules(rulesData);
                 setRulesByDomain(container.uuid, rulesData);
@@ -68,7 +68,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                 id: r.Id.toString(),
                 name: r.Name,
                 trigger: r.EventType.Name,
-                selector: r.TrackingTarget?.Value || '',
+                selector: r.TrackingTarget || '',
                 extraction: []
             }));
             setContainer({
@@ -113,7 +113,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                 id: r.Id.toString(),
                 name: r.Name,
                 trigger: r.EventType.Name,
-                selector: r.TrackingTarget?.Value || '',
+                selector: r.TrackingTarget || '',
                 extraction: []
             }));
             setContainer({
@@ -141,7 +141,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                 id: ruleToView.Id.toString(),
                 name: ruleToView.Name,
                 trigger: ruleToView.EventType.Name.toLowerCase(),
-                selector: ruleToView.TrackingTarget?.Value || '',
+                selector: ruleToView.TrackingTarget || '',
                 extraction: []
             };
             // Map to RuleDetailResponse format for compatibility
@@ -150,10 +150,9 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                 Name: ruleToView.Name,
                 DomainID: ruleToView.DomainID,
                 EventTypeID: ruleToView.EventTypeID,
-                TrackingTargetId: ruleToView.TrackingTargetId,
                 TrackingTarget: ruleToView.TrackingTarget,
-                Conditions: ruleToView.Conditions,
-                PayloadMappings: ruleToView.PayloadMappings
+                ActionType: ruleToView.ActionType,
+                ItemIdentities: ruleToView.ItemIdentities
             };
             setCurrentRule(mappedRule);
             setCurrentRuleDetails(details);
@@ -170,7 +169,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                 id: ruleToEdit.Id.toString(),
                 name: ruleToEdit.Name,
                 trigger: ruleToEdit.EventType.Name.toLowerCase(),
-                selector: ruleToEdit.TrackingTarget?.Value || '',
+                selector: ruleToEdit.TrackingTarget || '',
                 extraction: []
             };
             // Map to RuleDetailResponse format for compatibility
@@ -179,10 +178,9 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                 Name: ruleToEdit.Name,
                 DomainID: ruleToEdit.DomainID,
                 EventTypeID: ruleToEdit.EventTypeID,
-                TrackingTargetId: ruleToEdit.TrackingTargetId,
                 TrackingTarget: ruleToEdit.TrackingTarget,
-                Conditions: ruleToEdit.Conditions,
-                PayloadMappings: ruleToEdit.PayloadMappings
+                ActionType: ruleToEdit.ActionType,
+                ItemIdentities: ruleToEdit.ItemIdentities
             };
             setCurrentRule(mappedRule);
             setCurrentRuleDetails(details);

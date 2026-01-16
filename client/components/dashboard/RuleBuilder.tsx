@@ -646,64 +646,43 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     setIsSaving(true);
     
     try {
-      // Transform payload mappings
-      const payloadMappings = rule.payloadMappings.map(mapping => {
-        const backendMapping: any = {
-          Field: FIELD_TO_BACKEND[mapping.field] || mapping.field,
-          Source: SOURCE_TO_BACKEND[mapping.source]
-        };
-
-        // Set values based on source type
-        if (mapping.source === MappingSource.REQUEST_BODY) {
-          backendMapping.RequestUrlPattern = mapping.requestUrlPattern || null;
-          backendMapping.RequestMethod = mapping.requestMethod || 'POST';
-          backendMapping.RequestBodyPath = mapping.value || null;
-          backendMapping.Value = null;
-          backendMapping.UrlPart = null;
-          backendMapping.UrlPartValue = null;
-        } else if (mapping.source === MappingSource.REQUEST_URL) {
-          backendMapping.RequestUrlPattern = mapping.requestUrlPattern || null;
-          backendMapping.RequestMethod = mapping.requestMethod || 'POST';
-          backendMapping.RequestBodyPath = null;
-          backendMapping.Value = mapping.value || null;
-          backendMapping.UrlPart = null;
-          backendMapping.UrlPartValue = null;
-        } 
-        // else if (mapping.source === MappingSource.URL) {
-        //   backendMapping.UrlPart = mapping.urlPart || 'PathName';
-        //   backendMapping.UrlPartValue = mapping.urlPartValue || null;
-        //   backendMapping.Value = null;
-        //   backendMapping.RequestUrlPattern = null;
-        //   backendMapping.RequestMethod = null;
-        //   backendMapping.RequestBodyPath = null;
-        // } 
-        else {
-          // Element, Cookie, LocalStorage, SessionStorage
-          backendMapping.Value = mapping.value || null;
-          backendMapping.RequestUrlPattern = null;
-          backendMapping.RequestMethod = null;
-          backendMapping.RequestBodyPath = null;
-          backendMapping.UrlPart = null;
-          backendMapping.UrlPartValue = null;
-        }
-
-        return backendMapping;
-      });
-
-      // Transform tracking target (NULL for Scroll and Page view)
-      let trackingTarget = null;
-      if (rule.eventType !== EventType.SCROLL && rule.eventType !== EventType.PAGE_VIEW && rule.targetElement) {
-        trackingTarget = {
-          PatternId: 1,
-          OperatorId: 1,
-          Value: rule.targetElement.selector || ''
-        };
-      }
-
       // Get the selected interaction type details
       const selectedInteraction = interactionTypes.find(it => it.label === selectedInteractionType);
       const eventTypeId = selectedInteraction?.eventTypeId || EVENT_TYPE_TO_ID[rule.eventType];
       const actionType = selectedInteraction?.actionType || null;
+
+      // Transform tracking target (NULL for Scroll and Page view, just selector string for others)
+      let trackingTarget: string | null = null;
+      if (rule.eventType !== EventType.SCROLL && rule.eventType !== EventType.PAGE_VIEW && rule.targetElement) {
+        trackingTarget = rule.targetElement.selector || '';
+      }
+
+      // Find ItemId mapping to create ItemIdentity
+      const itemMapping = rule.payloadMappings.find(m => m.field === 'itemId');
+      let itemIdentity: any = null;
+      
+      if (itemMapping) {
+        if (itemMapping.source === MappingSource.REQUEST_BODY) {
+          itemIdentity = {
+            Source: 'request_body',
+            TrackingRuleId: 0, // Will be set by backend
+            RequestConfig: {
+              RequestUrlPattern: itemMapping.requestUrlPattern || null,
+              RequestMethod: itemMapping.requestMethod || 'POST',
+              RequestBodyPath: itemMapping.value || null
+            }
+          };
+        } else if (itemMapping.source === MappingSource.REQUEST_URL) {
+          itemIdentity = {
+            Source: 'request_url',
+            TrackingRuleId: 0, // Will be set by backend
+            RequestConfig: {
+              RequestUrlPattern: itemMapping.requestUrlPattern || null,
+              RequestMethod: itemMapping.requestMethod || 'GET'
+            }
+          };
+        }
+      }
 
       // Prepare the payload
       const payload = {
@@ -711,8 +690,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
         DomainKey: domainKey,
         EventTypeId: eventTypeId,
         ActionType: actionType,
-        Conditions: [],
-        PayloadMappings: payloadMappings,
+        ItemIdentity: itemIdentity,
         TrackingTarget: trackingTarget
       };
 
