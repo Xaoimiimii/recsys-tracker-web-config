@@ -40,9 +40,17 @@ export interface UserState {
 
 // ==================== DOMAIN TYPES ====================
 
+export interface UserIdentityDto {
+  Source: 'local_storage' | 'session_storage' | 'cookie' | 'request_body' | 'element';
+  RequestConfig: any;
+  Value: string;
+  IsActivated: boolean;
+}
+
 export interface CreateDomainDto {
   url: string;
   type: number;
+  UserIdentity: UserIdentityDto;
 }
 
 export interface DomainResponse {
@@ -122,9 +130,9 @@ export interface CreateRule {
   Name: string;
   DomainKey: string;
   EventTypeId: number;
-  ItemIdentity: ItemIdentity;
+  PayloadMapping: any[];
   TrackingTarget: string;
-  ActionType?: string;
+  ActionType?: string | null;
 }
 
 export interface RuleDetailResponse {

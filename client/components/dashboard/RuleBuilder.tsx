@@ -1,12 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Lightbulb, X, Fingerprint, Target, Filter, Plus, Trash2, Database, AlertCircle, Loader2, Save } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Lightbulb, X, Fingerprint, Target, Database, AlertCircle, Loader2, Save } from 'lucide-react';
 import styles from './RuleBuilder.module.css';
 import { ruleApi } from '../../lib/api/rule';
-import { useDataCache } from '../../contexts/DataCacheContext';
 
 // ==================== TYPES ====================
 
-// Interaction Type Definition
 export interface InteractionTypeOption {
   label: string;
   actionType: ActionType | null;
@@ -64,33 +62,13 @@ export const DOMAIN_INTERACTION_TYPES: Record<string, InteractionTypeOption[]> =
 export enum EventType {
   CLICK = 'Click',
   RATING = 'Rating',
-  REVIEW = 'Review',
-  SCROLL = 'Scroll',
-  PAGE_VIEW = 'Page view'
+  REVIEW = 'Review'
 }
 
 export enum MappingSource {
   REQUEST_BODY = 'request_body',
   REQUEST_URL = 'request_url',
-  ELEMENT = 'element',
-  COOKIE = 'cookie',
-  LOCAL_STORAGE = 'local_storage',
-  SESSION_STORAGE = 'session_storage',
-  // URL = 'page_url',
-}
-
-export interface PayloadMapping {
-  field: string;
-  source: MappingSource;
-  value?: string;
-  requestUrlPattern?: string;
-  requestMethod?: 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'GET';
-  requestBodyPath?: string;
-  fullUrl?: string;
-  pathname?: string;
-  queryString?: string;
-  urlPart?: 'PathName' | 'QueryParam';
-  urlPartValue?: string;
+  ELEMENT = 'element'
 }
 
 export enum ActionType {
@@ -101,84 +79,66 @@ export enum ActionType {
   PURCHASE = 'Purchase'
 }
 
+export interface PayloadMapping {
+  field: string;
+  source: MappingSource;
+  value?: string;
+  requestUrlPattern?: string;
+  requestMethod?: 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'GET';
+  urlExtractType?: 'pathname' | 'query';
+}
+
 export interface TrackingRule {
   id: string;
   name: string;
   eventType: EventType;
   actionType?: ActionType;
   targetElement?: {
-    operator: string;
-    value: string;
+    selector: string;
   };
   payloadMappings: PayloadMapping[];
 }
 
 // ==================== CONSTANTS ====================
-export const EVENT_TYPE_OPTIONS = Object.values(EventType);
 
 export const EVENT_DESCRIPTIONS: Record<EventType, string> = {
-  [EventType.CLICK]: "Tracks click behaviors on interface elements like Buttons, Links, or Icons.",
+  [EventType.CLICK]: "Tracks click behaviors on interface elements like Buttons or Icons.",
   [EventType.RATING]: "Records user rating actions through score or star components.",
-  [EventType.REVIEW]: "Collects data when users submit text comments or detailed feedback.",
-  [EventType.SCROLL]: "Monitors page scroll depth to measure content engagement.",
-  [EventType.PAGE_VIEW]: "Measures page views or screen transitions within the application."
+  [EventType.REVIEW]: "Collects data when users submit text comments or detailed feedback."
 };
 
 export const TARGET_SUGGESTIONS: Record<EventType, string> = {
-  [EventType.CLICK]: "Suggested: #add-to-cart, .add-to-cart, favorite-btn, .bookmark-icon, .buy-now, .purchase-button",
-  [EventType.RATING]: "Suggested: .rating, .rating-stars, .star, .star-rating, input[type=radio][name*=rating], [data-rating]",
-  [EventType.REVIEW]: "Suggested: #review, #review-box, .review-box, .review-textarea, textarea[name*=review], textarea[placeholder*=review], .submit-review, .btn-submit-review",
-  [EventType.SCROLL]: "",
-  [EventType.PAGE_VIEW]: ""
+  [EventType.CLICK]: "Suggested: #add-to-cart, .add-to-cart, favorite-btn, .bookmark-icon",
+  [EventType.RATING]: "Suggested: .rating, .rating-stars, .star, input[type=radio][name*=rating]",
+  [EventType.REVIEW]: "Suggested: #review, .review-box, textarea[name*=review], .submit-review"
 };
 
 export interface SectionExample {
   title: string;
   htmlContext?: string;
   config: string;
-  config2?: string;
 }
 
 const PAYLOAD_COMMON_EXAMPLES: SectionExample[] = [
   {
     title: "Request Body Mapping",
-    htmlContext: "// Request Sample (POST)\nURL: /api/v1/reviews/submit\nBody: { \"content\": \"Great!\", \"user_id\": 501 }\n\n// Response Body (Short)\n{ \"status\": \"ok\", \"id\": \"rev_99\" }",
+    htmlContext: "// Request Sample (POST)\nURL: /api/v1/reviews/submit\nBody: { \"content\": \"Great!\", \"user_id\": 501 }",
     config: "Source: request_body | URL Pattern: /api/v1/reviews/submit | Method: POST | Path: content"
   },
   {
+    title: "Request URL - PathName Mapping",
+    htmlContext: "// Sample request URL\nhttps://example.com/api/product/2912917937/details",
+    config: "RequestUrlPattern: \"/api/product/{id}\" | RequestMethod: \"GET\" | PathName - SegmentIndex: 3 (gets '2912917937')"
+  },
+  {
+    title: "Request URL - Query Parameter Mapping",
+    htmlContext: "// Sample request URL\nhttps://example.com/api/submit-review?item_id=2912917937&ref=homepage",
+    config: "RequestUrlPattern: \"/api/submit-review\" | RequestMethod: \"POST\" | QueryParam - Key: item_id"
+  },
+  {
     title: "Element Mapping",
-    htmlContext: "// Target div containing review text\n<div class=\"review-card\">\n  <p class=\"review-text\">Best product ever!</p>\n  <span data-id=\"item_404\"></span>\n</div>",
-    config: "Source: element | Path: .review-card .review-text"
-  },
-  {
-    title: "Global JS Object Mapping",
-    htmlContext: "// Value stored in window object\nwindow.APP_CONFIG = {\n  currentUser: { id: \"u_789\", name: \"John\" }\n};",
-    config: "Source: global | Path: APP_CONFIG.currentUser.id"
-  },
-  {
-    title: "Cookie Mapping",
-    htmlContext: "// Value stored in browser cookies\ndocument.cookie: \"session_id=xyz123; user_type=vip\"",
-    config: "Source: cookie | Path: session_id"
-  },
-  {
-    title: "Local Storage Mapping",
-    htmlContext: "// Value stored in Local Storage\nlocalStorage.getItem(\"user_prefs\"): '{\"theme\": \"dark\", \"id\": \"123\"}'",
-    config: "Source: local_storage | Path: user_prefs.id"
-  },
-  {
-    title: "Session Storage Mapping",
-    htmlContext: "// Value stored in Session Storage\nsessionStorage.getItem(\"temp_token\"): \"tmp_abc_555\"",
-    config: "Source: session_storage | Path: temp_token"
-  },
-  {
-    title: "URL - PathName Mapping",
-    htmlContext: "// Sample URL\nhttps://example.com/product/iphone-15/details\n\n// Parse Results\nPathName: /product/iphone-15/details\nquery: (none)",
-    config: "Source: url | URL Part: PathName | Segment Index: 2 (gets 'iphone-15')"
-  },
-  {
-    title: "URL - Query Param Mapping",
-    htmlContext: "// Sample URL\nhttps://example.com/search?q=shoes&category=mens\n\n// Parse Results\nPathName: /search\nquery: q=shoes&category=mens",
-    config: "Source: url | URL Part: QueryParam | Key: q (gets 'shoes')"
+    htmlContext: "// Target div containing item ID\n<div class=\"product-card\" data-id=\"item_404\"></div>",
+    config: "Source: element | Path: .product-card"
   }
 ];
 
@@ -188,121 +148,63 @@ export const SECTION_EXAMPLES: Record<string, Record<EventType, SectionExample[]
       { 
         title: "Buy Button Example", 
         htmlContext: '<button class="btn-buy" id="cart-add">Add to Cart</button>',
-        config: "Target Type: 'CSS Selector' | Match Condition: 'Contains' | Value: '.btn-buy'",
-        config2: "Target Type: 'CSS Selector' | Match Condition: 'Contains' | Value: '#cart-add'" 
+        config: "Target Type: 'CSS Selector' | Value: '.btn-buy' or '#cart-add'" 
       }
     ],
     [EventType.RATING]: [
       { 
         title: "Star Rating Component", 
         htmlContext: '<div class="rating-stars" data-value="5"></div>',
-        config: "Target Type: 'CSS Selector' | Match Condition: 'Contains' | Value: '.submit-rating'",
-        config2: "Target Type: 'CSS Selector' | Match Condition: 'Contains' | Value: '#submit-rating'"
+        config: "Target Type: 'CSS Selector' | Value: '.submit-rating' or '#submit-rating'"
       }
     ],
     [EventType.REVIEW]: [
       { 
         title: "Submit Feedback Form", 
-        htmlContext: '<form id="review-form">\n  <textarea name="review" placeholder="Write your review..."></textarea>\n  <button type="submit">Submit</button>\n</form>',
-        config: "Target Type: 'CSS Selector' | Match Condition: 'Contains' | Value: '#review-form'",
-        config2: "Target Type: 'CSS Selector' | Match Condition: 'Contains' | Value: 'textarea[name=review]'"
+        htmlContext: '<form id="review-form">\n  <textarea name="review"></textarea>\n  <button type="submit">Submit</button>\n</form>',
+        config: "Target Type: 'CSS Selector' | Value: '#review-form' or 'textarea[name=review]'"
       }
-    ],
-    [EventType.SCROLL]: [],
-    [EventType.PAGE_VIEW]: []
+    ]
   },
   payload: {
     [EventType.CLICK]: PAYLOAD_COMMON_EXAMPLES,
     [EventType.REVIEW]: PAYLOAD_COMMON_EXAMPLES,
-    [EventType.RATING]: PAYLOAD_COMMON_EXAMPLES,
-    [EventType.SCROLL]: PAYLOAD_COMMON_EXAMPLES,
-    [EventType.PAGE_VIEW]: PAYLOAD_COMMON_EXAMPLES
+    [EventType.RATING]: PAYLOAD_COMMON_EXAMPLES
   }
-};
-
-export const MAPPING_SOURCES = Object.values(MappingSource);
-
-export const OPERATORS = ['Contains', 'Equals', 'Starts with', 'Ends with'];
-
-// Mapping constants for API
-export const EVENT_TYPE_TO_ID: Record<EventType, number> = {
-  [EventType.CLICK]: 1,
-  [EventType.RATING]: 2,
-  [EventType.REVIEW]: 3,
-  [EventType.SCROLL]: 4,
-  [EventType.PAGE_VIEW]: 5
-};
-
-export const PATTERN_TO_ID: Record<string, number> = {
-  'CSS Selector': 1,
-  'URL': 2,
-  'Data Attribute': 3
-};
-
-export const SOURCE_TO_BACKEND: Record<MappingSource, string> = {
-  [MappingSource.REQUEST_BODY]: 'RequestBody',
-  [MappingSource.REQUEST_URL]: 'RequestUrl',
-  [MappingSource.ELEMENT]: 'Element',
-  [MappingSource.COOKIE]: 'Cookie',
-  [MappingSource.LOCAL_STORAGE]: 'LocalStorage',
-  [MappingSource.SESSION_STORAGE]: 'SessionStorage',
-  // [MappingSource.URL]: 'Url'
-};
-
-export const FIELD_TO_BACKEND: Record<string, string> = {
-  'userId': 'UserId',
-  'anonymousId': 'AnonymousId',
-  'itemId': 'ItemId',
-  'itemTitle': 'ItemTitle',
-  'rating_value': 'Value',
-  'review_text': 'Value'
 };
 
 export const INITIAL_MAPPINGS: Record<string, string[]> = {
   [EventType.CLICK]: ['itemId'],
   [EventType.RATING]: ['itemId', 'rating_value'],
-  [EventType.REVIEW]: ['itemId', 'review_text'],
-  [EventType.SCROLL]: ['itemId'],
-  [EventType.PAGE_VIEW]: ['itemId'],
+  [EventType.REVIEW]: ['itemId', 'review_text']
 };
 
 // ==================== COMPONENT ====================
+
 interface RuleBuilderProps {
-  initialRule?: any;
-  ruleDetails?: any;
-  isViewMode?: boolean;
   onSave: (response: { statusCode: number; message: string }) => void;
   onCancel: () => void;
   domainKey: string;
   domainType?: string;
-  userConfig?: {
-    mode: 'anonymousId' | 'userId';
-    source: 'local_storage' | 'cookie' | 'session_storage' | 'request_body' | 'element';
-    value: string;
-    requestUrlPattern?: string;
-    requestMethod?: 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'GET';
-  };
 }
 
 export const RuleBuilder: React.FC<RuleBuilderProps> = ({ 
-  initialRule, 
-  ruleDetails, 
-  isViewMode = false, 
   onSave, 
   onCancel, 
   domainKey,
   domainType = 'General'
 }) => {
   
+  const interactionTypes = DOMAIN_INTERACTION_TYPES[domainType] || DOMAIN_INTERACTION_TYPES['General'];
+  const [selectedInteractionType, setSelectedInteractionType] = useState<string>(interactionTypes[0]?.label || '');
+  
   const [rule, setRule] = useState<TrackingRule>({
     id: 'new-rule-' + Date.now(),
     name: '',
     eventType: EventType.CLICK,
     actionType: ActionType.VIEW,
-    targetElement: { selector: '', operator: 'contains', value: '' },
-    payloadMappings: [
-      { field: 'itemId', source: MappingSource.ELEMENT, path: '.product-id', required: true }
-    ],
+    targetElement: { selector: '' },
+    payloadMappings: []
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -312,120 +214,18 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     payloadMappings?: { [key: number]: string };
   }>({});
   const [modalContent, setModalContent] = useState<{title: string, examples: SectionExample[]} | null>(null);
-  const [selectedInteractionType, setSelectedInteractionType] = useState<string>('');
-  const interactionTypes = DOMAIN_INTERACTION_TYPES[domainType] || DOMAIN_INTERACTION_TYPES['General'];
 
-  // Load data from ruleDetails when viewing a rule
+  // Initialize payloadMappings when interaction type changes
   useEffect(() => {
-    if (ruleDetails && isViewMode) {
-      // Helper function to convert backend source to frontend enum
-      const convertSource = (source: string): MappingSource => {
-        const sourceMap: Record<string, MappingSource> = {
-          'RequestBody': MappingSource.REQUEST_BODY,
-          'RequestUrl': MappingSource.REQUEST_URL,
-          'Element': MappingSource.ELEMENT,
-          'Cookie': MappingSource.COOKIE,
-          'LocalStorage': MappingSource.LOCAL_STORAGE,
-          'SessionStorage': MappingSource.SESSION_STORAGE,
-          // 'Url': MappingSource.URL
-        };
-        return sourceMap[source] || MappingSource.ELEMENT;
-      };
-
-      // Helper function to convert backend field to frontend field
-      const convertField = (field: string): string => {
-        const fieldMap: Record<string, string> = {
-          'UserId': 'userId',
-          'AnonymousId': 'anonymousId',
-          'ItemId': 'itemId',
-          'ItemTitle': 'itemTitle',
-          'Value': ruleDetails.EventType?.Name === 'Rating' ? 'rating_value' : 'review_text'
-        };
-        return fieldMap[field] || field.toLowerCase();
-      };
-
-      // Convert EventType
-      const eventTypeMap: Record<string, EventType> = {
-        '1': EventType.CLICK,
-        '2': EventType.RATING,
-        '3': EventType.REVIEW,
-        '4': EventType.SCROLL,
-        '5': EventType.PAGE_VIEW
-      };
-
-      // Transform PayloadMappings
-      const payloadMappings: PayloadMapping[] = ruleDetails.PayloadMappings.map((mapping: any) => {
-        const source = convertSource(mapping.Source);
-        const result: PayloadMapping = {
-          field: convertField(mapping.Field),
-          source: source
-        };
-
-        if (source === MappingSource.REQUEST_BODY) {
-          result.requestUrlPattern = mapping.RequestUrlPattern || '';
-          result.requestMethod = mapping.RequestMethod || 'POST';
-          result.value = mapping.RequestBodyPath || '';
-        } 
-        else if (source === MappingSource.REQUEST_URL) {
-          result.requestUrlPattern = mapping.RequestUrlPattern || '';
-          result.requestMethod = mapping.RequestMethod || 'POST';
-          result.value = mapping.Value || '';
-        }
-        // else if (source === MappingSource.URL) {
-        //   result.urlPart = mapping.UrlPart || 'PathName';
-        //   result.urlPartValue = mapping.UrlPartValue || '';
-        // } 
-        else {
-          result.value = mapping.Value || '';
-        }
-
-        return result;
-      });
-
-      // Transform TrackingTarget
-      let targetElement = undefined;
-      if (ruleDetails.TrackingTarget) {
-        targetElement = {
-          selector: ruleDetails.TrackingTarget.Value || '',
-          operator: 'contains',
-          value: ruleDetails.TrackingTarget.Value || ''
-        };
-      }
-
-      setRule({
-        id: ruleDetails.Id.toString(),
-        name: ruleDetails.Name || '',
-        eventType: eventTypeMap[ruleDetails.EventTypeID] || EventType.CLICK,
-        actionType: ruleDetails.ActionType || null,
-        targetElement: targetElement,
-        payloadMappings: payloadMappings
-      });
-      
-      // Set selectedInteractionType based on ruleDetails
-      const matchingInteraction = interactionTypes.find(
-        it => it.eventTypeId === ruleDetails.EventTypeID && 
-              (it.actionType === ruleDetails.ActionType || (it.actionType === null && !ruleDetails.ActionType))
-      );
-      if (matchingInteraction) {
-        setSelectedInteractionType(matchingInteraction.label);
-      }
-    }
-  }, [ruleDetails, isViewMode, interactionTypes]);
-
-  // Effect to handle interaction type changes
-  useEffect(() => {
-    if (!selectedInteractionType || isViewMode) return;
+    if (!selectedInteractionType) return;
     
     const selectedInteraction = interactionTypes.find(it => it.label === selectedInteractionType);
     if (!selectedInteraction) return;
     
-    // Map eventTypeId to EventType enum
     const eventTypeMap: Record<number, EventType> = {
       1: EventType.CLICK,
       2: EventType.RATING,
-      3: EventType.REVIEW,
-      4: EventType.SCROLL,
-      5: EventType.PAGE_VIEW
+      3: EventType.REVIEW
     };
     
     const eventType = eventTypeMap[selectedInteraction.eventTypeId] || EventType.CLICK;
@@ -435,127 +235,61 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
       ...prev,
       eventType: eventType,
       actionType: selectedInteraction.actionType as any,
-      // Set targetElement to NULL for Scroll and Page view
-      targetElement: (eventType === EventType.SCROLL || eventType === EventType.PAGE_VIEW) 
-        ? undefined 
-        : prev.targetElement || { selector: '', operator: 'equals', value: '' },
+      targetElement: { selector: '' },
       payloadMappings: initialFields.map(field => ({
         field,
-        source: field.toLowerCase().includes('user') ? MappingSource.LOCAL_STORAGE : MappingSource.ELEMENT,
+        source: MappingSource.ELEMENT,
         value: '',
-        required: true
+        urlExtractType: 'pathname'
       }))
     }));
-  }, [selectedInteractionType, isViewMode, interactionTypes]);
-  
-  // Initialize selectedInteractionType on mount
-  useEffect(() => {
-    if (!selectedInteractionType && !isViewMode && !ruleDetails) {
-      // Default to first interaction type
-      if (interactionTypes.length > 0) {
-        setSelectedInteractionType(interactionTypes[0].label);
-      }
-    }
-  }, []);
+  }, [selectedInteractionType, interactionTypes]);
 
+  // Handle mapping updates
   const handleUpdateMapping = (index: number, updates: Partial<PayloadMapping>) => {
     const newMappings = [...rule.payloadMappings];
     let updatedMapping = { ...newMappings[index], ...updates };
 
-    const nextField = (updates.field ?? newMappings[index].field);
-
-    if (nextField === 'anonymousId') {
-      updatedMapping = {
-        ...updatedMapping,
-        source: MappingSource.LOCAL_STORAGE,
-        value: 'recsys_anon_id',
-        requestUrlPattern: undefined,
-        requestMethod: undefined,
-        requestBodyPath: undefined,
-        urlPart: undefined,
-        urlPartValue: undefined,
-        fullUrl: undefined,
-        pathname: undefined,
-        queryString: undefined,
-      };
-    } else if (updates.source) {
+    // Reset fields when source changes
+    if (updates.source) {
       if (updates.source === MappingSource.REQUEST_URL) {
         updatedMapping = {
           ...updatedMapping,
-          requestBodyPath: undefined,
-          urlPart: undefined,
-          urlPartValue: undefined,
-          fullUrl: undefined,
-          pathname: undefined,
-          queryString: undefined
+          value: '',
+          requestUrlPattern: '',
+          requestMethod: 'GET',
+          urlExtractType: 'pathname'
         };
       } else if (updates.source === MappingSource.REQUEST_BODY) {
         updatedMapping = {
           ...updatedMapping,
-          value: undefined,
-          urlPart: undefined,
-          urlPartValue: undefined,
-          fullUrl: undefined,
-          pathname: undefined,
-          queryString: undefined
+          value: '',
+          requestUrlPattern: '',
+          requestMethod: 'POST',
+          urlExtractType: undefined
         };
-      } 
-      // else if (updates.source === MappingSource.URL) {
-      //   updatedMapping = {
-      //     ...updatedMapping,
-      //     value: undefined,
-      //     requestUrlPattern: undefined,
-      //     requestMethod: undefined,
-      //     requestBodyPath: undefined
-      //   };
-      // } 
-      else if ([MappingSource.ELEMENT, MappingSource.COOKIE, MappingSource.LOCAL_STORAGE, MappingSource.SESSION_STORAGE].includes(updates.source)) {
+      } else if (updates.source === MappingSource.ELEMENT) {
         updatedMapping = {
           ...updatedMapping,
+          value: '',
           requestUrlPattern: undefined,
           requestMethod: undefined,
-          requestBodyPath: undefined,
-          urlPart: undefined,
-          urlPartValue: undefined,
-          fullUrl: undefined,
-          pathname: undefined,
-          queryString: undefined
+          urlExtractType: undefined
         };
       }
+    }
+
+    // Reset value when urlExtractType changes for request_url
+    if (updates.urlExtractType && newMappings[index].source === MappingSource.REQUEST_URL) {
+      updatedMapping.value = '';
     }
 
     newMappings[index] = updatedMapping;
     setRule(prev => ({ ...prev, payloadMappings: newMappings }));
   };
 
-  const parseUrl = useCallback((index: number, url: string) => {
-    setRule(prev => {
-      const newMappings = [...prev.payloadMappings];
-      const currentMapping = newMappings[index];
-      
-      try {
-        const parsed = new URL(url);
-        newMappings[index] = {
-          ...currentMapping,
-          fullUrl: url,
-          pathname: parsed.pathname,
-          queryString: parsed.search.slice(1)
-        };
-      } catch (e) {
-        newMappings[index] = {
-          ...currentMapping,
-          fullUrl: url,
-          pathname: 'Invalid URL',
-          queryString: ''
-        };
-      }
-      
-      return { ...prev, payloadMappings: newMappings };
-    });
-  }, []);
-
+  // Save handler
   const handleSave = async () => {
-    // Clear previous errors
     setErrors({});
     const newErrors: {
       ruleName?: string;
@@ -563,78 +297,30 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
       payloadMappings?: { [key: number]: string };
     } = {};
 
-    // Validation 1: Rule Name is required
+    // Validation 1: Rule Name
     if (!rule.name.trim()) {
       newErrors.ruleName = 'Rule Name is required.';
     }
 
-    // Validation 2: Target element value is required for Click/Rating/Review
-    if ([EventType.CLICK, EventType.RATING, EventType.REVIEW].includes(rule.eventType)) {
-      if (!rule.targetElement?.selector?.trim()) {
-        newErrors.targetElement = 'Target Element value is required for this event type.';
-      }
+    // Validation 2: Target Element
+    if (!rule.targetElement?.selector?.trim()) {
+      newErrors.targetElement = 'Target Element selector is required.';
     }
 
-    // Validation 3: Payload Mapping validations
+    // Validation 3: Payload Mappings
     const payloadErrors: { [key: number]: string } = {};
     rule.payloadMappings.forEach((mapping, idx) => {
-      // Check item fields (itemId, itemTitle) - required for all event types
-      if (['itemId', 'itemTitle'].includes(mapping.field)) {
-        if (mapping.source === MappingSource.REQUEST_BODY) {
-          if (!mapping.requestUrlPattern?.trim()) {
-            payloadErrors[idx] = 'URL Pattern is required when source is Request Body.';
-          } else if (!mapping.value?.trim()) {
-            payloadErrors[idx] = 'Body Path is required when source is Request Body.';
-          }
-        } 
-        // else if (mapping.source === MappingSource.URL) {
-        //   if (!mapping.urlPartValue?.trim()) {
-        //     payloadErrors[idx] = 'URL Part Value is required when source is URL.';
-        //   }
-        // }
-        else {
-          // Element, Cookie, LocalStorage, SessionStorage
-          if (!mapping.value?.trim()) {
-            payloadErrors[idx] = 'Path/Value is required.';
-          }
+      if (mapping.source === MappingSource.REQUEST_BODY) {
+        if (!mapping.requestUrlPattern?.trim() || !mapping.value?.trim()) {
+          payloadErrors[idx] = 'URL Pattern and Body Path are required.';
         }
-      }
-
-      // Check rating_value field
-      if (mapping.field === 'rating_value') {
-        if (mapping.source === MappingSource.REQUEST_BODY) {
-          if (!mapping.requestUrlPattern?.trim() || !mapping.value?.trim()) {
-            payloadErrors[idx] = 'URL Pattern and Body Path are required when source is Request Body.';
-          }
-        } 
-        // else if (mapping.source === MappingSource.URL) {
-        //   if (!mapping.urlPartValue?.trim()) {
-        //     payloadErrors[idx] = 'URL Part and its value are required when source is URL.';
-        //   }
-        // } 
-        else {
-          if (!mapping.value?.trim()) {
-            payloadErrors[idx] = 'Path/Value is required.';
-          }
+      } else if (mapping.source === MappingSource.REQUEST_URL) {
+        if (!mapping.requestUrlPattern?.trim() || !mapping.value?.trim()) {
+          payloadErrors[idx] = 'URL Pattern and value are required.';
         }
-      }
-
-      // Check review_text field
-      if (mapping.field === 'review_text') {
-        if (mapping.source === MappingSource.REQUEST_BODY) {
-          if (!mapping.requestUrlPattern?.trim() || !mapping.value?.trim()) {
-            payloadErrors[idx] = 'URL Pattern and Body Path are required when source is Request Body.';
-          }
-        } 
-        // else if (mapping.source === MappingSource.URL) {
-        //   if (!mapping.urlPartValue?.trim()) {
-        //     payloadErrors[idx] = 'URL Part and its value are required when source is URL.';
-        //   }
-        // } 
-        else {
-          if (!mapping.value?.trim()) {
-            payloadErrors[idx] = 'Path/Value is required.';
-          }
+      } else if (mapping.source === MappingSource.ELEMENT) {
+        if (!mapping.value?.trim()) {
+          payloadErrors[idx] = 'CSS Selector is required.';
         }
       }
     });
@@ -643,8 +329,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
       newErrors.payloadMappings = payloadErrors;
     }
 
-    // If there are any errors, set them and stop
-    if (Object.keys(newErrors).length > 0 || Object.keys(payloadErrors).length > 0) {
+    if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
@@ -652,55 +337,61 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     setIsSaving(true);
     
     try {
-      // Get the selected interaction type details
       const selectedInteraction = interactionTypes.find(it => it.label === selectedInteractionType);
-      const eventTypeId = selectedInteraction?.eventTypeId || EVENT_TYPE_TO_ID[rule.eventType];
+      const eventTypeId = selectedInteraction?.eventTypeId || 1;
       const actionType = selectedInteraction?.actionType || null;
 
-      // Transform tracking target (NULL for Scroll and Page view, just selector string for others)
-      let trackingTarget: string | null = null;
-      if (rule.eventType !== EventType.SCROLL && rule.eventType !== EventType.PAGE_VIEW && rule.targetElement) {
-        trackingTarget = rule.targetElement.selector || '';
-      }
+      const trackingTarget = rule.targetElement?.selector || '';
 
-      // Find ItemId mapping to create ItemIdentity
-      const itemMapping = rule.payloadMappings.find(m => m.field === 'itemId');
-      let itemIdentity: any = null;
+      // Build PayloadMapping from payload mappings
+      const fieldNameMap: Record<string, string> = {
+        'itemId': 'ItemId',
+        'rating_value': 'Rating',
+        'review_text': 'Review'
+      };
+
+      const payloadMapping: any[] = [];
       
-      if (itemMapping) {
-        if (itemMapping.source === MappingSource.REQUEST_BODY) {
-          itemIdentity = {
-            Source: 'request_body',
-            TrackingRuleId: 0, // Will be set by backend
-            RequestConfig: {
-              RequestUrlPattern: itemMapping.requestUrlPattern || null,
-              RequestMethod: itemMapping.requestMethod || 'POST',
-              RequestBodyPath: itemMapping.value || null
-            }
+      rule.payloadMappings.forEach(mapping => {
+        const fieldName = fieldNameMap[mapping.field];
+        if (!fieldName) return;
+
+        const mappingItem: any = {
+          Field: fieldName,
+          Source: mapping.source
+        };
+
+        if (mapping.source === MappingSource.REQUEST_BODY) {
+          mappingItem.Config = {
+            RequestUrlPattern: mapping.requestUrlPattern || null,
+            RequestMethod: mapping.requestMethod || 'POST',
+            Value: mapping.value || null
           };
-        } else if (itemMapping.source === MappingSource.REQUEST_URL) {
-          itemIdentity = {
-            Source: 'request_url',
-            TrackingRuleId: 0, // Will be set by backend
-            RequestConfig: {
-              RequestUrlPattern: itemMapping.requestUrlPattern || null,
-              RequestMethod: itemMapping.requestMethod || 'GET'
-            }
+        } else if (mapping.source === MappingSource.REQUEST_URL) {
+          mappingItem.Config = {
+            RequestUrlPattern: mapping.requestUrlPattern || null,
+            RequestMethod: mapping.requestMethod || 'GET',
+            Value: mapping.value || null,
+            ExtractType: mapping.urlExtractType || 'pathname'
+          };
+        } else if (mapping.source === MappingSource.ELEMENT) {
+          mappingItem.Config = {
+            SelectorPattern: mapping.value || null
           };
         }
-      }
 
-      // Prepare the payload
+        payloadMapping.push(mappingItem);
+      });
+
       const payload = {
         Name: rule.name,
         DomainKey: domainKey,
         EventTypeId: eventTypeId,
         ActionType: actionType,
-        ItemIdentity: itemIdentity,
+        PayloadMapping: payloadMapping,
         TrackingTarget: trackingTarget
       };
 
-      // Call the API
       const response = await ruleApi.create(payload);
       
       setIsSaving(false);
@@ -724,9 +415,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
 
   const SectionHeader = ({ title, icon, sectionKey, required = false }: { title: string, icon: React.ReactNode, sectionKey?: string, required?: boolean }) => (
     <div className={styles.sectionHeader}>
-      <div className={styles.headerIcon}>
-        {icon}
-      </div>
+      <div className={styles.headerIcon}>{icon}</div>
       <h3 className={styles.sectionTitle}>
         {title}
         {required && <span className={styles.required}>*</span>}
@@ -744,7 +433,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
 
   return (
     <div className={styles.mainContainer}>
-      {/* Modal Overlay */}
+      {/* Modal for Examples */}
       {modalContent && (
         <div className={styles.modalOverlay} onClick={() => setModalContent(null)}>
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
@@ -759,27 +448,15 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
               modalContent.examples.map((ex, i) => (
                 <div key={i} className={styles.exampleCard}>
                   <div className={styles.exampleLabel}>{ex.title}</div>
-                  
                   {ex.htmlContext && (
                     <div className={styles.exampleHtmlContext}>
-                      <p className={styles.exampleHtmlTitle}>Actual DIV / HTML example on website:</p>
-                      <pre className={styles.examplePre}>
-                        {ex.htmlContext}
-                      </pre>
+                      <p className={styles.exampleHtmlTitle}>HTML Example:</p>
+                      <pre className={styles.examplePre}>{ex.htmlContext}</pre>
                     </div>
                   )}
-
                   <div className={styles.exampleDivider}></div>
-                  
-                  <p className={styles.exampleConfigTitle}>Config sample:</p>
-                  <code className={`${styles.exampleCode} ${styles.exampleCodeNoMargin}`}>
-                    {ex.config}
-                  </code>
-                  {ex.config2 && (
-                    <code className={`${styles.exampleCode} ${styles.exampleCodeMargin}`}>
-                      {ex.config2}
-                    </code>
-                  )}
+                  <p className={styles.exampleConfigTitle}>Config:</p>
+                  <code className={styles.exampleCode}>{ex.config}</code>
                 </div>
               ))
             )}
@@ -791,7 +468,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
       )}
 
       <div className={styles.formSection}>
-        {/* 1. Identification */}
+        {/* 1. Event Identification */}
         <div className={styles.card}>
           <SectionHeader title="Event Identification" icon={<Fingerprint size={14} />} />
           <div className={styles.grid2}>
@@ -799,15 +476,12 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
               <label className={styles.label}>Rule Name</label>
               <input 
                 type="text"
-                placeholder="e.g., Click Register Button"
+                placeholder="e.g., Click Buy Button"
                 className={`${styles.input} ${errors.ruleName ? styles.inputError : ''}`}
                 value={rule.name}
-                disabled={isViewMode}
                 onChange={e => {
                   setRule({...rule, name: e.target.value});
-                  if (errors.ruleName) {
-                    setErrors(prev => ({...prev, ruleName: undefined}));
-                  }
+                  if (errors.ruleName) setErrors(prev => ({...prev, ruleName: undefined}));
                 }}
               />
               {errors.ruleName && (
@@ -822,78 +496,41 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
               <select 
                 className={styles.input}
                 value={selectedInteractionType}
-                disabled={isViewMode}
                 onChange={e => setSelectedInteractionType(e.target.value)}
               >
                 {interactionTypes.map(it => (
                   <option key={it.label} value={it.label}>{it.label}</option>
                 ))}
               </select>
-              <p className={styles.description}>
-                {rule.eventType === EventType.CLICK && "Tracks click behaviors on interface elements like Buttons or Icons."}
-                {rule.eventType === EventType.RATING && "Records user rating actions through score or star components."}
-                {rule.eventType === EventType.REVIEW && "Collects data when users submit text comments or detailed feedback."}
-                {rule.eventType === EventType.SCROLL && "Monitors page scroll depth to measure content engagement."}
-                {rule.eventType === EventType.PAGE_VIEW && "Measures page views or screen transitions within the application."}
-              </p>
+              <p className={styles.description}>{EVENT_DESCRIPTIONS[rule.eventType]}</p>
             </div>
           </div>
         </div>
 
-        {/* 2. Target Configuration */}
-        {rule.eventType !== EventType.SCROLL && rule.eventType !== EventType.PAGE_VIEW && (
-          <div className={styles.card}>
-            <SectionHeader 
-              title="Target Element" 
-              icon={<Target size={14} />} 
-              sectionKey="target" 
-              required 
+        {/* 2. Target Element */}
+        <div className={styles.card}>
+          <SectionHeader title="Target Element" icon={<Target size={14} />} sectionKey="target" required />
+          <div>
+            <label className={styles.label}>CSS Selector</label>
+            <input 
+              type="text"
+              placeholder=".my-element"
+              className={`${styles.input} ${styles.monospaceInput} ${errors.targetElement ? styles.inputError : ''}`}
+              value={rule.targetElement?.selector || ''}
+              onChange={e => {
+                setRule({...rule, targetElement: {selector: e.target.value}});
+                if (errors.targetElement) setErrors(prev => ({...prev, targetElement: undefined}));
+              }}
             />
-            <div className={styles.grid3}>
-              <div>
-                <label className={styles.label}>Target Type</label>
-                <input 
-                  type="text"
-                  disabled
-                  className={`${styles.input} ${styles.disabledInput}`}
-                  value="CSS Selector"
-                />
-              </div>
-              <div>
-                <label className={styles.label}>Match Condition</label>
-                <input 
-                  type="text"
-                  disabled
-                  className={`${styles.input} ${styles.disabledInput}`}
-                  value="Contains"
-                />
-              </div>
-              <div>
-                <label className={styles.label}>Selector Pattern</label>
-                <input 
-                  type="text"
-                  placeholder=".my-element"
-                  className={`${styles.input} ${styles.monospaceInput} ${errors.targetElement ? styles.inputError : ''}`}
-                  value={rule.targetElement?.selector || ''}
-                  disabled={isViewMode}
-                  onChange={e => {
-                    setRule({...rule, targetElement: {...rule.targetElement, selector: e.target.value}});
-                    if (errors.targetElement) {
-                      setErrors(prev => ({...prev, targetElement: undefined}));
-                    }
-                  }}
-                />
-                {errors.targetElement && (
-                  <p className={styles.errorText}>
-                    <AlertCircle size={14} />
-                    {errors.targetElement}
-                  </p>
-                )}
-              </div>
-            </div>
-            <p className={styles.suggestion}>{TARGET_SUGGESTIONS[rule.eventType]}</p>
+            {errors.targetElement && (
+              <p className={styles.errorText}>
+                <AlertCircle size={14} />
+                {errors.targetElement}
+              </p>
+            )}
           </div>
-        )}
+          <p className={styles.suggestion}>{TARGET_SUGGESTIONS[rule.eventType]}</p>
+        </div>
 
         {/* 3. Payload Mapping */}
         <div className={styles.card}>
@@ -904,75 +541,142 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                 <tr>
                   <th className={`${styles.th} ${styles.thWidth180}`}>Data Field</th>
                   <th className={`${styles.th} ${styles.thWidth180}`}>Source</th>
-                  <th className={styles.th}>Details / Configuration</th>
+                  <th className={styles.th}>Configuration</th>
                 </tr>
               </thead>
               <tbody>
-                {rule.payloadMappings.map((mapping, idx) => {
-                  const isItemField = mapping.field === 'itemId' || mapping.field === 'itemTitle';
+                {rule.payloadMappings.map((mapping, idx) => (
+                  <tr key={idx}>
+                    <td className={`${styles.td} ${styles.tdVerticalTop}`}>
+                      <span className={styles.fieldTag}>{mapping.field}</span>
+                    </td>
+                    <td className={`${styles.td} ${styles.tdVerticalTop}`}>
+                      <select 
+                        className={styles.input}
+                        value={mapping.source}
+                        onChange={e => handleUpdateMapping(idx, { source: e.target.value as MappingSource })}
+                      >
+                        <option value={MappingSource.REQUEST_BODY}>request_body</option>
+                        <option value={MappingSource.REQUEST_URL}>request_url</option>
+                        <option value={MappingSource.ELEMENT}>element</option>
+                      </select>
+                    </td>
+                    <td className={styles.td}>
+                      {/* REQUEST_BODY Configuration */}
+                      {mapping.source === MappingSource.REQUEST_BODY && (
+                        <div className={styles.urlParsingContainer}>
+                          <div className={styles.urlParsingInputRow}>
+                            <input 
+                              type="text" 
+                              placeholder="URL Pattern (/api/song/:id)" 
+                              className={`${styles.input} ${styles.urlParsingInputFlex2} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
+                              value={mapping.requestUrlPattern || ''}
+                              onChange={e => {
+                                handleUpdateMapping(idx, { requestUrlPattern: e.target.value });
+                                if (errors.payloadMappings?.[idx]) {
+                                  const newPayloadErrors = {...errors.payloadMappings};
+                                  delete newPayloadErrors[idx];
+                                  setErrors(prev => ({...prev, payloadMappings: newPayloadErrors}));
+                                }
+                              }}
+                            />
+                            <select 
+                              className={`${styles.input} ${styles.urlParsingInputFlex1}`}
+                              value={mapping.requestMethod || 'POST'}
+                              onChange={e => handleUpdateMapping(idx, { requestMethod: e.target.value as any })}
+                            >
+                              <option>POST</option>
+                              <option>PUT</option>
+                              <option>PATCH</option>
+                              <option>DELETE</option>
+                              <option>GET</option>
+                            </select>
+                          </div>
+                          <input 
+                            type="text" 
+                            placeholder="Body Path (e.g., content.id)" 
+                            className={`${styles.input} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
+                            value={mapping.value || ''}
+                            onChange={e => {
+                              handleUpdateMapping(idx, { value: e.target.value });
+                              if (errors.payloadMappings?.[idx]) {
+                                const newPayloadErrors = {...errors.payloadMappings};
+                                delete newPayloadErrors[idx];
+                                setErrors(prev => ({...prev, payloadMappings: newPayloadErrors}));
+                              }
+                            }}
+                          />
+                          {errors.payloadMappings?.[idx] && (
+                            <p className={styles.errorText}>
+                              <AlertCircle size={14} />
+                              {errors.payloadMappings[idx]}
+                            </p>
+                          )}
+                          <div className={styles.fieldNote}>
+                            Specify the JSON path in request body. Example: <code>{'{"content": {"id": "123"}}'}</code> → path: <strong>content.id</strong>
+                          </div>
+                        </div>
+                      )}
 
-                  return (
-                    <React.Fragment key={idx}>
-                    <tr>
-                      <td className={`${styles.td} ${styles.tdVerticalTop}`}>
-                        {isItemField ? (
+                      {/* REQUEST_URL Configuration */}
+                      {mapping.source === MappingSource.REQUEST_URL && (
+                        <div className={styles.urlParsingContainer}>
+                          <div className={styles.urlParsingInputRow}>
+                            <input 
+                              type="text" 
+                              placeholder="URL Pattern (/api/product/{id})" 
+                              className={`${styles.input} ${styles.urlParsingInputFlex2} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
+                              value={mapping.requestUrlPattern || ''}
+                              onChange={e => {
+                                handleUpdateMapping(idx, { requestUrlPattern: e.target.value });
+                                if (errors.payloadMappings?.[idx]) {
+                                  const newPayloadErrors = {...errors.payloadMappings};
+                                  delete newPayloadErrors[idx];
+                                  setErrors(prev => ({...prev, payloadMappings: newPayloadErrors}));
+                                }
+                              }}
+                            />
+                            <select 
+                              className={`${styles.input} ${styles.urlParsingInputFlex1}`}
+                              value={mapping.requestMethod || 'GET'}
+                              onChange={e => handleUpdateMapping(idx, { requestMethod: e.target.value as any })}
+                            >
+                              <option>GET</option>
+                              <option>POST</option>
+                              <option>PUT</option>
+                              <option>PATCH</option>
+                              <option>DELETE</option>
+                            </select>
+                          </div>
+                          
+                          {/* Radio buttons for extract type */}
                           <div className={styles.radioGroup}>
                             <label className={styles.radioLabel}>
-                              <input type="radio" name={`item-field-${idx}`} checked={mapping.field === 'itemId'} disabled={isViewMode} onChange={() => handleUpdateMapping(idx, { field: 'itemId' })} />
-                              ItemId
+                              <input 
+                                type="radio" 
+                                name={`extract-type-${idx}`} 
+                                checked={mapping.urlExtractType === 'pathname'} 
+                                onChange={() => handleUpdateMapping(idx, { urlExtractType: 'pathname' })} 
+                              />
+                              PathName
                             </label>
                             <label className={styles.radioLabel}>
-                              <input type="radio" name={`item-field-${idx}`} checked={mapping.field === 'itemTitle'} disabled={isViewMode} onChange={() => handleUpdateMapping(idx, { field: 'itemTitle' })} />
-                              ItemTitle
+                              <input 
+                                type="radio" 
+                                name={`extract-type-${idx}`} 
+                                checked={mapping.urlExtractType === 'query'} 
+                                onChange={() => handleUpdateMapping(idx, { urlExtractType: 'query' })} 
+                              />
+                              Query Parameter
                             </label>
                           </div>
-                        ) : (
-                          <span className={styles.fieldTag}>{mapping.field}</span>
-                        )}
-                      </td>
-                      <td className={`${styles.td} ${styles.tdVerticalTop}`}>
-                        <select 
-                          className={styles.input}
-                          value={mapping.source}
-                          disabled={isViewMode}
-                          onChange={e => handleUpdateMapping(idx, { source: e.target.value as MappingSource })}
-                        >
-                          {MAPPING_SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                      </td>
-                      <td className={styles.td}>
-                        {/* SOURCE SPECIFIC INPUTS */}
-                        {mapping.source === MappingSource.REQUEST_BODY && (
-                          <div className={styles.urlParsingContainer}>
-                            <div className={styles.urlParsingInputRow}>
-                              <input 
-                                type="text" placeholder="URL Pattern (/api/song/:id)" 
-                                className={`${styles.input} ${styles.urlParsingInputFlex2} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
-                                value={mapping.requestUrlPattern || ''}
-                                disabled={isViewMode}
-                                onChange={e => {
-                                  handleUpdateMapping(idx, { requestUrlPattern: e.target.value });
-                                  if (errors.payloadMappings?.[idx]) {
-                                    const newPayloadErrors = {...errors.payloadMappings};
-                                    delete newPayloadErrors[idx];
-                                    setErrors(prev => ({...prev, payloadMappings: newPayloadErrors}));
-                                  }
-                                }}
-                              />
-                              <select 
-                                className={`${styles.input} ${styles.urlParsingInputFlex1}`}
-                                value={mapping.requestMethod || 'POST'}
-                                disabled={isViewMode}
-                                onChange={e => handleUpdateMapping(idx, { requestMethod: e.target.value as any })}
-                              >
-                                <option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option><option>GET</option>
-                              </select>
-                            </div>
+
+                          {mapping.urlExtractType === 'pathname' && (
                             <input 
-                              type="text" placeholder="Body Path (e.g., content.id)" 
+                              type="number" 
+                              placeholder="Segment Index (e.g., 3)" 
                               className={`${styles.input} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                               value={mapping.value || ''}
-                              disabled={isViewMode}
                               onChange={e => {
                                 handleUpdateMapping(idx, { value: e.target.value });
                                 if (errors.payloadMappings?.[idx]) {
@@ -982,168 +686,14 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                                 }
                               }}
                             />
-                            {errors.payloadMappings?.[idx] && (
-                              <p className={styles.errorText}>
-                                <AlertCircle size={14} />
-                                {errors.payloadMappings[idx]}
-                              </p>
-                            )}
-                            <div fieldNote className={styles.fieldNote}>
-                              Specify the JSON path within the request/response body to extract the desired value. 
-                              <br />
-                              For example, for a request/response body like <code>{'{"content": {"id": "12345"}}'}</code>, the path to extract the ID would be <strong>content.id</strong>.
-                            </div>
-                          </div>
-                        )}
-
-                        {mapping.source === MappingSource.REQUEST_URL && (
-                          <div className={styles.urlParsingContainer}>
-                            <div className={styles.urlParsingInputRow}>
-                              <input 
-                                type="text" placeholder="URL Pattern (/api/cart/:id)" 
-                                className={`${styles.input} ${styles.urlParsingInputFlex2} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
-                                value={mapping.requestUrlPattern || ''}
-                                disabled={isViewMode}
-                                onChange={e => {
-                                  handleUpdateMapping(idx, { requestUrlPattern: e.target.value });
-                                  if (errors.payloadMappings?.[idx]) {
-                                    const newPayloadErrors = {...errors.payloadMappings};
-                                    delete newPayloadErrors[idx];
-                                    setErrors(prev => ({...prev, payloadMappings: newPayloadErrors}));
-                                  }
-                                }}
-                              />
-                              <select 
-                                className={`${styles.input} ${styles.urlParsingInputFlex1}`}
-                                value={mapping.requestMethod || 'POST'}
-                                disabled={isViewMode}
-                                onChange={e => handleUpdateMapping(idx, { requestMethod: e.target.value as any })}
-                              >
-                                <option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option><option>GET</option>
-                              </select>
-                            </div>
-                            <input 
-                              type="number" placeholder="Path Index (e.g. 3 for :id)" 
-                              className={`${styles.input} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
-                              value={mapping.value || ''}
-                              disabled={isViewMode}
-                              onChange={e => {
-                                handleUpdateMapping(idx, { value: e.target.value });
-                                if (errors.payloadMappings?.[idx]) {
-                                  const newPayloadErrors = {...errors.payloadMappings};
-                                  delete newPayloadErrors[idx];
-                                  setErrors(prev => ({...prev, payloadMappings: newPayloadErrors}));
-                                }
-                              }}
-                            />
-                            {errors.payloadMappings?.[idx] && (
-                              <p className={styles.errorText}>
-                                <AlertCircle size={14} />
-                                {errors.payloadMappings[idx]}
-                              </p>
-                            )}
-                            <div fieldNote className={styles.fieldNote}>
-                              Specify the path index from the URL to extract the desired value.
-                              <br />
-                              For example, in request URL <strong>www.example.com/api/products/:id</strong>, the path index for <strong>:id</strong> is <strong>3</strong>.
-                            </div>
-                          </div>
-                        )}
-
-                        {/* {mapping.source === MappingSource.URL && (
-                          <div className={styles.urlParsingContainer}>
-                            <input 
-                              type="text" placeholder="Enter full URL to parse..." className={styles.input}
-                              value={mapping.fullUrl || ''}
-                              disabled={isViewMode}
-                              onChange={e => parseUrl(idx, e.target.value)}
-                            />
-                            {mapping.pathname && (
-                              <div className={styles.urlParsingResultsGrid}>
-                                <input type="text" disabled className={`${styles.input} ${styles.urlParsingDisabledInput}`} value={`Path: ${mapping.pathname}`} />
-                                <input type="text" disabled className={`${styles.input} ${styles.urlParsingDisabledInput}`} value={`Query: ${mapping.queryString || 'None'}`} />
-                              </div>
-                            )}
-                            <div className={styles.urlParsingControlRow}>
-                              <select 
-                                className={`${styles.input} ${styles.urlParsingSelect} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
-                                value={mapping.urlPart || 'PathName'}
-                                disabled={isViewMode}
-                                onChange={e => {
-                                  handleUpdateMapping(idx, { urlPart: e.target.value as any });
-                                  if (errors.payloadMappings?.[idx]) {
-                                    const newPayloadErrors = {...errors.payloadMappings};
-                                    delete newPayloadErrors[idx];
-                                    setErrors(prev => ({...prev, payloadMappings: newPayloadErrors}));
-                                  }
-                                }}
-                              >
-                                <option value="PathName">PathName</option>
-                                <option value="QueryParam">QueryParam</option>
-                              </select>
-                              {mapping.urlPart === 'PathName' ? (
-                                <input 
-                                  type="number" placeholder="Segment Index" 
-                                  className={`${styles.input} ${styles.urlParsingInputFlexAuto} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
-                                  value={mapping.urlPartValue || ''}
-                                  disabled={isViewMode}
-                                  onChange={e => {
-                                    handleUpdateMapping(idx, { urlPartValue: e.target.value });
-                                    if (errors.payloadMappings?.[idx]) {
-                                      const newPayloadErrors = {...errors.payloadMappings};
-                                      delete newPayloadErrors[idx];
-                                      setErrors(prev => ({...prev, payloadMappings: newPayloadErrors}));
-                                    }
-                                  }}
-                                />
-                              ) : (
-                                <input 
-                                  type="text" placeholder="Param Key" 
-                                  className={`${styles.input} ${styles.urlParsingInputFlexAuto} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
-                                  value={mapping.urlPartValue || ''}
-                                  disabled={isViewMode}
-                                  onChange={e => {
-                                    handleUpdateMapping(idx, { urlPartValue: e.target.value });
-                                    if (errors.payloadMappings?.[idx]) {
-                                      const newPayloadErrors = {...errors.payloadMappings};
-                                      delete newPayloadErrors[idx];
-                                      setErrors(prev => ({...prev, payloadMappings: newPayloadErrors}));
-                                    }
-                                  }}
-                                />
-                              )}
-
-                            </div>
-                            {errors.payloadMappings?.[idx] && (
-                              <p className={styles.errorText}>
-                                <AlertCircle size={14} />
-                                {errors.payloadMappings[idx]}
-                              </p>
-                            )}
-                          {mapping.urlPart === 'PathName' ? (
-                            <div fieldNote className={styles.fieldNote}>
-                              Specify the segment index of the URL path to extract the value.
-                              <br />
-                              For example, in URL <strong>www.example.com/products/:id</strong>, the segment index of <strong>:id</strong> is 3.
-                            </div>
-                          ) : (
-                            <div fieldNote className={styles.fieldNote}>
-                              Specify the query parameter key to extract the value.
-                              <br />
-                              For example, in URL <strong>www.example.com/page?itemId=:id</strong>, the param key is <strong>itemId</strong>.
-                            </div>
                           )}
-                        </div>
-                        )} */}
 
-                        {mapping.source === MappingSource.ELEMENT && (
-                          <div>
+                          {mapping.urlExtractType === 'query' && (
                             <input 
-                              type="text"
-                              placeholder='CSS Selector (e.g. .title)'
+                              type="text" 
+                              placeholder="Query Key (e.g., item_id)" 
                               className={`${styles.input} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                               value={mapping.value || ''}
-                              disabled={isViewMode}
                               onChange={e => {
                                 handleUpdateMapping(idx, { value: e.target.value });
                                 if (errors.payloadMappings?.[idx]) {
@@ -1153,56 +703,54 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                                 }
                               }}
                             />
-                            {errors.payloadMappings?.[idx] && (
-                              <p className={styles.errorText}>
-                                <AlertCircle size={14} />
-                                {errors.payloadMappings[idx]}
-                              </p>
-                            )}
-                            <div fieldNote className={styles.fieldNote}>
-                              Specify a valid CSS selector to extract the value from the target element on the webpage. 
-                              <br />
-                              For example, to extract the title from an element like <code>{'<div class="title">Song Name</div>'}</code>, use the selector <strong>.title</strong>.
-                            </div>
+                          )}
+
+                          {errors.payloadMappings?.[idx] && (
+                            <p className={styles.errorText}>
+                              <AlertCircle size={14} />
+                              {errors.payloadMappings[idx]}
+                            </p>
+                          )}
+                          <div className={styles.fieldNote}>
+                            {mapping.urlExtractType === 'pathname' 
+                              ? "Specify segment index. Example: /api/product/123/details → index 3 gets '123'"
+                              : "Specify query key. Example: ?item_id=123&ref=home → key 'item_id' gets '123'"
+                            }
                           </div>
-                        )}
-                    
-                        {mapping.source !== MappingSource.REQUEST_BODY && mapping.source !== MappingSource.REQUEST_URL && mapping.source !== MappingSource.ELEMENT && (
-                          <div>
-                            <input 
-                              type="text"
-                              placeholder='Path (e.g. user.id)'
-                              className={`${styles.input} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
-                              value={mapping.value || ''}
-                              disabled={isViewMode}
-                              onChange={e => {
-                                handleUpdateMapping(idx, { value: e.target.value });
-                                if (errors.payloadMappings?.[idx]) {
-                                  const newPayloadErrors = {...errors.payloadMappings};
-                                  delete newPayloadErrors[idx];
-                                  setErrors(prev => ({...prev, payloadMappings: newPayloadErrors}));
-                                }
-                              }}
-                            />
-                            {errors.payloadMappings?.[idx] && (
-                              <p className={styles.errorText}>
-                                <AlertCircle size={14} />
-                                {errors.payloadMappings[idx]}
-                              </p>
-                            )}
-                            <div fieldNote className={styles.fieldNote}>
-                              Specify the data path to extract the desired value from the selected source. 
-                              <br />
-                              For example, for a JSON object like <code>{'{"user": {"id": "12345"}}'}</code>, the path to extract the user ID would be <strong>user.id</strong>.
-                            </div>
+                        </div>
+                      )}
+
+                      {/* ELEMENT Configuration */}
+                      {mapping.source === MappingSource.ELEMENT && (
+                        <div>
+                          <input 
+                            type="text"
+                            placeholder='CSS Selector (e.g., .product-id)'
+                            className={`${styles.input} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
+                            value={mapping.value || ''}
+                            onChange={e => {
+                              handleUpdateMapping(idx, { value: e.target.value });
+                              if (errors.payloadMappings?.[idx]) {
+                                const newPayloadErrors = {...errors.payloadMappings};
+                                delete newPayloadErrors[idx];
+                                setErrors(prev => ({...prev, payloadMappings: newPayloadErrors}));
+                              }
+                            }}
+                          />
+                          {errors.payloadMappings?.[idx] && (
+                            <p className={styles.errorText}>
+                              <AlertCircle size={14} />
+                              {errors.payloadMappings[idx]}
+                            </p>
+                          )}
+                          <div className={styles.fieldNote}>
+                            CSS selector to extract value from element. Example: <code>{'<div class="title">Name</div>'}</code> → selector: <strong>.title</strong>
                           </div>
-                        )}
-                    
-                      </td>
-                    </tr>
-                    </React.Fragment>
-                  );
-                })}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -1214,27 +762,21 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
             <AlertCircle size={18} /> Important Notes:
           </h4>
           <p className={styles.warningCardText}>
-            <strong>1. Transparency Notice:</strong> <br></br>
-            Our service operates based on user interaction data collected through the methods you select and configure. <br></br>
-            By continuing to use the service, you acknowledge that you understand and agree to the sharing of this data. <br></br>
-            We commit to strictly protecting the data and using it solely for improving recommendation quality.<br /><br />
-            <strong>2. Testing Required:</strong> <br></br>
-            Ensure configurations are verified in the testing environment. Network request tracking requires the API endpoint to match the specified pattern.<br /><br />
-            <strong>3. Security Policy:</strong> <br></br>
-            Whitelist our tracking script domain in your Content Security Policy (CSP) to ensure proper functionality.
+            <strong>1. Transparency:</strong> User interaction data is collected and used for recommendation improvements.<br /><br />
+            <strong>2. Testing:</strong> Verify configurations in testing environment before production.<br /><br />
+            <strong>3. Security:</strong> Whitelist tracking script domain in your CSP.
           </p>
         </div>
 
+        {/* Action Buttons */}
         <div className={styles.buttonActions}>
           <button onClick={onCancel} className={styles.btnSecondary}>
-            {isViewMode ? 'Close' : 'Cancel'}
+            Cancel
           </button>
-          {!isViewMode && (
-            <button onClick={handleSave} disabled={isSaving} className={styles.btnPrimary}>
-              {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} style={{ marginRight: '4px' }} />}
-              Save
-            </button>
-          )}
+          <button onClick={handleSave} disabled={isSaving} className={styles.btnPrimary}>
+            {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} style={{ marginRight: '4px' }} />}
+            Save
+          </button>
         </div>
       </div>
     </div>
