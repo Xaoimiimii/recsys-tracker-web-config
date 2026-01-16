@@ -22,21 +22,6 @@ export class RuleController {
     constructor(private ruleService: RuleService) { }
 
     // @UseGuards(JwtAuthGuard)
-    @Get('pattern')
-    @ApiOperation({ summary: 'Get all patterns (CSS, ...)' })
-    async getPatterns() {
-        const patterns = await this.ruleService.getPatterns();
-        return patterns;
-    }
-
-    // @UseGuards(JwtAuthGuard)
-    // @Get('payload-patterns')
-    // async getPayloadPatterns() {
-    //     const payloadPatterns = await this.ruleService.getPayloadPatterns();
-    //     return payloadPatterns;
-    // }
-
-    // @UseGuards(JwtAuthGuard)
     @Get('operators')
     @ApiOperation({ summary: 'Get all operators (Contains, Equals, ...)' })
     async getOperators() {

@@ -43,11 +43,6 @@ export class CreateReturnMethodDto {
     @IsNotEmpty()
     Value: string;
 
-    @ApiProperty({ example: 1 })
-    @IsNumber()
-    @IsNotEmpty()
-    OperatorId: number;
-
     @IsOptional()
     @IsArray()
     @ValidateNested({ each: true })

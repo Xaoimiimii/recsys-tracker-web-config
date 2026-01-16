@@ -13,10 +13,9 @@ export class DomainController {
     @ApiOperation({ summary: 'Create a new domain' })
     @Post('create')
     async createDomain(@Body() body: CreateDomainDto, @Req() req: Request) {
-        const { url, type } = body;
         const tenant = req.user;
         if (!tenant) throw new UnauthorizedException();
-        return this.domainService.createDomain(tenant['Id'], url, type);
+        return this.domainService.createDomain(tenant['Id'], body.url, body.type, body.UserIdentity);
     }
 
     @UseGuards(JwtAuthGuard)

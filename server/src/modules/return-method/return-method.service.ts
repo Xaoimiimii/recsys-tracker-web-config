@@ -34,7 +34,6 @@ export class ReturnMethodService {
         configurationName: string,
         returnType: ReturnType,
         value: string,
-        operatorId: number,
         delayDuration: number,
         customizingFields: CustomizingFieldDto[],
         layoutJson: Record<string, any>,
@@ -86,14 +85,6 @@ export class ReturnMethodService {
 
         if (!domain) throw new NotFoundException('Domain not found');
 
-        const operator = await this.prisma.operator.findUnique({
-            where: {
-                Id: operatorId,
-            },
-        });
-
-        if (!operator) throw new NotFoundException('Operator not found');
-
         const searchKeywordConfig = this.prisma.searchKeywordConfig.findUnique({
             where: {
                 Id: SearchKeywordConfigId,
@@ -109,7 +100,6 @@ export class ReturnMethodService {
                 ConfigurationName: configurationName,
                 ReturnType: returnType,
                 Value: value,
-                OperatorID: operatorId,
                 Customizing: customizingFields as any,
                 Layout: layoutJson,
                 Style: styleJson,
@@ -124,7 +114,6 @@ export class ReturnMethodService {
     async updateReturnMethod(
         id: number,
         configurationName?: string,
-        operatorId?: number,
         value?: string,
         customizingFields?: CustomizingFieldDto[],
         layoutJson?: Record<string, any>,
@@ -140,13 +129,6 @@ export class ReturnMethodService {
 
         if (!existingReturnMethod) {
             throw new NotFoundException(`Return method id ${id} not found`);
-        }
-
-        if (operatorId !== undefined) {
-            const operator = await this.prisma.operator.findUnique({
-                where: { Id: operatorId },
-            });
-            if (!operator) throw new NotFoundException('Operator not found');
         }
 
         if (delayDuration !== undefined && delayDuration < 0) {
@@ -192,9 +174,6 @@ export class ReturnMethodService {
             where: { Id: id },
             data: {
                 ConfigurationName: configurationName,
-                Operator: operatorId
-                    ? { connect: { Id: operatorId } }
-                    : undefined,
                 Value: value,
                 Customizing: customizingFields as any,
                 Layout: layoutJson,
@@ -228,9 +207,6 @@ export class ReturnMethodService {
         const returnMethod = await this.prisma.returnMethod.findUnique({
             where: {
                 Id: id,
-            },
-            include: {
-                Operator: true,
             },
         });
         if (!returnMethod) {
