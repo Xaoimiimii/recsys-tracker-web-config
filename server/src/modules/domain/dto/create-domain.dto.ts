@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsNumber, IsOptional, IsEnum, IsObject } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsOptional, IsEnum, IsObject, IsBoolean } from 'class-validator';
 import { UserIdentitySource } from 'src/generated/prisma/enums';
 
 export class UserIdentityDto {
@@ -17,6 +17,11 @@ export class UserIdentityDto {
     @IsOptional()
     @IsString()
     Value: string
+
+    @ApiProperty({})
+    @IsNotEmpty()
+    @IsBoolean()
+    IsActivated: boolean
 }
 
 export class CreateDomainDto {

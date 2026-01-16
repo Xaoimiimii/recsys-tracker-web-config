@@ -1,7 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
-import { Item } from 'src/generated/prisma/client';
+import { Item, Prisma } from 'src/generated/prisma/client';
 import { Logger } from '@nestjs/common';
+
+type ItemWithCategories = Prisma.ItemGetPayload<{
+  include: {
+    ItemCategories: {
+      include: { Category: true }
+    }
+  }
+}>;
 
 @Injectable()
 export class SearchService {
@@ -37,9 +45,18 @@ export class SearchService {
         };
     }
 
-    async createItemInBulk(items: Item[], domainId: number) {
+    async createItemInBulk(items: ItemWithCategories[], domainId: number) {
         try {
-            const operations = items.flatMap((item) => [
+            const operations = items.flatMap((item: any) => {
+            const categoryNames = item.ItemCategories?.map(
+                (ic: any) => ic.Category?.Name
+            ).filter((name: string) => name) || [];
+
+            const categoryIds = item.ItemCategories?.map(
+                (ic: any) => ic.CategoryId
+            ) || [];
+
+            return [
                 {
                     index: { _index: this.INDEX_NAME, _id: item.Id.toString() },
                 },
@@ -48,8 +65,11 @@ export class SearchService {
                     domainId: domainId,
                     title: item.Title,
                     description: item.Description,
+                    category_names: categoryNames, 
+                    category_ids: categoryIds 
                 },
-            ]);
+            ];
+        });
 
             const bulkResponse = await this.elasticsearchService.bulk({
                 operations: operations,

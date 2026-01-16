@@ -80,12 +80,12 @@ export type PrismaVersion = {
 }
 
 /**
- * Prisma Client JS version: 7.1.0
- * Query Engine version: ab635e6b9d606fa5c8fb8b1a7f909c3c3c1c98ba
+ * Prisma Client JS version: 7.2.0
+ * Query Engine version: 0c8ef2ce45c83248ab3df073180d5eda9e8be7a3
  */
 export const prismaVersion: PrismaVersion = {
-  client: "7.1.0",
-  engine: "ab635e6b9d606fa5c8fb8b1a7f909c3c3c1c98ba"
+  client: "7.2.0",
+  engine: "0c8ef2ce45c83248ab3df073180d5eda9e8be7a3"
 }
 
 /**
@@ -2015,7 +2015,8 @@ export const UserIdentityScalarFieldEnum = {
   Source: 'Source',
   DomainId: 'DomainId',
   RequestConfig: 'RequestConfig',
-  Value: 'Value'
+  Value: 'Value',
+  IsActivated: 'IsActivated'
 } as const
 
 export type UserIdentityScalarFieldEnum = (typeof UserIdentityScalarFieldEnum)[keyof typeof UserIdentityScalarFieldEnum]
@@ -2034,8 +2035,7 @@ export const EventScalarFieldEnum = {
   EventTypeId: 'EventTypeId',
   UserId: 'UserId',
   AnonymousId: 'AnonymousId',
-  ItemField: 'ItemField',
-  ItemValue: 'ItemValue',
+  ItemId: 'ItemId',
   RatingValue: 'RatingValue',
   ReviewValue: 'ReviewValue',
   Timestamp: 'Timestamp',
@@ -2343,16 +2343,9 @@ export type ListEnumUserIdentitySourceFieldRefInput<$PrismaModel> = FieldRefInpu
 
 
 /**
- * Reference to a field of type 'EventItemField'
+ * Reference to a field of type 'Boolean'
  */
-export type EnumEventItemFieldFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EventItemField'>
-    
-
-
-/**
- * Reference to a field of type 'EventItemField[]'
- */
-export type ListEnumEventItemFieldFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EventItemField[]'>
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 /**

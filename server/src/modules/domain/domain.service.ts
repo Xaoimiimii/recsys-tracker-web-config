@@ -46,7 +46,8 @@ export class DomainService {
                 Source: userIdentity.Source,
                 DomainId: domain.Id,
                 RequestConfig: userIdentity.RequestConfig as Prisma.InputJsonValue,
-                Value: userIdentity.Value
+                Value: userIdentity.Value,
+                IsActivated: userIdentity.IsActivated
             }
         })
 
