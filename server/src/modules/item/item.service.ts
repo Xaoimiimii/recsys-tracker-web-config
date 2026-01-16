@@ -72,6 +72,13 @@ export class ItemService {
                                 ImageUrl: item.ImageUrl || null,
                                 Attributes: item.Attributes || undefined,
                             },
+                            include: {
+                                ItemCategories: {
+                                    include: {
+                                        Category: true
+                                    }
+                                }
+                            }
                         });
                     });
 
