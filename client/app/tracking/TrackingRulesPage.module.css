@@ -223,7 +223,7 @@
   border: 1px solid #E5E7EB;
   border-radius: 0.75rem;
   padding: 1.25rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .exampleLabel {
@@ -605,31 +605,12 @@
     gap: 1rem;
 }
 
-/* .exampleCard {
-    background: #F9FAFB;
-    border: 1px solid #E5E7EB;
-    border-radius: 0.75rem;
-    padding: 1.25rem;
-    transition: all 0.2s;
-} */
-
-.exampleCard:hover {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    border-color: #D1D5DB;
-}
-
 .exampleHeader {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 0.75rem;
 }
-
-/* .exampleLabel {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #1F2937;
-} */
 
 .exampleBadge {
     padding: 0.25rem 0.75rem;
