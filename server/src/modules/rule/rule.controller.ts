@@ -1,37 +1,25 @@
 import {
     Body,
     Controller,
+    Delete,
     Get,
     HttpException,
     HttpStatus,
     NotFoundException,
     Param,
     ParseIntPipe,
+    Patch,
     Post,
 } from '@nestjs/common';
 import { RuleService } from './rule.service';
 import { CreateRuleDto } from './dto';
 import { JwtAuthGuard } from 'src/modules/auth/guard';
 import { ApiOperation } from '@nestjs/swagger';
+import { UpdateRuleDto } from './dto/update-rule.dto';
 
 @Controller('rule')
 export class RuleController {
     constructor(private ruleService: RuleService) { }
-
-    // @UseGuards(JwtAuthGuard)
-    @Get('pattern')
-    @ApiOperation({ summary: 'Get all patterns (CSS, ...)' })
-    async getPatterns() {
-        const patterns = await this.ruleService.getPatterns();
-        return patterns;
-    }
-
-    // @UseGuards(JwtAuthGuard)
-    // @Get('payload-patterns')
-    // async getPayloadPatterns() {
-    //     const payloadPatterns = await this.ruleService.getPayloadPatterns();
-    //     return payloadPatterns;
-    // }
 
     // @UseGuards(JwtAuthGuard)
     @Get('operators')
@@ -90,5 +78,40 @@ export class RuleController {
 
         const result = rules.map(r => ({ id: r.Id, name: r.Name, EventTypeName: r.EventType.Name }));
         return result;
+    }
+
+    // @UseGuards(JwtAuthGuard)
+    @Delete(':id')
+    @ApiOperation({ summary: 'Delete a rule by its id' })
+    async deleteRule(@Param('id', ParseIntPipe) id: number) {
+        try {
+            await this.ruleService.deleteRule(id);
+            return {
+                statusCode: HttpStatus.OK,
+                message: 'Rule was deleted successfully',
+            };
+        } catch (error) {
+            throw new HttpException(
+                { statusCode: 404, message: error.message },
+                HttpStatus.NOT_FOUND,
+            );
+        }
+    }
+
+    // UseGuards(JwtAuthGuard)
+    @Patch('')
+    @ApiOperation({ summary: 'Update an existing rule' })
+    async updateRule(@Body() rule: UpdateRuleDto) {
+        const updatedRule = await this.ruleService.updateRule(rule);
+        if (!updatedRule) {
+            throw new HttpException(
+                { statusCode: 404, message: 'Some error occurred' },
+                HttpStatus.NOT_FOUND,
+            );
+        }
+        return {
+            statusCode: HttpStatus.OK,
+            message: 'Rule was updated successfully',
+        };
     }
 }

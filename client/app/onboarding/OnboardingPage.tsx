@@ -136,7 +136,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onLogout, onDoma
                 </div>
                 <div className={styles.skipSection}>
                     <button 
-                      onClick={() => handleSelectDomainType('general')} 
+                      onClick={() => handleSelectDomainType('General')} 
                       className={styles.skipButton}
                       disabled={loading}
                     >

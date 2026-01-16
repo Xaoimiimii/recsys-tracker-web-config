@@ -2,6 +2,7 @@
 export { authApi } from './auth';
 export { domainApi } from './domain';
 export { returnMethodApi } from './return-method';
+export { searchInputApi } from './search-input';
 export { ruleApi } from './rule';
 export { userApi } from './user';
 export { eventApi } from './event';

@@ -70,7 +70,8 @@ export const EventsChart: React.FC<EventsChartProps> = ({
             eventId: event.Id,
             ruleId: event.TrackingRule.Id,
             ruleName: event.TrackingRule.Name,
-            user: event.UserValue,
+            userId: event.UserId,
+            anonymousId: event.AnonymousId,
             item: event.ItemValue,
             eventType: event.EventTypeId,
             ratingValue: event.RatingValue,
@@ -97,8 +98,10 @@ export const EventsChart: React.FC<EventsChartProps> = ({
                     <p className={styles.tooltipLabel}>Event #{data.eventId}</p>
                     <p className={styles.tooltipItem}>Rule name: {data.ruleName}</p>
                     <p className={styles.tooltipItem}>Event type: {getEventTypeName(data.eventType)}</p>
-                    <p className={styles.tooltipItem}>User: {data.user}</p>
                     <p className={styles.tooltipItem}>Item: {data.item}</p>
+                    <p className={styles.tooltipItem}>User ID: {data.userId}</p>
+                    <p className={styles.tooltipItem}>Anonymous ID: {data.anonymousId}</p>
+                    
                     {data.eventType === 2 && data.ratingValue !== null && (
                         <p className={styles.tooltipItem}>Rating: {data.ratingValue}</p>
                     )}

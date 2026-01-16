@@ -267,7 +267,6 @@ export interface DisplayConfiguration {
     displayType: DisplayType;
     operator: number;
     value: string;
-    
     layoutJson: LayoutJson;
     styleJson: StyleJson;
     customizingFields: CustomizingFields;

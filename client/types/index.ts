@@ -1,4 +1,4 @@
-export type DomainType = 'music' | 'movie' | 'news' | 'ecommerce' | 'general';
+export type DomainType = 'Music Streaming' | 'Movies & Video' | 'E-Commerce' | 'News & Media' | 'General';
 
 export type TriggerType = 'click' | 'rate' | 'page_view' | 'scroll';
 

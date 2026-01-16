@@ -37,11 +37,11 @@ export class ReturnMethodController {
             dto.ConfigurationName,
             dto.ReturnType,
             dto.Value,
-            dto.OperatorId,
             dto.DelayDuration,
             dto.CustomizingFields || [],
             dto.LayoutJson,
             dto.StyleJson,
+            dto.SearchKeywordConfigId,
         );
 
         if (!result) {
@@ -64,12 +64,12 @@ export class ReturnMethodController {
         const result = await this.returnMethodService.updateReturnMethod(
             dto.Id,
             dto.ConfigurationName,
-            dto.OperatorId,
             dto.Value,
             dto.CustomizingFields,
             dto.LayoutJson,
             dto.StyleJson,
             dto.DelayDuration,
+            dto.SearchKeywordConfigId,
         );
 
         if (!result) {
@@ -101,5 +101,12 @@ export class ReturnMethodController {
     @ApiOperation({ summary: 'Get a return method by id' })
     async getReturnMethodById(@Param('id', ParseIntPipe) id: number) {
         return this.returnMethodService.getReturnMethodById(id);
+    }
+
+    // @UseGuards(JwtAuthGuard)
+    @Get('/item-attributes/:domainKey')
+    @ApiOperation({ summary: 'Get item attributes by domain key' })
+    async getItemAttributes(@Param('domainKey') domainKey: string) {
+        return this.returnMethodService.getItemAttributes(domainKey);
     }
 }

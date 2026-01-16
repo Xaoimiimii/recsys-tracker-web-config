@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Container, UserState } from '../../types';
-import { Activity, X, Copy, Plus, RefreshCw } from 'lucide-react';
+import { X, Copy, RefreshCw } from 'lucide-react';
 import styles from './DashboardPage.module.css';
 import { MOCK_SCRIPT_TEMPLATE } from '../../lib/constants';
 import { useDataCache } from '../../contexts/DataCacheContext';
-import { domainApi, ruleApi, eventApi } from '../../lib/api';
+import { ruleApi, eventApi } from '../../lib/api';
 import type { DomainResponse, TrackedEvent } from '../../lib/api/types';
 import { EventsChart } from '../../components/dashboard/EventsChart';
 
@@ -70,11 +70,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
 
     const mapDomainToContainer = (domain: DomainResponse): Container => {
         const domainTypeMap: Record<number, any> = {
-            1: 'music',
-            2: 'movie',
-            3: 'news',
-            4: 'ecommerce',
-            5: 'general',
+            1: 'Music Streaming',
+            2: 'Movies & Video',
+            3: 'E-Commerce',
+            4: 'News & Media',
+            5: 'General',
         };
 
         return {
@@ -158,15 +158,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
         }
         setSelectedEvent(null); // Clear event selection when changing rules
     };
-
-    const handleEventClick = (event: TrackedEvent) => {
-        setSelectedEvent(event);
-    };
-
-    const displayEvents = selectedRuleId ? latestRuleEvents : latestEvents;
-    const displayLoading = selectedRuleId ? loadingRuleEvents : loadingEvents;
-    const displayTitle = selectedRuleId ? `Events for Rule #${selectedRuleId}` : `Latest Domain Events`;
-
+    
     return (
         <div className={styles.container}>
             {/* Top Stats / Info */}

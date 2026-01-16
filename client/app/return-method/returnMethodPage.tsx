@@ -5,9 +5,12 @@ import { Plus, Eye, Edit2, Trash2, Layers, Puzzle } from 'lucide-react';
 import styles from './returnMethodPage.module.css';
 import { DisplayConfiguration, DisplayType } from './types';
 import { returnMethodApi } from '../../lib/api/return-method';
-import type { ReturnMethodResponse } from '../../lib/api/types';
+import { searchInputApi } from '../../lib/api/search-input';
+import type { ReturnMethodResponse, SearchInputResponse } from '../../lib/api/types';
 import { useDataCache } from '../../contexts/DataCacheContext';
 import { DEFAULT_POPUP_LAYOUT, DEFAULT_STYLE_CONFIG } from './returnMethodDefaults';
+
+type TabType = 'display-method' | 'search-input';
 import { parse } from 'path';
 
 interface ReturnMethodPageProps {
@@ -18,7 +21,9 @@ interface ReturnMethodPageProps {
 export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container }) => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+    const [activeTab, setActiveTab] = useState<TabType>('display-method');
     const [configurations, setConfigurations] = useState<DisplayConfiguration[]>([]);
+    const [searchInputConfigs, setSearchInputConfigs] = useState<SearchInputResponse[]>([]);
     
     // State lưu tên Operator để hiển thị
     const [operatorNames, setOperatorNames] = useState<Record<string, string>>({});
@@ -27,7 +32,12 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     
-    const { getReturnMethodsByDomain, setReturnMethodsByDomain, operators } = useDataCache();
+    const { 
+        getReturnMethodsByDomain, 
+        setReturnMethodsByDomain,
+        getSearchInputsByDomain,
+        setSearchInputsByDomain 
+    } = useDataCache();
 
     // Fetch return methods from API
     useEffect(() => {
@@ -71,7 +81,7 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
                     id: item.Key,
                     configurationName: item.ConfigurationName,
                     displayType,
-                    operator: parseInt(item.OperatorId), 
+                    operator: parseInt(item.OperatorId),
                     value: item.Value,
                     layoutJson: item.LayoutJson || DEFAULT_POPUP_LAYOUT,
                     styleJson: item.StyleJson || DEFAULT_STYLE_CONFIG,
@@ -88,21 +98,69 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
         fetchReturnMethods();
     }, [container?.uuid, getReturnMethodsByDomain, setReturnMethodsByDomain]);
 
+    // Fetch search input configurations
+    useEffect(() => {
+        const fetchSearchInputs = async () => {
+            if (!container?.uuid) return;
+            
+            // Check cache first
+            const cachedSearchInputs = getSearchInputsByDomain(container.uuid);
+            if (cachedSearchInputs) {
+                transformAndSetSearchInputs(cachedSearchInputs);
+                return;
+            }
+
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                const response = await searchInputApi.getByDomainKey(container.uuid);
+                setSearchInputsByDomain(container.uuid, response);
+                transformAndSetSearchInputs(response);
+            } catch (err) {
+                console.error('Failed to fetch search inputs:', err);
+                setError('Failed to load search inputs. Please try again.');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        const transformAndSetSearchInputs = (response: SearchInputResponse[]) => {
+            setSearchInputConfigs(response);
+        };
+
+        if (activeTab === 'search-input') {
+            fetchSearchInputs();
+        }
+    }, [container?.uuid, activeTab, getSearchInputsByDomain, setSearchInputsByDomain]);
+
     const filteredConfigurations = configurations.filter(config => {
         const typeMatch = filterType === 'all' || config.displayType === filterType;
         return typeMatch;
     });
 
     const handleCreateNew = () => {
-        navigate('/dashboard/recommendation-display/create');
+        if (activeTab === 'display-method') {
+            navigate('/dashboard/recommendation-display/create');
+        } else {
+            navigate('/dashboard/recommendation-display/search-input/create');
+        }
     };
 
     const handleView = (id: string) => {
-        navigate(`/dashboard/recommendation-display/view/${id}`);
+        if (activeTab === 'display-method') {
+            navigate(`/dashboard/recommendation-display/view/${id}`);
+        } else {
+            navigate(`/dashboard/recommendation-display/search-input/view/${id}`);
+        }
     };
 
     const handleEdit = (id: string) => {
-        navigate(`/dashboard/recommendation-display/edit/${id}`);
+        if (activeTab === 'display-method') {
+            navigate(`/dashboard/recommendation-display/edit/${id}`);
+        } else {
+            navigate(`/dashboard/recommendation-display/search-input/edit/${id}`);
+        }
     };
 
     const handleDelete = async (id: string) => {
@@ -122,32 +180,13 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
         // }
     };
 
-    const getSummary = (config: DisplayConfiguration): JSX.Element => {
-        // Lấy tên Operator từ map (ưu tiên) hoặc tìm trong context
-        const opName = operatorNames[config.id] || 
-                       operators.find(op => op.Id === config.operator)?.Name || 
-                       'Contains';
-        
-        const operatorText = `[${opName}]`;
-        
+    const getSummary = (config: DisplayConfiguration): string => {
         if (config.displayType === 'inline-injection') {
-            return (
-                <div>
-                    <span style={{color: '#6b7280', fontSize: '0.8em'}}>Target Div: </span>
-                    <span style={{fontWeight: 500}}>{config.value}</span>
-                    <div style={{fontSize: '0.75em', color: '#9ca3af'}}>
-                        Inside element matching selector
-                    </div>
-                </div>
-            );
-        } else {
-            return (
-                <div>
-                     <span style={{color: '#6b7280', fontSize: '0.8em'}}>Trigger URL {operatorText}: </span>
-                     <span style={{fontWeight: 500}}>{config.value}</span>
-                </div>
-            );
+            return `Div: ${config.value}`;
+        } else if (config.displayType === 'popup') {
+            return `URL: ${config.value}`;
         }
+        return `${config.value}`;
     };
 
     return (
@@ -157,112 +196,185 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
                     <h1 className={styles.pageTitle}>Recommendation Display Configurations</h1>
                     <button className={styles.addButton} onClick={handleCreateNew}>
                         <Plus size={18} />
-                        Create new configuration
+                        {activeTab === 'display-method' ? 'Create new configuration' : 'Add Search Input'}
                     </button>
                 </div>
 
-                <div className={styles.filters}>
-                    <div className={styles.filterGroup}>
-                        <label className={styles.filterLabel}>Type:</label>
-                        <select 
-                            className={styles.filterSelect}
-                            value={filterType}
-                            onChange={(e) => setFilterType(e.target.value as DisplayType | 'all')}
-                        >
-                            <option value="all">All Types</option>
-                            <option value="popup">Popup</option>
-                            <option value="inline-injection">Inline Injection</option>
-                        </select>
-                    </div>
+                {/* Tabs */}
+                <div className={styles.tabs}>
+                    <button 
+                        className={`${styles.tab} ${activeTab === 'display-method' ? styles.tabActive : ''}`}
+                        onClick={() => setActiveTab('display-method')}
+                    >
+                        Display Method
+                    </button>
+                    <button 
+                        className={`${styles.tab} ${activeTab === 'search-input' ? styles.tabActive : ''}`}
+                        onClick={() => setActiveTab('search-input')}
+                    >
+                        Search Input Configuration
+                    </button>
                 </div>
 
-                {isLoading ? (
-                    <div className={styles.emptyState}>
-                        <p className={styles.emptyTitle}>Loading...</p>
-                        <p className={styles.emptyDescription}>
-                            Fetching return method configurations...
-                        </p>
-                    </div>
-                ) : error ? (
-                    <div className={styles.emptyState}>
-                        <p className={styles.emptyTitle}>Error</p>
-                        <p className={styles.emptyDescription}>{error}</p>
-                    </div>
-                ) : filteredConfigurations.length === 0 ? (
-                    <div className={styles.emptyState}>
-                        <p className={styles.emptyTitle}>No display configurations yet</p>
-                        <p className={styles.emptyDescription}>
-                            Create your first recommendation display configuration to get started.
-                        </p>
-                        <button className={styles.emptyButton} onClick={handleCreateNew}>
-                            <Plus size={18} />
-                            Create your first configuration
-                        </button>
-                    </div>
-                ) : (
-                    <div className={styles.tableContainer}>
-                        <table className={styles.configTable}>
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Name</th>
-                                    <th>Type</th>
-                                    <th>Target Condition</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredConfigurations.map((config, index) => (
-                                    <tr key={config.id}>
-                                        <td>#{index + 1}</td>
-                                        <td className={styles.nameCell}>
-                                            <div style={{fontWeight: 'bold'}}>{config.configurationName}</div>
-                                            {/* Ẩn ID giả đi vì nó không có ý nghĩa với người dùng */}
-                                            {/* <div style={{fontSize: '0.75rem', color: '#9ca3af'}}>ID: {config.id}</div> */}
-                                        </td>
-                                        <td>
-                                            <span className={styles.typeTag} style={{
-                                                backgroundColor: config.displayType === 'popup' ? '#e0f2fe' : '#f3e8ff',
-                                                color: config.displayType === 'popup' ? '#0284c7' : '#9333ea',
-                                                display: 'inline-flex',
-                                                alignItems: 'center',
-                                                gap: '4px'
-                                            }}>
-                                                {config.displayType === 'popup' ? <Layers size={12}/> : <Puzzle size={12}/>}
-                                                {config.displayType === 'popup' ? 'Popup' : 'Inline'}
-                                            </span>
-                                        </td>
-                                        <td className={styles.summaryCell}>
-                                            {getSummary(config)}
-                                        </td>
-                                        <td className={styles.actionsCell}>
-                                            <button 
-                                                className={styles.actionButton}
-                                                onClick={() => handleView(config.id)}
-                                                title="View details"
-                                            >
-                                                <Eye size={16} />
-                                            </button>
-                                            <button 
-                                                className={styles.actionButton}
-                                                onClick={() => handleEdit(config.id)}
-                                                title="Edit configuration"
-                                            >
-                                                <Edit2 size={16} />
-                                            </button>
-                                            <button 
-                                                className={styles.deleteButton}
-                                                onClick={() => handleDelete(config.id)}
-                                                title="Delete configuration"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                {/* Display Method Tab Content */}
+                {activeTab === 'display-method' && (
+                    <>
+                        <div className={styles.filters}>
+                            <div className={styles.filterGroup}>
+                                <label className={styles.filterLabel}>Type:</label>
+                                <select 
+                                    className={styles.filterSelect}
+                                    value={filterType}
+                                    onChange={(e) => setFilterType(e.target.value as DisplayType | 'all')}
+                                >
+                                    <option value="all">All Types</option>
+                                    <option value="popup">Popup</option>
+                                    <option value="inline-injection">Inline Injection</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {isLoading ? (
+                            <div className={styles.emptyState}>
+                                <p className={styles.emptyTitle}>Loading...</p>
+                                <p className={styles.emptyDescription}>
+                                    Fetching return method configurations...
+                                </p>
+                            </div>
+                        ) : error ? (
+                            <div className={styles.emptyState}>
+                                <p className={styles.emptyTitle}>Error</p>
+                                <p className={styles.emptyDescription}>{error}</p>
+                            </div>
+                        ) : filteredConfigurations.length === 0 ? (
+                            <div className={styles.emptyState}>
+                                <p className={styles.emptyTitle}>No display configurations yet</p>
+                                <p className={styles.emptyDescription}>
+                                    Create your first recommendation display configuration to get started.
+                                </p>
+                                <button className={styles.emptyButton} onClick={handleCreateNew}>
+                                    <Plus size={18} />
+                                    Create your first configuration
+                                </button>
+                            </div>
+                        ) : (
+                            <div className={styles.tableContainer}>
+                                <table className={styles.configTable}>
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Name</th>
+                                            <th>Type</th>
+                                            <th>Target Condition</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredConfigurations.map((config, index) => (
+                                            <tr key={config.id}>
+                                                <td>#{index + 1}</td>
+                                                <td className={styles.nameCell}>{config.configurationName}</td>
+                                                <td>
+                                                    <span className={styles.typeTag}>
+                                                        {config.displayType === 'popup' ? 'Popup' : 'Inline Injection'}
+                                                    </span>
+                                                </td>
+                                                <td className={styles.summaryCell}>
+                                                    {getSummary(config)}
+                                                </td>
+                                                <td className={styles.actionsCell}>
+                                                    <button 
+                                                        className={styles.actionButton}
+                                                        onClick={() => handleView(config.id)}
+                                                        title="View details"
+                                                    >
+                                                        <Eye size={16} />
+                                                    </button>
+                                                    <button 
+                                                        className={styles.actionButton}
+                                                        onClick={() => handleEdit(config.id)}
+                                                        title="Edit configuration"
+                                                    >
+                                                        <Edit2 size={16} />
+                                                    </button>
+                                                    <button 
+                                                        className={styles.deleteButton}
+                                                        onClick={() => handleDelete(config.id)}
+                                                        title="Delete configuration"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </>
+                )}
+
+                {/* Search Input Configuration Tab Content */}
+                {activeTab === 'search-input' && (
+                    <>
+                        {searchInputConfigs.length === 0 ? (
+                            <div className={styles.emptyState}>
+                                <p className={styles.emptyTitle}>No search input configurations yet</p>
+                                <p className={styles.emptyDescription}>
+                                    Create your first search input configuration to enable search keyword tracking.
+                                </p>
+                                <button className={styles.emptyButton} onClick={handleCreateNew}>
+                                    <Plus size={18} />
+                                    Add your first search input
+                                </button>
+                            </div>
+                        ) : (
+                            <div className={styles.tableContainer}>
+                                <table className={styles.configTable}>
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Name</th>
+                                            <th>Selector</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {searchInputConfigs.map((config, index) => (
+                                            <tr key={config.Id}>
+                                                <td>#{index + 1}</td>
+                                                <td className={styles.nameCell}>{config.ConfigurationName}</td>
+                                                <td className={styles.summaryCell}>{config.InputSelector}</td>
+                                                <td className={styles.actionsCell}>
+                                                    <button 
+                                                        className={styles.actionButton}
+                                                        onClick={() => handleView(config.Id.toString())}
+                                                        title="View details"
+                                                    >
+                                                        <Eye size={16} />
+                                                    </button>
+                                                    <button 
+                                                        className={styles.actionButton}
+                                                        onClick={() => handleEdit(config.Id.toString())}
+                                                        title="Edit configuration"
+                                                    >
+                                                        <Edit2 size={16} />
+                                                    </button>
+                                                    <button 
+                                                        className={styles.deleteButton}
+                                                        onClick={() => handleDelete(config.Id.toString())}
+                                                        title="Delete configuration"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
         </div>

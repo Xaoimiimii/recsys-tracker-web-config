@@ -63,25 +63,15 @@ export type TrackingRule = Prisma.TrackingRuleModel
  */
 export type EventType = Prisma.EventTypeModel
 /**
- * Model TrackingTarget
+ * Model ItemIdentity
  * 
  */
-export type TrackingTarget = Prisma.TrackingTargetModel
+export type ItemIdentity = Prisma.ItemIdentityModel
 /**
- * Model Condition
+ * Model UserIdentity
  * 
  */
-export type Condition = Prisma.ConditionModel
-/**
- * Model Pattern
- * 
- */
-export type Pattern = Prisma.PatternModel
-/**
- * Model PayloadMapping
- * 
- */
-export type PayloadMapping = Prisma.PayloadMappingModel
+export type UserIdentity = Prisma.UserIdentityModel
 /**
  * Model Operator
  * 
@@ -92,6 +82,11 @@ export type Operator = Prisma.OperatorModel
  * 
  */
 export type Event = Prisma.EventModel
+/**
+ * Model SearchKeywordConfig
+ * 
+ */
+export type SearchKeywordConfig = Prisma.SearchKeywordConfigModel
 /**
  * Model Category
  * 

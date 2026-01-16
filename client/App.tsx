@@ -8,6 +8,7 @@ import { LoaderScriptPage } from './app/loader-script/LoaderScriptPage';
 import { ItemUploadPage } from './app/item-upload/ItemUploadPage';
 import { ReturnMethodPage } from './app/return-method/returnMethodPage';
 import { ReturnMethodFormPage } from './app/return-method/ReturnMethodFormPage';
+import { SearchInputFormPage } from './app/return-method/SearchInputFormPage';
 import { DomainSelectionPage } from './app/domain-selection/DomainSelectionPage';
 import { OnboardingPage } from './app/onboarding/OnboardingPage';
 import { MainLayout } from './components/layout/MainLayout';
@@ -28,11 +29,11 @@ function AppContent() {
   // Map DomainResponse to Container type
   const mapDomainToContainer = (domain: DomainResponse): Container => {
     const domainTypeMap: Record<number, DomainType> = {
-      1: 'music',
-      2: 'movie',
-      3: 'news',
-      4: 'ecommerce',
-      5: 'general',
+      1: 'Music Streaming',
+      2: 'Movies & Video',
+      3: 'E-Commerce',
+      4: 'News & Media',
+      5: 'General',
     };
 
     return {
@@ -40,7 +41,7 @@ function AppContent() {
       uuid: domain.Key,
       name: new URL(domain.Url).hostname,
       url: domain.Url,
-      domainType: domainTypeMap[domain.Type] || 'general',
+      domainType: domainTypeMap[domain.Type] || 'General',
       rules: [],
       outputConfig: {
         displayMethods: [],
@@ -164,6 +165,15 @@ function AppContent() {
             path="recommendation-display/create" 
             element={
               <ReturnMethodFormPage 
+                container={container} 
+                mode="create"
+              />
+            } 
+          />
+          <Route 
+            path="recommendation-display/search-input/create" 
+            element={
+              <SearchInputFormPage 
                 container={container} 
                 mode="create"
               />

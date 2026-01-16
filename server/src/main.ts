@@ -5,6 +5,7 @@ import { PrismaExceptionFilter } from './common/filters/prisma-exception.filter'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NestExpressApplication, ExpressAdapter } from '@nestjs/platform-express';
 import * as express from 'express';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(
@@ -15,6 +16,9 @@ async function bootstrap() {
   // Increase body size limit for item imports
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
+  
+  // Enable cookie parsing
+  app.use(cookieParser.default());
 
   // Enable CORS for frontend and file:// protocol
   app.enableCors({

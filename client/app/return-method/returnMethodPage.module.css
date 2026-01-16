@@ -40,6 +40,7 @@
 
 .sectionHeader {
     margin-bottom: 1.5rem;
+    display: flex;
 }
 
 .sectionTitle {
@@ -47,6 +48,16 @@
     font-weight: bold;
     color: var(--color-text-main);
     margin: 0;
+}
+
+.closeButton {
+    margin-left: auto;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    color: var(--color-text-secondary);
+    transition: color 0.2s;
 }
 
 .sectionContent {
@@ -98,6 +109,35 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1.5rem;
+}
+
+.tabs {
+    display: flex;
+    gap: 0.25rem;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: 1.5rem;
+}
+
+.tab {
+    padding: 0.75rem 1.5rem;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tab:hover {
+    color: var(--color-text-main);
+    background-color: var(--color-hover-bg, rgba(0, 0, 0, 0.05));
+}
+
+.tabActive {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
 }
 
 .pageTitle {
@@ -823,6 +863,102 @@
 
 .saveButton:disabled {
     opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.inputWithLabel {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.inputPrefix {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+}
+
+.textInputWithPrefix {
+    flex: 1;
+}
+
+.noteList {
+    margin: 0;
+    padding-left: 1.25rem;
+    font-size: 0.875rem;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    list-style: disc;
+}
+
+.noteList li {
+    margin-bottom: 0.25rem;
+}
+
+.noteList li:last-child {
+    margin-bottom: 0;
+}
+
+.switchContainer {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.switchLabel {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-main);
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: var(--color-primary);
+}
+
+input:checked + .slider:before {
+    transform: translateX(20px);
+}
+
+input:disabled + .slider {
+    opacity: 0.5;
     cursor: not-allowed;
 }
 

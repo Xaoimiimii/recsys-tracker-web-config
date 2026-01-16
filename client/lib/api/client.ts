@@ -1,7 +1,5 @@
-// const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://recsys-tracker-web-config.onrender.com';
-// const SERVER_API_BASE_URL = import.meta.env.SERVER_API_BASE_URL || 'https://recsys-tracker-module.onrender.com';
-const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
-const SERVER_API_BASE_URL = import.meta.env.SERVER_API_BASE_URL || 'http://localhost:3001';
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://recsys-tracker-web-config.onrender.com';
+const SERVER_API_BASE_URL = import.meta.env.SERVER_API_BASE_URL || 'https://recsys-tracker-module.onrender.com';
 
 export async function apiFetch<T>(
     endpoint: string,

@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Container } from '../../types';
-import { Save, Layers, Monitor, Puzzle, ArrowLeft, ArrowUp, ArrowDown, Trash2, Plus, Check, BookOpen, Construction } from 'lucide-react';
+import { Save, X, Layers, Monitor, Puzzle, ArrowLeft, ArrowUp, ArrowDown, Trash2, Plus, Check, BookOpen, Construction } from 'lucide-react';
 import styles from './returnMethodPage.module.css';
 import { DisplayType, LayoutJson, StyleJson, CustomizingFields, FieldConfig } from './types';
 import { useDataCache } from '../../contexts/DataCacheContext';
 import { returnMethodApi } from '../../lib/api/return-method';
-import { ReturnType } from '../../lib/api/types';
+import { searchInputApi } from '../../lib/api/search-input';
+import { ReturnType, SearchInputResponse } from '../../lib/api/types';
 import { DEFAULT_POPUP_LAYOUT, DEFAULT_INLINE_LAYOUT, DEFAULT_STYLE_CONFIG, LAYOUT_MODE_OPTIONS } from './returnMethodDefaults';
 
 interface ReturnMethodFormPageProps {
@@ -34,32 +35,109 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
     const [name, setName] = useState('');
     const [operatorId, setOperatorId] = useState<number>(1);
     const [value, setValue] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    
+    // Custom Widget fields
+    const [layoutStyle, setLayoutStyle] = useState('grid');
+    const [theme, setTheme] = useState('light');
+    const [spacing, setSpacing] = useState('medium');
+    const [size, setSize] = useState('large');
+    
+    // Popup fields
     const [isSaving, setIsSaving] = useState(false);
-    const [errors, setErrors] = useState<{ name?: string; value?: string; general?: string }>({});
-
+    
+    // Search keyword signals
+    const [enableSearchKeyword, setEnableSearchKeyword] = useState(false);
+    const [selectedSearchConfigId, setSelectedSearchConfigId] = useState<number | null>(null);
+    const [searchInputConfigs, setSearchInputConfigs] = useState<SearchInputResponse[]>([]);
+    
+    // Error states
+    const [errors, setErrors] = useState<{
+        name?: string;
+        value?: string;
+        general?: string;
+    }>({});
+    
     // --- CONFIG STATE ---
     const [layoutJson, setLayoutJson] = useState<LayoutJson>(DEFAULT_POPUP_LAYOUT);
     const [styleJson, setStyleJson] = useState<StyleJson>(DEFAULT_STYLE_CONFIG);
     const [customFields, setCustomFields] = useState<CustomizingFields>(DEFAULT_CUSTOM_FIELDS);
     const [delayedDuration, setDelayedDuration] = useState<number>(0);
 
-    const { operators } = useDataCache();
+    // Get cached operators from context
+    const { 
+        operators, 
+        clearReturnMethodsByDomain,
+        getSearchInputsByDomain,
+        setSearchInputsByDomain 
+    } = useDataCache();
+
+    // Fetch search input configurations
+    useEffect(() => {
+        const fetchSearchInputs = async () => {
+            if (!container?.uuid) return;
+            
+            // Check cache first
+            const cachedSearchInputs = getSearchInputsByDomain(container.uuid);
+            if (cachedSearchInputs) {
+                setSearchInputConfigs(cachedSearchInputs);
+                return;
+            }
+
+            // Fetch from API if not in cache
+            try {
+                const response = await searchInputApi.getByDomainKey(container.uuid);
+                setSearchInputsByDomain(container.uuid, response);
+                setSearchInputConfigs(response);
+            } catch (error) {
+                console.error('Failed to fetch search inputs:', error);
+                setSearchInputConfigs([]);
+            }
+        };
+
+        fetchSearchInputs();
+    }, [container?.uuid, getSearchInputsByDomain, setSearchInputsByDomain]);
 
     const sortedFields = useMemo(() => {
         return [...customFields.fields].sort((a, b) => a.position - b.position);
     }, [customFields]);
 
     // --- EFFECT: LOAD DATA ---
-    useEffect(() => {
-        if (mode !== 'create' && id) {
-            // Mock implementation
-            setName('Campaign Popup 2024');
-            setValue('/khuyen-mai');
-            setOperatorId(1); // Default or load from API
-            
-        }
-    }, [mode, id]);
+    // useEffect(() => {
+    //     if (mode !== 'create' && id) {
+    //         // Mock loading existing configuration
+    //         const mockConfig: DisplayConfiguration = {
+    //             id: id,
+    //             configurationName: 'Product Page Widget',
+    //             displayType: 'inline-injection',
+    //             operator: 'contains',
+    //             value: 'product-detail',
+    //             widgetDesign: {
+    //                 layout: 'grid',
+    //                 theme: 'light',
+    //                 spacing: 'medium',
+    //                 size: 'large'
+    //             }
+    //         };
+
+    //         setName(mockConfig.configurationName);
+    //         setDisplayType(mockConfig.displayType);
+    //         const operatorId = mockConfig.operator === 'contains' ? 1 : 
+    //                 mockConfig.operator === 'equals' ? 2 : 
+    //                 mockConfig.operator === 'starts with' ? 3 : 
+    //                 mockConfig.operator === 'ends with' ? 4 : 1;
+    //         setOperatorId(operatorId);
+    //         setValue(mockConfig.value);
+
+    //         if (mockConfig.displayType === 'inline-injection') {
+    //             if (mockConfig.widgetDesign) {
+    //                 setLayoutStyle(mockConfig.widgetDesign.layout);
+    //                 setTheme(mockConfig.widgetDesign.theme);
+    //                 setSpacing(mockConfig.widgetDesign.spacing);
+    //                 setSize(mockConfig.widgetDesign.size);
+    //             }
+    //         }
+    //     }
+    // }, [mode, id]);
 
     // --- HANDLERS ---
     const handleTypeChange = (type: DisplayType) => {
@@ -196,8 +274,8 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
 
         setIsSaving(true);
         try {
-            const requestData = {
-                Key: container?.uuid,
+            const requestData: any = {
+                Key: container.uuid,
                 ConfigurationName: name,
                 ReturnType: displayType === 'popup' ? ReturnType.POPUP : ReturnType.INLINE_INJECTION,
                 OperatorId: operatorId,
@@ -208,8 +286,15 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                 CustomizingFields: customFields.fields,
                 DelayDuration: delayedDuration || 0
             };
-            
-            if (mode === 'create') await returnMethodApi.create(requestData as any);
+
+            // Add SearchKeywordConfigId if enabled and selected
+            if (enableSearchKeyword && selectedSearchConfigId) {
+                requestData.SearchKeywordConfigId = selectedSearchConfigId;
+            }
+
+            await returnMethodApi.create(requestData);
+            // Clear cache để trang danh sách sẽ fetch lại data mới
+            clearReturnMethodsByDomain(container.uuid);
             navigate('/dashboard/recommendation-display');
         } catch (error) {
             console.error(error);
@@ -854,6 +939,61 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                 </div>
             </div>
 
+            {/* Section: Search Keyword Signals */}
+            <div className={styles.sectionCard}>
+                <div className={styles.sectionHeader}>
+                    <h2 className={styles.sectionTitle}>Search Keyword Signals</h2>
+                </div>
+                <div className={styles.sectionContent}>
+                    <div className={styles.formGroup}>
+                        <div className={styles.switchContainer}>
+                            <label className={styles.switchLabel}>
+                                Apply search keyword to this display rule
+                            </label>
+                            <label className={styles.switch}>
+                                <input
+                                    type="checkbox"
+                                    checked={enableSearchKeyword}
+                                    onChange={(e) => {
+                                        setEnableSearchKeyword(e.target.checked);
+                                        if (!e.target.checked) {
+                                            setSelectedSearchConfigId(null);
+                                        }
+                                    }}
+                                    disabled={isReadOnly}
+                                />
+                                <span className={styles.slider}></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    {enableSearchKeyword && (
+                        <div className={styles.formGroup}>
+                            <label className={styles.fieldLabel}>
+                                Choose search keyword configuration
+                            </label>
+                            <select 
+                                className={styles.selectInput}
+                                value={selectedSearchConfigId || ''}
+                                onChange={(e) => setSelectedSearchConfigId(e.target.value ? Number(e.target.value) : null)}
+                                disabled={isReadOnly}
+                            >
+                                <option value="">Select a search keyword configuration...</option>
+                                {searchInputConfigs.map(config => (
+                                    <option key={config.Id} value={config.Id}>
+                                        {config.ConfigurationName}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    <div className={styles.helperBox}>
+                        When enabled, the system will use the keywords entered in the search bar (if any) to filter/rearrange the recommended results.
+                    </div>
+                </div>
+            </div>
+
             <div className={styles.sectionCard}>
                 <div className={styles.sectionHeader}>
                     <h2 className={styles.sectionTitle}>
@@ -893,10 +1033,11 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
 
             {!isReadOnly && (
                 <div className={styles.formActions}>
-                    <button className={styles.cancelButton} onClick={() => navigate('/dashboard/recommendation-display')}>
-                        Cancel
-                    </button>
-                    <button className={styles.saveButton} onClick={handleSave} disabled={isSaving}>
+                    <button 
+                        className={styles.saveButton} 
+                        onClick={handleSave}
+                        disabled={isSaving}
+                    >
                         <Save size={18} />
                         {isSaving ? 'Saving...' : 'Save Configuration'}
                     </button>

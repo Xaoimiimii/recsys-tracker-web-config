@@ -40,6 +40,8 @@ model Domain {
   Users         User[]
   Ratings       Rating[]
   Models        Model[]
+  SearchKeywordConfigs SearchKeywordConfig[]
+  UserIdentities UserIdentity[]
 }
 
 // model DomainReturn {
@@ -66,9 +68,9 @@ model ReturnMethod {
 
   DomainID Int
   Domain   Domain @relation(fields: [DomainID], references: [Id])
-
-  OperatorID Int
-  Operator   Operator @relation(fields: [OperatorID], references: [Id])
+  
+  SearchKeywordConfigID Int?
+  SearchKeywordConfig   SearchKeywordConfig? @relation(fields: [SearchKeywordConfigID], references: [Id])
 
   ReturnType        ReturnType
   Value             String
@@ -100,14 +102,12 @@ model TrackingRule {
   EventTypeID Int
   EventType   EventType @relation(fields: [EventTypeID], references: [Id])
 
-  TrackingTargetId Int
-  TrackingTarget   TrackingTarget @relation(fields: [TrackingTargetId], references: [Id])
+  TrackingTarget String?
 
   ActionType ActionType?
 
-  Conditions      Condition[]
-  PayloadMappings PayloadMapping[]
   Events          Event[]
+  ItemIdentities  ItemIdentity[]
 }
 
 // model TriggerEvent {
@@ -136,33 +136,6 @@ model EventType {
   Events        Event[]
 }
 
-model TrackingTarget {
-  Id    Int    @id @default(autoincrement())
-  Value String
-
-  PatternId Int
-  Pattern   Pattern @relation(fields: [PatternId], references: [Id])
-
-  OperatorId Int
-  Operator   Operator @relation(fields: [OperatorId], references: [Id])
-
-  TrackingRules TrackingRule[]
-}
-
-model Condition {
-  Id    Int    @id @default(autoincrement())
-  Value String
-
-  TrackingRuleID Int
-  TrackingRule   TrackingRule @relation(fields: [TrackingRuleID], references: [Id])
-
-  PatternId Int
-  Pattern   Pattern @relation(fields: [PatternId], references: [Id])
-
-  OperatorID Int
-  Operator   Operator @relation(fields: [OperatorID], references: [Id])
-}
-
 // model PayloadConfig {
 //   Id               Int @id @default(autoincrement())
 //   PayloadPatternID Int
@@ -186,79 +159,95 @@ model Condition {
 //   PayloadConfigs PayloadConfig[]
 // }
 
-model Pattern {
-  Id   Int    @id @default(autoincrement())
-  Name String
+// enum PayloadField {
+//   UserId
+//   Username
+//   ItemId
+//   ItemTitle
+//   Value
+//   AnonymousId
+// }
 
-  TrackingTargets TrackingTarget[]
-  Conditions      Condition[]
+// enum PayloadSource {
+//   RequestBody
+//   Element
+//   Cookie
+//   LocalStorage
+//   SessionStorage
+//   Url
+//   RequestUrl
+// }
+
+// enum PayloadRequestMethod {
+//   GET
+//   POST
+//   PUT
+//   PATCH
+// }
+
+// enum PayloadUrlPart {
+//   QueryParam
+//   PathName
+//   Hash
+// }
+
+// model PayloadMapping {
+//   Id     Int           @id @default(autoincrement())
+//   Field  PayloadField
+//   Source PayloadSource
+//   Value  String?
+
+//   RequestUrl String?
+
+//   RequestUrlPattern String?
+//   RequestMethod     PayloadRequestMethod?
+//   RequestBodyPath   String?
+//   UrlPart           PayloadUrlPart?
+//   UrlPartValue      String?
+
+//   TrackingRuleId Int
+//   TrackingRule   TrackingRule @relation(fields: [TrackingRuleId], references: [Id])
+// }
+enum ItemIdentitySource {
+  request_body
+  request_url
 }
 
-enum PayloadField {
-  UserId
-  Username
-  ItemId
-  ItemTitle
-  Value
-  AnonymousId
-}
+model ItemIdentity {
+  Id Int @id @default(autoincrement())
 
-enum PayloadSource {
-  RequestBody
-  Element
-  Cookie
-  LocalStorage
-  SessionStorage
-  Url
-  RequestUrl
-}
-
-enum PayloadRequestMethod {
-  GET
-  POST
-  PUT
-  PATCH
-}
-
-enum PayloadUrlPart {
-  QueryParam
-  PathName
-  Hash
-}
-
-model PayloadMapping {
-  Id     Int           @id @default(autoincrement())
-  Field  PayloadField
-  Source PayloadSource
-  Value  String?
-
-  RequestUrl String?
-
-  RequestUrlPattern String?
-  RequestMethod     PayloadRequestMethod?
-  RequestBodyPath   String?
-  UrlPart           PayloadUrlPart?
-  UrlPartValue      String?
+  Source ItemIdentitySource
 
   TrackingRuleId Int
   TrackingRule   TrackingRule @relation(fields: [TrackingRuleId], references: [Id])
+
+  RequestConfig Json?
 }
 
-// model EventPattern {
-//   Id   Int    @id @default(autoincrement())
-//   Name String
+enum UserIdentitySource {
+  request_body
+  local_storage
+  session_storage
+  cookie
+  element
+}
 
-//   TrackingTargets TrackingTarget[]
-//   Conditions      Condition[]
-// }
+model UserIdentity {
+  Id Int @id @default(autoincrement())
+
+  Source UserIdentitySource
+
+  DomainId Int
+  Domain Domain @relation(fields: [DomainId], references: [Id])
+
+  RequestConfig Json?
+  Value         String?
+  IsActivated Boolean @default(false)
+}
 
 model Operator {
   Id   Int    @id @default(autoincrement())
   Name String
-
-  Conditions      Condition[]
-  TrackingTargets TrackingTarget[]
-  ReturnMethods   ReturnMethod[]
 }
 
 enum EventUserField {
@@ -267,10 +256,10 @@ enum EventUserField {
   AnonymousId
 }
 
-enum EventItemField {
-  ItemId
-  ItemTitle
-}
+// enum EventItemField {
+//   ItemId
+//   ItemTitle
+// }
 
 model Event {
   Id Int @id @default(autoincrement())
@@ -284,8 +273,9 @@ model Event {
   UserId      String?
   AnonymousId String?
 
-  ItemField EventItemField
-  ItemValue String
+  // ItemField EventItemField
+  // ItemValue String
+  ItemId  String?
 
   RatingValue Int?
   ReviewValue String?
@@ -294,6 +284,18 @@ model Event {
 
   TrackingRuleId Int
   TrackingRule   TrackingRule @relation(fields: [TrackingRuleId], references: [Id])
+}
+
+model SearchKeywordConfig {
+  Id Int @id @default(autoincrement())
+
+  DomainID Int
+  Domain   Domain @relation(fields: [DomainID], references: [Id])
+
+  ConfigurationName String
+  InputSelector String
+
+  ReturnMethods ReturnMethod[]
 }
 
 model Category {

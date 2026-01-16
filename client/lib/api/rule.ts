@@ -22,13 +22,8 @@ export const ruleApi = {
         apiFetch<{ statusCode: number; message: string }>('/rule/create', {
             method: 'POST',
             body: JSON.stringify(data),
-        }, true),
+        }, false, true),
 
-    // Get detailed information for a specific rule
-    getRuleById: (ruleId: number) => 
-        apiFetch<RuleDetailResponse>(`/rule/${ruleId}`, undefined, true),
-
-    // Get list of rules for a domain
     getRulesByDomain: (domainKey: string) => 
         apiFetch<RuleListItem[]>(`/rule/domain/${domainKey}`, undefined, true),
 

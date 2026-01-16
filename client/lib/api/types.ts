@@ -218,8 +218,8 @@ export interface CreateItem {
 export interface TrackedEvent {
   Id: number;
   EventTypeId: number;
-  UserField: string;
-  UserValue: string;
+  UserId?: string;
+  AnonymousId: string;
   ItemField: string;
   ItemValue: string;
   RatingValue: number | null;
@@ -229,4 +229,13 @@ export interface TrackedEvent {
     Id: number;
     Name: string;
   };
+}
+
+// ==================== SEARCH INPUT TYPES ====================
+
+export interface SearchInputResponse {
+  Id: number;
+  DomainID: number;
+  ConfigurationName: string;
+  InputSelector: string;
 }
