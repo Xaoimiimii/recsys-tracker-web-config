@@ -259,11 +259,11 @@ export const FIELD_TO_BACKEND: Record<string, string> = {
 };
 
 export const INITIAL_MAPPINGS: Record<string, string[]> = {
-  [EventType.CLICK]: ['userId', 'itemId'],
-  [EventType.RATING]: ['userId', 'itemId', 'rating_value'],
-  [EventType.REVIEW]: ['userId', 'itemId', 'review_text'],
-  [EventType.SCROLL]: ['userId', 'itemId'],
-  [EventType.PAGE_VIEW]: ['userId', 'itemId'],
+  [EventType.CLICK]: ['itemId'],
+  [EventType.RATING]: ['itemId', 'rating_value'],
+  [EventType.REVIEW]: ['itemId', 'review_text'],
+  [EventType.SCROLL]: ['itemId'],
+  [EventType.PAGE_VIEW]: ['itemId'],
 };
 
 // ==================== COMPONENT ====================
@@ -275,6 +275,13 @@ interface RuleBuilderProps {
   onCancel: () => void;
   domainKey: string;
   domainType?: string;
+  userConfig?: {
+    mode: 'anonymousId' | 'userId';
+    source: 'local_storage' | 'cookie' | 'session_storage' | 'request_body' | 'element';
+    value: string;
+    requestUrlPattern?: string;
+    requestMethod?: 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'GET';
+  };
 }
 
 export const RuleBuilder: React.FC<RuleBuilderProps> = ({ 
@@ -294,7 +301,6 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     actionType: ActionType.VIEW,
     targetElement: { selector: '', operator: 'contains', value: '' },
     payloadMappings: [
-      { field: 'userId', source: MappingSource.LOCAL_STORAGE, path: 'user.id', required: true },
       { field: 'itemId', source: MappingSource.ELEMENT, path: '.product-id', required: true }
     ],
   });
@@ -572,8 +578,8 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     // Validation 3: Payload Mapping validations
     const payloadErrors: { [key: number]: string } = {};
     rule.payloadMappings.forEach((mapping, idx) => {
-      // Check user/item fields (userId, anonymousId, itemId, itemTitle) - required for all event types
-      if (['userId', 'anonymousId', 'itemId', 'itemTitle'].includes(mapping.field)) {
+      // Check item fields (itemId, itemTitle) - required for all event types
+      if (['itemId', 'itemTitle'].includes(mapping.field)) {
         if (mapping.source === MappingSource.REQUEST_BODY) {
           if (!mapping.requestUrlPattern?.trim()) {
             payloadErrors[idx] = 'URL Pattern is required when source is Request Body.';
@@ -903,25 +909,13 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
               </thead>
               <tbody>
                 {rule.payloadMappings.map((mapping, idx) => {
-                  const isUserField = mapping.field === 'userId' || mapping.field === 'anonymousId';
                   const isItemField = mapping.field === 'itemId' || mapping.field === 'itemTitle';
 
                   return (
                     <React.Fragment key={idx}>
                     <tr>
                       <td className={`${styles.td} ${styles.tdVerticalTop}`}>
-                        {isUserField ? (
-                          <div className={styles.radioGroup}>
-                            <label className={styles.radioLabel}>
-                              <input type="radio" name={`user-field-${idx}`} checked={mapping.field === 'userId'} disabled={isViewMode} onChange={() => handleUpdateMapping(idx, { field: 'userId' })} />
-                              User_info
-                            </label>
-                            <label className={styles.radioLabel}>
-                              <input type="radio" name={`user-field-${idx}`} checked={mapping.field === 'anonymousId'} disabled={isViewMode} onChange={() => handleUpdateMapping(idx, { field: 'anonymousId' })} />
-                              AnonymousId
-                            </label>
-                          </div>
-                        ) : isItemField ? (
+                        {isItemField ? (
                           <div className={styles.radioGroup}>
                             <label className={styles.radioLabel}>
                               <input type="radio" name={`item-field-${idx}`} checked={mapping.field === 'itemId'} disabled={isViewMode} onChange={() => handleUpdateMapping(idx, { field: 'itemId' })} />
@@ -939,8 +933,8 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                       <td className={`${styles.td} ${styles.tdVerticalTop}`}>
                         <select 
                           className={styles.input}
-                          value={mapping.field === 'anonymousId' ? MappingSource.LOCAL_STORAGE : mapping.source}
-                          disabled={isViewMode || mapping.field === 'anonymousId'}
+                          value={mapping.source}
+                          disabled={isViewMode}
                           onChange={e => handleUpdateMapping(idx, { source: e.target.value as MappingSource })}
                         >
                           {MAPPING_SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
@@ -1148,8 +1142,8 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                               type="text"
                               placeholder='CSS Selector (e.g. .title)'
                               className={`${styles.input} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
-                              value={mapping.field === 'anonymousId' ? 'recsys_anon_id' : (mapping.value || '')}
-                              disabled={isViewMode || mapping.field === 'anonymousId'}
+                              value={mapping.value || ''}
+                              disabled={isViewMode}
                               onChange={e => {
                                 handleUpdateMapping(idx, { value: e.target.value });
                                 if (errors.payloadMappings?.[idx]) {
@@ -1179,8 +1173,8 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                               type="text"
                               placeholder='Path (e.g. user.id)'
                               className={`${styles.input} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
-                              value={mapping.field === 'anonymousId' ? 'recsys_anon_id' : (mapping.value || '')}
-                              disabled={isViewMode || mapping.field === 'anonymousId'}
+                              value={mapping.value || ''}
+                              disabled={isViewMode}
                               onChange={e => {
                                 handleUpdateMapping(idx, { value: e.target.value });
                                 if (errors.payloadMappings?.[idx]) {
@@ -1206,22 +1200,6 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                     
                       </td>
                     </tr>
-                    {isUserField && (
-                      <tr>
-                        <td colSpan={3} className={styles.td}>
-                          {mapping.field === 'userId' && (
-                            <div className={styles.fieldNote}>
-                              We will attempt to capture user information according to this configuration, but will fall back to anonymous ID if capture fails.
-                            </div>
-                          )}
-                          {mapping.field === 'anonymousId' && (
-                            <div className={styles.fieldNote}>
-                              Anonymous ID has limitations in tracking user behavior across sessions. We recommend configuring User_info for better tracking accuracy.
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    )}
                     </React.Fragment>
                   );
                 })}
@@ -1262,3 +1240,5 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     </div>
   );
 };
+
+
