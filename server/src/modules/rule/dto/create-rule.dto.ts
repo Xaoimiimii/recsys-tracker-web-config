@@ -1,7 +1,7 @@
+import { PayloadMappingDto } from './payload-mapping.dto';
 import { ActionType } from './../../../generated/prisma/enums';
-import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { IsArray, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString } from "class-validator";
 import { ApiProperty } from "@nestjs/swagger";
-import { ItemIdentityDto } from './item-identity.dto';
 
 export class CreateRuleDto {
     @ApiProperty({ example: "Rule Name" })
@@ -19,9 +19,10 @@ export class CreateRuleDto {
     @IsNotEmpty()
     EventTypeId: number;
 
-    @ApiProperty({ description: "Item identity" })
+    @ApiProperty({ description: "Payload mappings" })
     @IsNotEmpty()
-    ItemIdentity: ItemIdentityDto
+    @IsArray()
+    PayloadMapping: PayloadMappingDto[]
 
     @ApiProperty({ example: "" })
     @IsNotEmpty()
