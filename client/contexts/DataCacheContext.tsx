@@ -1,5 +1,5 @@
 import React, { createContext, useContext, ReactNode, useState } from 'react';
-import { Pattern, Operator, RuleListItem, ReturnMethodResponse, SearchInputResponse } from '../lib/api/types';
+import { RuleListItem, ReturnMethodResponse, SearchInputResponse } from '../lib/api/types';
 
 export interface TriggerEvent {
     Id: number;
@@ -8,14 +8,10 @@ export interface TriggerEvent {
 
 interface DataCacheContextType {
     triggerEvents: TriggerEvent[];
-    patterns: Pattern[];
-    operators: Operator[];
     rulesByDomain: Record<string, RuleListItem[]>;
     returnMethodsByDomain: Record<string, ReturnMethodResponse[]>;
     searchInputsByDomain: Record<string, SearchInputResponse[]>;
     setTriggerEvents: (data: TriggerEvent[]) => void;
-    setPatterns: (data: Pattern[]) => void;
-    setOperators: (data: Operator[]) => void;
     setRulesByDomain: (domainKey: string, data: RuleListItem[]) => void;
     setReturnMethodsByDomain: (domainKey: string, data: ReturnMethodResponse[]) => void;
     setSearchInputsByDomain: (domainKey: string, data: SearchInputResponse[]) => void;
@@ -31,8 +27,6 @@ export const DataCacheContext = createContext<DataCacheContextType | undefined>(
 
 export const DataCacheProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [triggerEvents, setTriggerEvents] = useState<TriggerEvent[]>([]);
-    const [patterns, setPatterns] = useState<Pattern[]>([]);
-    const [operators, setOperators] = useState<Operator[]>([]);
     const [rulesByDomain, setRulesByDomainState] = useState<Record<string, RuleListItem[]>>({});
     const [returnMethodsByDomain, setReturnMethodsByDomainState] = useState<Record<string, ReturnMethodResponse[]>>({});
     const [searchInputsByDomain, setSearchInputsByDomainState] = useState<Record<string, SearchInputResponse[]>>({});
@@ -88,14 +82,10 @@ export const DataCacheProvider: React.FC<{ children: ReactNode }> = ({ children 
     return (
         <DataCacheContext.Provider value={{
             triggerEvents,
-            patterns,
-            operators,
             rulesByDomain,
             returnMethodsByDomain,
             searchInputsByDomain,
             setTriggerEvents,
-            setPatterns,
-            setOperators,
             setRulesByDomain,
             setReturnMethodsByDomain,
             setSearchInputsByDomain,

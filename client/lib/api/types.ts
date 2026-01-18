@@ -40,9 +40,17 @@ export interface UserState {
 
 // ==================== DOMAIN TYPES ====================
 
+export interface UserIdentityDto {
+  Source: 'local_storage' | 'session_storage' | 'cookie' | 'request_body' | 'element';
+  RequestConfig: any;
+  Value: string;
+  IsActivated: boolean;
+}
+
 export interface CreateDomainDto {
   url: string;
   type: number;
+  UserIdentity: UserIdentityDto;
 }
 
 export interface DomainResponse {
@@ -66,80 +74,65 @@ export interface CreateReturnMethod {
   ConfigurationName: string;
   ReturnType: ReturnType;
   Value: string;
-  OperatorId: number;
   LayoutJson: any;          
   StyleJson: any;
   CustomizingFields: any;
   DelayDuration?: number;
+  SearchKeywordConfigId?: number;
 }
 
 export interface ReturnMethodResponse {
   Key: string;
   ConfigurationName: string;
-  OperatorId: string;
   Value: string;
   ReturnType: string;
   LayoutJson?: any;
   StyleJson?: any;
   CustomizingFields?: any;
   DelayDuration?: number;
+  SearchKeywordConfigId?: number;
 }
 
 
 // ==================== RULE TYPES ====================
-
-export interface Pattern {
-  Id: number;
-  Name: string;
-}
-
-export interface Operator {
-  Id: number;
-  Name: string;
-}
 
 export interface EventType {
   Id: number;
   Name: string;
 }
 
-export interface Condition {
-  PatternId: number;
-  OperatorId: number;
-  Value: string;
+export enum ItemIdentitySource {
+  REQUEST_BODY = 'request_body',
+  REQUEST_URL = 'request_url'
 }
 
-export interface PayloadConfig {
-  Field: string;
-  Source: string;
-  Value?: string | null;
-  RequestUrlPattern?: string | null;
-  RequestMethod?: string | null;
-  RequestBodyPath?: string | null;
-  UrlPart?: string | null;
-  UrlPartValue?: string | null;
+export enum UserIdentitySource {
+  REQUEST_BODY = 'request_body',
+  LOCAL_STORAGE = 'local_storage',
+  SESSION_STORAGE = 'session_storage',
+  COOKIE = 'cookie',
+  ELEMENT = 'element'
 }
 
-export interface TrackingTarget {
-  PatternId: number;
-  OperatorId: number;
-  Value: string;
+export interface ItemIdentity {
+  Source: ItemIdentitySource;
+  TrackingRuleId: number;
+  RequestConfig?: Record<string, any>;
+}
+
+export interface UserIdentity {
+  Source: UserIdentitySource;
+  RequestConfig?: Record<string, any>;
+  Value?: string;
 }
 
 export interface CreateRule {
   Name: string;
   DomainKey: string;
   EventTypeId: number;
-  TrackingTarget?: TrackingTarget | null;
-  Conditions: Condition[];
-  PayloadMappings: PayloadConfig[];
-}
-
-export interface TargetElement {
-  Id: number;
-  Value: string;
-  PatternId: number;
-  OperatorId: number;
+  PayloadMapping: any[];
+  TrackingTarget: string;
+  ActionType?: string | null;
 }
 
 export interface RuleDetailResponse {
@@ -147,33 +140,9 @@ export interface RuleDetailResponse {
   Name: string;
   DomainID: number;
   EventTypeID: number;
-  TrackingTargetId: number;
-  TrackingTarget: TargetElement;
-  Conditions: RuleCondition[];
-  PayloadMappings: RulePayloadMapping[];
-}
-
-// Condition with all fields from API response
-export interface RuleCondition {
-  Id: number;
-  Value: string;
-  TrackingRuleID: number;
-  PatternId: number;
-  OperatorID: number;
-}
-
-// PayloadMapping with all fields from API response
-export interface RulePayloadMapping {
-  Id: number;
-  Field: string;
-  Source: string;
-  Value: string | null;
-  RequestUrlPattern: string | null;
-  RequestMethod: string | null;
-  RequestBodyPath: string | null;
-  UrlPart: string | null;
-  UrlPartValue: string | null;
-  TrackingRuleId: number;
+  TrackingTarget: string | null;
+  ActionType?: string;
+  ItemIdentities: ItemIdentity[];
 }
 
 // EventType info in rule
@@ -188,11 +157,10 @@ export interface RuleListItem {
   Name: string;
   DomainID: number;
   EventTypeID: number;
-  TrackingTargetId: number;
-  PayloadMappings: RulePayloadMapping[];
-  Conditions: RuleCondition[];
-  TrackingTarget: TargetElement;
+  TrackingTarget: string | null;
+  ActionType?: string;
   EventType: RuleEventType;
+  ItemIdentities: ItemIdentity[];
 }
 
 // ==================== USER TYPES ====================

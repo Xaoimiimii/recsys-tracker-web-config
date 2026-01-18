@@ -1,7 +1,5 @@
 import { apiFetch } from './client';
 import type { 
-    Pattern, 
-    Operator, 
     CreateRule, 
     RuleListItem,
     RuleDetailResponse,
@@ -9,12 +7,6 @@ import type {
 } from './types';
 
 export const ruleApi = {
-    getPatterns: () => 
-        apiFetch<Pattern[]>('/rule/pattern', undefined, true),
-
-    getOperators: () => 
-        apiFetch<Operator[]>('/rule/operators', undefined, true),
-
     getAllEventType: () =>
         apiFetch<EventType[]>('/rule/event-type', undefined, true),
 

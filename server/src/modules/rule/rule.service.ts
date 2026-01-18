@@ -1,4 +1,4 @@
-import { ItemIdentity, Prisma } from './../../generated/prisma/client';
+import { Prisma } from './../../generated/prisma/client';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRuleDto } from './dto';
@@ -50,14 +50,18 @@ export class RuleService {
             },
         });
 
-        await this.prisma.itemIdentity.create({
-            data: {
-                Source: rule.ItemIdentity.Source,
-                TrackingRuleId: createdRule.Id,
-                RequestConfig: rule.ItemIdentity.RequestConfig as any
-            }
-        })
-
+        for (const payloadMapping of rule.PayloadMapping)
+        {
+            await this.prisma.payloadMapping.create({
+                data: {
+                    Field: payloadMapping.Field,
+                    Source: payloadMapping.Source,
+                    TrackingRuleId: createdRule.Id,
+                    Config: payloadMapping.Config as Prisma.InputJsonValue
+                }
+            })
+        }
+        
         return createdRule;
     }
 
@@ -102,6 +106,12 @@ export class RuleService {
         });
         if (!existingRule) throw new NotFoundException(`Rule id ${id} not found`);
 
+        await this.prisma.payloadMapping.deleteMany({
+            where: {
+                Id: id
+            }
+        });
+
         await this.prisma.trackingRule.delete({
             where: {
                 Id: id,
@@ -134,22 +144,23 @@ export class RuleService {
 
         if (data.TrackingTarget) updateData.TrackingTarget = data.TrackingTarget;
 
-        if (data.ItemIdentity) {
-            const ItemIdentity = await this.prisma.itemIdentity.findFirst({
+        if (data.PayloadMapping) {
+            await this.prisma.payloadMapping.deleteMany({
                 where: {
                     TrackingRuleId: data.Id
                 }
             });
-            
-            await this.prisma.itemIdentity.update({
-                where: {
-                    Id: ItemIdentity?.Id
-                },
-                data: {
-                    Source: data.ItemIdentity.Source,
-                    RequestConfig: data.ItemIdentity.RequestConfig as Prisma.InputJsonValue
-                }
-            })
+
+            await Promise.all(data.PayloadMapping.map(payloadMapping => 
+                this.prisma.payloadMapping.create({
+                    data: {
+                        Field: payloadMapping.Field,
+                        Source: payloadMapping.Source,
+                        TrackingRuleId: data.Id,
+                        Config: payloadMapping.Config as Prisma.InputJsonValue
+                    }
+                })
+            ))
         }
 
         const updatedRule = await this.prisma.trackingRule.update({

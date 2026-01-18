@@ -19,7 +19,6 @@ interface DashboardPageProps {
 export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, setContainer, onLogout, domains }) => {
     const [showModal, setShowModal] = useState(false);
     const [showDomainSwitcher, setShowDomainSwitcher] = useState(false);
-    const { patterns, operators, setPatterns, setOperators } = useDataCache();
 
     // Event state
     const [latestEvents, setLatestEvents] = useState<TrackedEvent[]>([]);
@@ -29,36 +28,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
 
     const [selectedRuleId, setSelectedRuleId] = useState<number | undefined>(undefined);
     const [selectedEvent, setSelectedEvent] = useState<TrackedEvent | null>(null);
-
-    // Fetch master data when dashboard loads
-    useEffect(() => {
-        const fetchMasterData = async () => {
-            try {
-                // Only fetch if not already in cache
-                const promises = [];
-
-                if (patterns.length === 0) {
-                    promises.push(
-                        ruleApi.getPatterns().then(data => setPatterns(data))
-                    );
-                }
-
-                if (operators.length === 0) {
-                    promises.push(
-                        ruleApi.getOperators().then(data => setOperators(data))
-                    );
-                }
-
-                if (promises.length > 0) {
-                    await Promise.all(promises);
-                }
-            } catch (error) {
-                console.error('Failed to fetch master data:', error);
-            }
-        };
-
-        fetchMasterData();
-    }, [patterns.length, operators.length, setPatterns, setOperators]);
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
@@ -158,7 +127,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
         }
         setSelectedEvent(null); // Clear event selection when changing rules
     };
-    
+
     return (
         <div className={styles.container}>
             {/* Top Stats / Info */}

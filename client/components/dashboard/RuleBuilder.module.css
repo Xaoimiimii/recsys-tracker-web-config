@@ -1156,6 +1156,10 @@
   margin-top: 0;
 }
 
+.exampleCodeMargin {
+  margin-top: 0.75rem;
+}
+
 .modalCloseButton {
   width: 100%;
   justify-content: center;

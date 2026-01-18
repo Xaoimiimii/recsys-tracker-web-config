@@ -28,7 +28,7 @@ export const SearchInputFormPage: React.FC<SearchInputFormPageProps> = ({ contai
     }>({});
 
     // Get cached operators from context
-    const { operators, clearSearchInputsByDomain } = useDataCache();
+    const { clearSearchInputsByDomain } = useDataCache();
 
     const handleSave = async () => {
         // Reset errors
@@ -124,32 +124,24 @@ export const SearchInputFormPage: React.FC<SearchInputFormPageProps> = ({ contai
 
                         <div className={styles.formRow}>
                             <div className={styles.formCol}>
-                                <label className={styles.inputLabel}>Match Operator</label>
-                                <select 
+                                <label className={styles.inputLabel}>Target Type</label>
+                                <input
                                     className={styles.selectInput}
-                                    value={operatorId}
-                                    onChange={(e) => setOperatorId(Number(e.target.value))}
-                                    disabled={isReadOnly}
-                                >
-                                    {operators.length > 0 ? (
-                                        operators.map(op => (
-                                            <option key={op.Id} value={op.Id}>
-                                                {op.Name}
-                                            </option>
-                                        ))
-                                    ) : (
-                                        <>
-                                            <option value="1">Contains</option>
-                                            <option value="2">Equals</option>
-                                            <option value="3">Starts with</option>
-                                            <option value="4">Ends with</option>
-                                        </>
-                                    )}
-                                </select>
+                                    value="CSS Selector"
+                                    disabled
+                                />
+                            </div>
+                            <div className={styles.formCol}>
+                                <label className={styles.inputLabel}>Match Condition</label>
+                                <input
+                                    className={styles.selectInput}
+                                    value="Contains"
+                                    disabled
+                                />
                             </div>
                             <div className={styles.formCol} style={{ flex: 2 }}>
                                 <label className={styles.inputLabel}>
-                                    CSS Selector Value <span className={styles.required}>*</span>
+                                    Selector Pattern <span className={styles.required}>*</span>
                                 </label>
                                 <input
                                     type="text"

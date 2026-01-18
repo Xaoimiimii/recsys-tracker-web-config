@@ -39,7 +39,13 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onLogout, onDoma
       const typeNumber = DOMAIN_TYPE_TO_NUMBER[type];
       const domain = await domainApi.create({ 
         url: enteredUrl,
-        type: typeNumber 
+        type: typeNumber,
+        UserIdentity: {
+          Source: 'local_storage',
+          RequestConfig: null,
+          Value: 'recsys_anon_id',
+          IsActivated: false
+        }
       });
       setCreatedDomainKey(domain.Key);
       localStorage.setItem('selectedDomainKey', domain.Key);
