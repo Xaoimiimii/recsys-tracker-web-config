@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Container } from '../../types';
-import { Save, X, Layers, Monitor, Puzzle, ArrowLeft, ArrowUp, ArrowDown, Trash2, Plus, Check, BookOpen, Construction } from 'lucide-react';
+import { Save, X, Layers, Monitor, Puzzle, ArrowLeft, ArrowUp, ArrowDown, Trash2, Plus, Check, BookOpen, Construction, Settings, Eye, Image, Divide } from 'lucide-react';
 import styles from './returnMethodPage.module.css';
 import { DisplayType, LayoutJson, StyleJson, CustomizingFields, FieldConfig } from './types';
 import { useDataCache } from '../../contexts/DataCacheContext';
@@ -18,10 +18,9 @@ interface ReturnMethodFormPageProps {
 const DEFAULT_CUSTOM_FIELDS: CustomizingFields = {
     fields: [
         { key: "image", position: 0, isEnabled: true },
-        { key: "product_name", position: 1, isEnabled: true },
-        { key: "price", position: 2, isEnabled: true },
-        { key: "rating", position: 3, isEnabled: true },
-        { key: "description", position: 4, isEnabled: false }
+        { key: "item_name", position: 1, isEnabled: true },
+        { key: "category", position: 2, isEnabled: true },
+        { key: "description", position: 3, isEnabled: true }
     ]
 };
 
@@ -35,6 +34,13 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
     const [name, setName] = useState('');
     const [value, setValue] = useState('');
     
+    // Advanced Mode Switch
+    const [isAdvancedMode, setIsAdvancedMode] = useState(false);
+    const [isCustomizationEnabled, setIsCustomizationEnabled] = useState(mode !== 'create');
+
+    // Floating Preview State
+    const [showFloatingPreview, setShowFloatingPreview] = useState(false);
+
     // Custom Widget fields
     const [layoutStyle, setLayoutStyle] = useState('grid');
     const [theme, setTheme] = useState('light');
@@ -98,45 +104,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
     const sortedFields = useMemo(() => {
         return [...customFields.fields].sort((a, b) => a.position - b.position);
     }, [customFields]);
-
-    // --- EFFECT: LOAD DATA ---
-    // useEffect(() => {
-    //     if (mode !== 'create' && id) {
-    //         // Mock loading existing configuration
-    //         const mockConfig: DisplayConfiguration = {
-    //             id: id,
-    //             configurationName: 'Product Page Widget',
-    //             displayType: 'inline-injection',
-    //             operator: 'contains',
-    //             value: 'product-detail',
-    //             widgetDesign: {
-    //                 layout: 'grid',
-    //                 theme: 'light',
-    //                 spacing: 'medium',
-    //                 size: 'large'
-    //             }
-    //         };
-
-    //         setName(mockConfig.configurationName);
-    //         setDisplayType(mockConfig.displayType);
-    //         const operatorId = mockConfig.operator === 'contains' ? 1 : 
-    //                 mockConfig.operator === 'equals' ? 2 : 
-    //                 mockConfig.operator === 'starts with' ? 3 : 
-    //                 mockConfig.operator === 'ends with' ? 4 : 1;
-    //         setOperatorId(operatorId);
-    //         setValue(mockConfig.value);
-
-    //         if (mockConfig.displayType === 'inline-injection') {
-    //             if (mockConfig.widgetDesign) {
-    //                 setLayoutStyle(mockConfig.widgetDesign.layout);
-    //                 setTheme(mockConfig.widgetDesign.theme);
-    //                 setSpacing(mockConfig.widgetDesign.spacing);
-    //                 setSize(mockConfig.widgetDesign.size);
-    //             }
-    //         }
-    //     }
-    // }, [mode, id]);
-
+    
     // --- HANDLERS ---
     const handleTypeChange = (type: DisplayType) => {
         if (isReadOnly) return;
@@ -317,88 +285,97 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
 
     // --- UI CONFIG PANELS ---
 
-    const renderPopupConfigPanel = () => (
-        <div className={styles.formContent}>
-             <div className={styles.formGroup}>
-                <div className={styles.sectionLabelWithIcon}>
-                    <Layers size={16} className="text-gray-500"/>
-                    <label className={styles.sectionLabel}>Popup Layout</label>
-                </div>
-                
-                <div className={styles.formRow}>
-                    <div className={styles.formCol}>
-                        <label className={styles.inputLabel}>Popup Delay (sec)</label>
-                        <input 
-                            type="number" className={styles.textInput}
-                            value={delayedDuration}
-                            onChange={(e) => setDelayedDuration(Number(e.target.value))}
-                            disabled={isReadOnly}
-                        />
-                    </div>
-                </div>
+    const renderPopupConfigPanel = () => {
+        return (
+            <div className={styles.formContent}>
+                <div className={styles.formGroup}>
+                    {/* 3. Popup Delay - Bị khóa theo isPopupSettingsDisabled */}
+                    {isCustomizationEnabled && (
+                        <>
+                            <div className={styles.sectionLabelWithIcon} style={{ marginBottom: 0 }}>
+                                <Layers size={16} className="text-gray-500"/>
+                                <label className={styles.sectionLabel}>Popup Layout</label>
+                            </div>
+                            <div className={styles.formRow}>
+                                <div className={styles.formCol}>
+                                    <label className={styles.inputLabel}>Popup Delay (sec)</label>
+                                    <input 
+                                        type="number" className={styles.textInput}
+                                        value={delayedDuration}
+                                        onChange={(e) => setDelayedDuration(Number(e.target.value))}
+                                    />
+                                </div>
+                            </div>
 
-                <div className={`${styles.formRow} ${styles.marginTopSm}`}>
-                    <div className={styles.formCol}>
-                        <label className={styles.inputLabel}>Position</label>
-                        <select 
-                            className={styles.selectInput}
-                            value={layoutJson.wrapper?.popup?.position}
-                            onChange={(e) => updatePopupWrapper('position', e.target.value)}
-                            disabled={isReadOnly}
-                        >
-                            <option value="center">Center (Modal)</option>
-                            <option value="bottom-right">Bottom Right</option>
-                            <option value="bottom-left">Bottom Left</option>
-                            <option value="top-center">Top Banner</option>
-                        </select>
-                    </div>
-                    <div className={styles.formCol}>
-                        <label className={styles.inputLabel}>Width (px)</label>
-                        <input 
-                            type="number" className={styles.textInput}
-                            value={layoutJson.wrapper?.popup?.width}
-                            onChange={(e) => updatePopupWrapper('width', Number(e.target.value))}
-                            disabled={isReadOnly}
-                        />
-                    </div>
-                </div>
+                            {/* 4. Position & Width - Bị khóa theo isPopupSettingsDisabled */}
+                            <div className={`${styles.formRow} ${styles.marginTopSm}`}>
+                                <div className={styles.formCol}>
+                                    <label className={styles.inputLabel}>Position</label>
+                                    <select 
+                                        className={styles.selectInput}
+                                        value={layoutJson.wrapper?.popup?.position}
+                                        onChange={(e) => updatePopupWrapper('position', e.target.value)}
+                                    >
+                                        <option value="center">Center (Modal)</option>
+                                        <option value="bottom-right">Bottom Right</option>
+                                        <option value="bottom-left">Bottom Left</option>
+                                        <option value="top-center">Top Banner</option>
+                                    </select>
+                                </div>
+                                <div className={styles.formCol}>
+                                    <label className={styles.inputLabel}>Width (px)</label>
+                                    <input 
+                                        type="number" className={styles.textInput}
+                                        value={layoutJson.wrapper?.popup?.width}
+                                        onChange={(e) => updatePopupWrapper('width', Number(e.target.value))}
+                                    />
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </div> 
             </div>
-        </div>
-    );
+        );
+    };
 
     const renderInlineConfigPanel = () => (
         <div className={styles.formContent}>
              <div className={styles.formGroup}>
-                <div className={styles.sectionLabelWithIcon}>
-                    <Monitor size={16} className="text-gray-500"/>
-                    <label className={styles.sectionLabel}>Inline Settings</label>
-                </div>
-                <div className={styles.formRow}>
-                    <div className={styles.formCol}>
-                        <label className={styles.inputLabel}>Target Selector (DOM)</label>
-                        <input 
-                            type="text" className={styles.textInput}
-                            placeholder="#product-recommendations"
-                            value={layoutJson.wrapper?.inline?.selector || ''}
-                            onChange={(e) => updateInlineWrapper('selector', e.target.value)}
-                            disabled={isReadOnly}
-                        />
-                         <p className={styles.helperText}>Use the top "Selector Value" to trigger, use this for placement logic if different.</p>
+                {/* [SỬA] Chỉ hiển thị khi Switch BẬT */}
+                {isCustomizationEnabled && (
+                    <>
+                    <div className={styles.sectionLabelWithIcon}>
+                        <Monitor size={16} className="text-gray-500"/>
+                        <label className={styles.sectionLabel}>Inline Settings</label>
                     </div>
-                    <div className={styles.formCol}>
-                        <label className={styles.inputLabel}>Injection Mode</label>
-                        <select 
-                            className={styles.selectInput}
-                            value={layoutJson.wrapper?.inline?.injectionMode}
-                            onChange={(e) => updateInlineWrapper('injectionMode', e.target.value)}
-                            disabled={isReadOnly}
-                        >
-                            <option value="append">Append (Bottom)</option>
-                            <option value="prepend">Prepend (Top)</option>
-                            <option value="replace">Replace</option>
-                        </select>
+                    <div className={styles.formRow}>
+                        <div className={styles.formCol}>
+                            <label className={styles.inputLabel}>Target Selector (DOM)</label>
+                            <input 
+                                type="text" className={styles.textInput}
+                                placeholder="#product-recommendations"
+                                value={layoutJson.wrapper?.inline?.selector || ''}
+                                onChange={(e) => updateInlineWrapper('selector', e.target.value)}
+                                disabled={isReadOnly}
+                            />
+                             <p className={styles.helperText}>Use the top "Selector Value" to trigger...</p>
+                        </div>
+                        <div className={styles.formCol}>
+                            <label className={styles.inputLabel}>Injection Mode</label>
+                            <select 
+                                className={styles.selectInput}
+                                value={layoutJson.wrapper?.inline?.injectionMode}
+                                onChange={(e) => updateInlineWrapper('injectionMode', e.target.value)}
+                                disabled={isReadOnly}
+                            >
+                                <option value="append">Append (Bottom)</option>
+                                <option value="prepend">Prepend (Top)</option>
+                                <option value="replace">Replace</option>
+                            </select>
+                        </div>
                     </div>
-                </div>
+                    </>
+                )}
             </div>
         </div>
     );
@@ -480,28 +457,12 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                     </div>
                 </div>
 
-                {/* Typography */}
+                {/* Typography (Đã rút gọn) */}
                 <div className={styles.formGroup}>
                     <label className={styles.fieldLabel}>Typography</label>
-                    <div className={styles.formRow}>
-                        <div className={styles.formCol}>
-                            <label className={styles.inputLabel}>Font Family</label>
-                            <select 
-                                className={styles.selectInput}
-                                value={styleJson.tokens.typography.fontFamily}
-                                onChange={(e) => updateTypography('fontFamily' as any, '', e.target.value)}
-                                disabled={isReadOnly}
-                            >
-                                <option value="Inter, sans-serif">Inter</option>
-                                <option value="Arial, sans-serif">Arial</option>
-                                <option value="'Times New Roman', serif">Times New Roman</option>
-                                <option value="inherit">Inherit from Site</option>
-                            </select>
-                        </div>
-                    </div>
-
+                    
                     <div className={styles.typographyList}>
-                        {['title', 'body', 'label'].map((type) => {
+                        {['title'].map((type) => {
                             const typoConfig = styleJson.tokens.typography[type as keyof typeof styleJson.tokens.typography] as any;
                             if (!typoConfig || typeof typoConfig !== 'object') return null;
 
@@ -536,8 +497,8 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                             />
                                         </div>
                                         <input type="color" className={styles.colorPickerFull}
-                                            value={styleJson.tokens.colors[type === 'title' ? 'textPrimary' : 'textSecondary'] || '#000000'}
-                                            onChange={(e) => updateColorToken(type === 'title' ? 'textPrimary' : 'textSecondary', e.target.value)}
+                                            value={styleJson.tokens.colors['textPrimary'] || '#000000'}
+                                            onChange={(e) => updateColorToken('textPrimary', e.target.value)}
                                         />
                                     </div>
                                 </div>
@@ -550,7 +511,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                 <div className={styles.formGroup}>
                     <label className={styles.fieldLabel}>Color Palette</label>
                     <div className={styles.formRow}>
-                        {['surface', 'border', 'primary'].map(colorKey => (
+                        {['surface', 'border'].map(colorKey => (
                              <div className={styles.formCol} key={colorKey}>
                                 <label className={styles.inputLabel}>{colorKey.charAt(0).toUpperCase() + colorKey.slice(1)}</label>
                                 <div className={styles.colorSwatchWrapper}>
@@ -613,10 +574,6 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
     const renderFieldsConfigPanel = () => {
         return (
             <div className={`${styles.formContent} ${styles.separatorTop}`}>
-                <h3 className={styles.sectionTitle} style={{ marginBottom: '1rem' }}>
-                    Data Fields Configuration
-                </h3>
-
                 {renderFieldInstructions()}
                 
                 <div className={styles.fieldList}>
@@ -758,7 +715,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                     <div className={styles.mockProductContent}>
                         {activeTextFields.map((fieldConfig) => {
                             const key = fieldConfig.key;
-                            if (key === 'product_name') {
+                            if (key === 'item_name') {
                                 return <div key={key} style={{fontWeight:'bold'}}>Product Sample {id}</div>;
                             }
                             if (key === 'price') {
@@ -766,6 +723,12 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                             }
                             if (key === 'rating') {
                                 return <div key={key} style={{color: 'orange'}}>★★★★★</div>;
+                            }
+                            if (key === 'category') {
+                                return <div key={key} style={{color: 'blue'}}>Category</div>;
+                            }
+                            if (key === 'description') {
+                                return <div key={key} style={{color: 'black', fontSize: '11px'}}>Description</div>;
                             }
                             return (
                                 <div key={key} style={{ fontSize: '11px', color: '#6B7280', marginTop: '2px' }}>
@@ -986,34 +949,69 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
             </div>
 
             <div className={styles.sectionCard}>
-                <div className={styles.sectionHeader}>
-                    <h2 className={styles.sectionTitle}>
-                        {displayType === 'popup' ? 'Popup' : 'Inline'} Customization
-                    </h2>
+                <h2 className={styles.sectionTitle}>
+                    Data Fields Configuration
+                </h2>
+                {renderFieldsConfigPanel()}
+            </div>
+
+            <div className={styles.sectionCard}>
+                <div className={styles.switchAndTitleSection}>
+                    <div className={styles.sectionHeader}>
+                        <h2 className={styles.sectionTitle}>
+                            {displayType === 'popup' ? 'Popup' : 'Inline'} Customization
+                        </h2>
+                    </div>
+
+                    {/* 2. Switch (Bên phải) */}
+                    <div className={styles.switchContainer}>
+                        <label className={styles.switchLabel} style={{ marginRight: '8px' }}>
+                            Advanced
+                        </label>
+                        <label className={styles.switch}>
+                            <input 
+                                type="checkbox" 
+                                checked={isCustomizationEnabled}
+                                onChange={(e) => setIsCustomizationEnabled(e.target.checked)}
+                                disabled={isReadOnly}
+                            />
+                            <span className={styles.slider}></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div className={styles.formRow} style={{ marginTop: '0.5rem' }}>
+                    <div className={styles.helperBox}>
+                        When Advanced is enabled, you are allowed to customize the configuration of the widget's layout, styling, and behavior.
+                    </div>
                 </div>
                 
                 <div className={styles.configGrid}>
+                    
                     <div>
                         {displayType === 'popup' ? renderPopupConfigPanel() : renderInlineConfigPanel()}
-                        {renderFieldsConfigPanel()}
                         
-                        <div className={`${styles.formRow} ${styles.separatorTop}`} style={{marginTop: '1.5rem', paddingTop: '1rem'}}>
-                            <div className={styles.formCol}>
-                                <label className={styles.inputLabel}>Content Layout</label>
-                                <select 
-                                    className={styles.selectInput}
-                                    value={layoutJson.contentMode}
-                                    onChange={(e) => handleLayoutModeChange(e.target.value)}
-                                    disabled={isReadOnly}
-                                >
-                                    {LAYOUT_MODE_OPTIONS.map(opt => (
-                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
+                        {isCustomizationEnabled && (
+                            <>
+                                <div className={`${styles.formRow} ${styles.separatorTop}`} style={{marginTop: '1.5rem', paddingTop: '1rem'}}>
+                                    <div className={styles.formCol}>
+                                        <label className={styles.inputLabel}>Content Layout</label>
+                                        <select 
+                                            className={styles.selectInput}
+                                            value={layoutJson.contentMode}
+                                            onChange={(e) => handleLayoutModeChange(e.target.value)}
+                                            disabled={isReadOnly}
+                                        >
+                                            {LAYOUT_MODE_OPTIONS.map(opt => (
+                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
 
-                        {renderStyleConfigPanel()}
+                                {renderStyleConfigPanel()}
+                            </>
+                        )}
                     </div>
 
                     <div>
@@ -1038,6 +1036,26 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
             {errors.general && (
                 <div className={styles.errorAlert} style={{ marginTop: '1rem' }}>{errors.general}</div>
             )}
+
+            <button 
+                className={styles.floatingPreviewBtn}
+                onClick={() => setShowFloatingPreview(true)}
+                title="Open live review"
+            >
+                <Image size={24} />
+            </button>
+
+            {showFloatingPreview && (
+                <div className={styles.previewModalOverlay} onClick={() => setShowFloatingPreview(false)}>
+                    <div className={styles.previewModalContent} onClick={e => e.stopPropagation()}>
+                        <button className={styles.closeModalBtn} onClick={() => setShowFloatingPreview(false)}>
+                            <X size={20} />
+                        </button>
+                        <h3 style={{ margin: '0 0 1rem 0' }}>Live Preview</h3>
+                        {renderLivePreview()}
+                    </div>
+                </div>
+            )}                          
         </div>
     );
 };

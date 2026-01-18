@@ -97,6 +97,12 @@ export interface LayoutJson {
     card: CardConfig;
 }
 
+export interface FieldStyleOverride {
+    fontSize?: number;
+    fontWeight?: number;
+    color?: string;
+}
+
 export interface TypographyConfig {
     fontSize: number;
     fontWeight: number;
@@ -198,7 +204,9 @@ export interface ComponentStyles {
             truncate: boolean;
         };
         rowGapToken: string;
+        overrides?: Record<string, FieldStyleOverride>;
     };
+    
     actions: {
         button: {
             variant: string;
