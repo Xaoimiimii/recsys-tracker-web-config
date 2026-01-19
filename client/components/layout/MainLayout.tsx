@@ -51,13 +51,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ userEmail, onLogout }) =
             <LayoutDashboard className="w-5 h-5" />
             Overview
           </Link>
-          {/* <Link
-            to="/dashboard/containers"
-            className={`${styles.navButton} ${activeTab === 'containers' ? styles.navButtonActive : ''}`}
+          <Link
+            to="/dashboard/item-upload"
+            className={`${styles.navButton} ${activeTab === 'item-upload' ? styles.navButtonActive : ''}`}
           >
-            <Container className="w-5 h-5" />
-            Containers
-          </Link> */}
+            <Upload className="w-5 h-5" />
+            Item Upload
+          </Link>
           <Link
             to="/dashboard/tracking-rules"
             className={`${styles.navButton} ${activeTab === 'tracking-rules' ? styles.navButtonActive : ''}`}
@@ -78,13 +78,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ userEmail, onLogout }) =
           >
             <Code className="w-5 h-5" />
             Loader Script
-          </Link>
-          <Link
-            to="/dashboard/item-upload"
-            className={`${styles.navButton} ${activeTab === 'item-upload' ? styles.navButtonActive : ''}`}
-          >
-            <Upload className="w-5 h-5" />
-            Item Upload
           </Link>
           <Link
             to="/dashboard/documentation"
