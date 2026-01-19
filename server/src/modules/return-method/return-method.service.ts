@@ -246,6 +246,10 @@ export class ReturnMethodService {
                 continue;
 
             Object.keys(attrs).forEach((key) => attributeSet.add(key));
+            attributeSet.add("Title");
+            attributeSet.add("Description");
+            attributeSet.add("ImageUrl");
+            attributeSet.add("Categories");
         }
 
         return Array.from(attributeSet);
