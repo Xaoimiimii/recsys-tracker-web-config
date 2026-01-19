@@ -158,9 +158,18 @@ export interface RuleListItem {
   DomainID: number;
   EventTypeID: number;
   TrackingTarget: string | null;
-  ActionType?: string;
-  EventType: RuleEventType;
-  ItemIdentities: ItemIdentity[];
+  ActionType?: string | null;
+  PayloadMappings?: PayloadMappingResponse[];
+  EventType?: RuleEventType;
+  ItemIdentities?: ItemIdentity[];
+}
+
+export interface PayloadMappingResponse {
+  Id: number;
+  Field: string;
+  Source: string;
+  Config: Record<string, any>;
+  TrackingRuleId: number;
 }
 
 // ==================== USER TYPES ====================

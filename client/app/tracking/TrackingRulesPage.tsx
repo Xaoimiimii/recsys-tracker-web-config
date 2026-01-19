@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, TrackingRule } from '../../types';
-import { RuleBuilder } from '../../components/dashboard/RuleBuilder';
+import { RuleBuilder, DOMAIN_INTERACTION_TYPES } from '../../components/dashboard/RuleBuilder';
 import { Box, Plus, Trash2, Edit2, MousePointer, Eye, Star, ArrowDownCircle, MessageSquareHeart, ChevronDown, ChevronUp, Lightbulb, X, Database, AlertCircle } from 'lucide-react';
 import { ruleApi, RuleListItem, RuleDetailResponse } from '../../lib/api/';
 import { useDataCache } from '../../contexts/DataCacheContext';
@@ -135,13 +135,17 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
             if (!container) return;
             
             // Update container's rules based on fetched data
-            const updatedRules: TrackingRule[] = rulesData.map(r => ({
-                id: r.Id.toString(),
-                name: r.Name,
-                trigger: r.EventType.Name,
-                selector: r.TrackingTarget || '',
-                extraction: []
-            }));
+            const updatedRules: TrackingRule[] = rulesData.map(r => {
+                // Get trigger name from EventTypeID
+                const triggerInfo = getTriggerTypeFromId(r.EventTypeID);
+                return {
+                    id: r.Id.toString(),
+                    name: r.Name,
+                    trigger: triggerInfo.label,
+                    selector: r.TrackingTarget || '',
+                    extraction: []
+                };
+            });
             setContainer({
                 ...container,
                 rules: updatedRules
@@ -168,6 +172,22 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
         }
     };
 
+    const getInteractionLabel = (eventTypeId: number, actionType: string | null | undefined, domainType: string | undefined) => {
+        if (!domainType) return getTriggerTypeFromId(eventTypeId);
+        
+        const interactionTypes = DOMAIN_INTERACTION_TYPES[domainType] || DOMAIN_INTERACTION_TYPES['General'];
+        const interaction = interactionTypes.find(t => 
+            t.eventTypeId === eventTypeId && 
+            (t.actionType === actionType || (t.actionType === null && actionType === null))
+        );
+        
+        if (interaction) {
+            return { label: interaction.label, icon: getTriggerTypeFromId(eventTypeId).icon };
+        }
+        
+        return getTriggerTypeFromId(eventTypeId);
+    };
+
     const saveRule = async (response: any) => {
         if (!container) return;
         
@@ -180,13 +200,16 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
             setRulesByDomain(container.uuid, rulesData);
 
             // Update container's rules based on fetched data
-            const updatedRules: TrackingRule[] = rulesData.map(r => ({
-                id: r.Id.toString(),
-                name: r.Name,
-                trigger: r.EventType.Name,
-                selector: r.TrackingTarget || '',
-                extraction: []
-            }));
+            const updatedRules: TrackingRule[] = rulesData.map(r => {
+                const triggerInfo = getTriggerTypeFromId(r.EventTypeID);
+                return {
+                    id: r.Id.toString(),
+                    name: r.Name,
+                    trigger: triggerInfo.label,
+                    selector: r.TrackingTarget || '',
+                    extraction: []
+                };
+            });
             setContainer({
                 ...container,
                 rules: updatedRules
@@ -208,10 +231,11 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
         console.log('Viewing rule:', ruleToView, 'from id:', id);
         if (ruleToView) {
             // Map to TrackingRule format
+            const triggerInfo = getTriggerTypeFromId(ruleToView.EventTypeID);
             const mappedRule: TrackingRule = {
                 id: ruleToView.Id.toString(),
                 name: ruleToView.Name,
-                trigger: ruleToView.EventType.Name.toLowerCase(),
+                trigger: triggerInfo.label.toLowerCase(),
                 selector: ruleToView.TrackingTarget || '',
                 extraction: []
             };
@@ -236,10 +260,11 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
         const ruleToEdit = rules.find(r => r.Id.toString() === id.toString());
         if (ruleToEdit) {
             // Map to TrackingRule format
+            const triggerInfo = getTriggerTypeFromId(ruleToEdit.EventTypeID);
             const mappedRule: TrackingRule = {
                 id: ruleToEdit.Id.toString(),
                 name: ruleToEdit.Name,
-                trigger: ruleToEdit.EventType.Name.toLowerCase(),
+                trigger: triggerInfo.label.toLowerCase(),
                 selector: ruleToEdit.TrackingTarget || '',
                 extraction: []
             };
@@ -644,27 +669,27 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                                 <thead>
                                     <tr>
                                         <th>#</th>
-                                        <th>Trigger Type</th>
+                                        <th>Event Type</th>
                                         <th>Rule Name</th>
-                                        <th>Selector (Value)</th>
+                                        <th>Tracking Target</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {rules.map((rule, index) => {
-                                        const triggerInfo = getTriggerTypeFromId(rule.EventTypeID);
-                                        const TriggerIcon = triggerInfo.icon;
+                                        const interactionInfo = getInteractionLabel(rule.EventTypeID, rule.ActionType, container?.domainType);
+                                        const InteractionIcon = interactionInfo.icon;
                                         return (
                                             <tr key={rule.Id}>
                                                 <td>#{index + 1}</td>
                                                 <td>
                                                     <div className={styles.triggerCell}>
-                                                        <TriggerIcon size={16} className={styles.triggerIcon} />
-                                                        {triggerInfo.label}
+                                                        <InteractionIcon size={16} className={styles.triggerIcon} />
+                                                        {interactionInfo.label}
                                                     </div>
                                                 </td>
                                                 <td>{rule.Name}</td>
-                                                <td>{rule.TrackingTarget?.Value || ''}</td>
+                                                <td>{rule.TrackingTarget || ''}</td>
                                                 <td>
                                                 <button 
                                                     className={styles.editButton}
