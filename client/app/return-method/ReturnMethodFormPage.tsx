@@ -8,7 +8,7 @@ import { useDataCache } from '../../contexts/DataCacheContext';
 import { returnMethodApi } from '../../lib/api/return-method';
 import { searchInputApi } from '../../lib/api/search-input';
 import { ReturnType, SearchInputResponse } from '../../lib/api/types';
-import { DEFAULT_POPUP_LAYOUT, DEFAULT_INLINE_LAYOUT, DEFAULT_STYLE_CONFIG, LAYOUT_MODE_OPTIONS } from './returnMethodDefaults';
+import { DEFAULT_POPUP_LAYOUT, DEFAULT_INLINE_LAYOUT, DEFAULT_STYLE_CONFIG, LAYOUT_MODE_OPTIONS, DARK_MODE_COLORS } from './returnMethodDefaults';
 
 interface ReturnMethodFormPageProps {
     container: Container | null;
@@ -35,8 +35,8 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
     const [value, setValue] = useState('');
     
     // Advanced Mode Switch
-    const [isAdvancedMode, setIsAdvancedMode] = useState(false);
-    const [isCustomizationEnabled, setIsCustomizationEnabled] = useState(mode !== 'create');
+    const [isFieldCustomizationEnabled, setIsFieldCustomizationEnabled] = useState(false);
+    const [isCustomizationEnabled, setIsCustomizationEnabled] = useState(false);
 
     // Floating Preview State
     const [showFloatingPreview, setShowFloatingPreview] = useState(false);
@@ -55,6 +55,11 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
     const [selectedSearchConfigId, setSelectedSearchConfigId] = useState<number | null>(null);
     const [searchInputConfigs, setSearchInputConfigs] = useState<SearchInputResponse[]>([]);
     
+    // Available attributes for custom fields
+    const [availableAttributes, setAvailableAttributes] = useState<string[]>([]);
+    const [showImage, setShowImage] = useState(true);
+    const [expandedFieldKey, setExpandedFieldKey] = useState<string | null>(null);
+    
     // Error states
     const [errors, setErrors] = useState<{
         name?: string;
@@ -65,15 +70,155 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
     // --- CONFIG STATE ---
     const [layoutJson, setLayoutJson] = useState<LayoutJson>(DEFAULT_POPUP_LAYOUT);
     const [styleJson, setStyleJson] = useState<StyleJson>(DEFAULT_STYLE_CONFIG);
-    const [customFields, setCustomFields] = useState<CustomizingFields>(DEFAULT_CUSTOM_FIELDS);
+    const [customFields, setCustomFields] = useState<CustomizingFields>({ fields: [] });
     const [delayedDuration, setDelayedDuration] = useState<number>(0);
+
+    // Generate default custom fields based on available attributes
+    const defaultCustomFields = useMemo(() => {
+        if (availableAttributes.length === 0) {
+            return { fields: [] };
+        }
+
+        // Priority mapping for common fields
+        const priorityFields = [
+            { apiName: 'ImageUrl', key: 'image_url' },
+            { apiName: 'Title', key: 'title' },
+            { apiName: 'Categories', key: 'categories' },
+            { apiName: 'Description', key: 'description' }
+        ];
+
+        const fields: FieldConfig[] = [];
+        let position = 0;
+
+        // Add priority fields first if they exist in available attributes
+        priorityFields.forEach(({ apiName, key }) => {
+            if (availableAttributes.includes(apiName)) {
+                fields.push({
+                    key,
+                    position,
+                    isEnabled: true
+                });
+                position++;
+            }
+        });
+
+        // Add remaining attributes
+        availableAttributes.forEach(attr => {
+            const existingPriorityField = priorityFields.find(pf => pf.apiName === attr);
+            if (!existingPriorityField) {
+                fields.push({
+                    key: attr.toLowerCase().replace(/\s+/g, '_'),
+                    position,
+                    isEnabled: true
+                });
+                position++;
+            }
+        });
+
+        return { fields };
+    }, [availableAttributes]);
+
+    useEffect(() => {
+        if (customFields['image_url']?.isEnabled) {
+            setShowImage(true);
+        }
+    }, [customFields]);
+
+    // Initialize custom fields when default fields are available
+    useEffect(() => {
+        if (defaultCustomFields.fields.length > 0 && customFields.fields.length === 0) {
+            setCustomFields(defaultCustomFields);
+        }
+    }, [defaultCustomFields, customFields.fields.length]);
 
     // Get cached data from context
     const { 
         clearReturnMethodsByDomain,
         getSearchInputsByDomain,
-        setSearchInputsByDomain 
+        setSearchInputsByDomain,
+        getReturnMethodsByDomain
     } = useDataCache();
+
+    // Trong file ReturnMethodFormPage.tsx
+
+    useEffect(() => {
+        if (mode === 'create' || !id || !container?.uuid) return;
+
+        const loadData = async () => {
+            let methods = getReturnMethodsByDomain(container.uuid);
+            if (!methods) {
+                try {
+                    methods = await returnMethodApi.getByDomainKey(container.uuid);
+                } catch (err) {
+                    console.error("Failed to load data", err);
+                    return;
+                }
+            }
+            const foundItem = methods?.find(m => String(m.Id) === String(id));
+            if (foundItem) {
+                const rawItem = foundItem as any;
+                setName(rawItem.ConfigurationName);
+                setValue(rawItem.Value);
+                setDisplayType(rawItem.ReturnType === 'POPUP' ? 'popup' : 'inline-injection');
+                setDelayedDuration(rawItem.DelayDuration || 0); 
+
+                const mappedLayout = rawItem.Layout || rawItem.LayoutJson;
+                if (mappedLayout) setLayoutJson(mappedLayout);
+                const mappedStyle = rawItem.Style || rawItem.StyleJson;
+                if (mappedStyle) setStyleJson(mappedStyle);
+
+                const rawCustomizing = rawItem.Customizing || rawItem.CustomizingFields;
+                if (rawCustomizing) {
+                    if (Array.isArray(rawCustomizing)) {
+                        setCustomFields({ fields: rawCustomizing });
+                    } else {
+                        setCustomFields(rawCustomizing); 
+                    }
+                }
+
+                if (rawItem.SearchKeywordConfigId) {
+                    setEnableSearchKeyword(true);
+                    setSelectedSearchConfigId(rawItem.SearchKeywordConfigId);
+                }
+
+                const hasFieldOverrides = mappedStyle?.components?.fieldRow?.overrides 
+                    && Object.keys(mappedStyle.components.fieldRow.overrides).length > 0;
+                
+                if (hasFieldOverrides) {
+                    setIsFieldCustomizationEnabled(true);
+                }
+                const isThemeChanged = mappedStyle?.theme && mappedStyle.theme !== 'light'; 
+                const isLayoutChanged = mappedLayout?.contentMode && mappedLayout.contentMode !== 'grid';
+                const defaultPrimary = DEFAULT_STYLE_CONFIG.tokens.colors.primary;
+                const currentPrimary = mappedStyle?.tokens?.colors?.primary;
+                const isColorChanged = currentPrimary && currentPrimary !== defaultPrimary;
+                let isWrapperChanged = false;
+                if (rawItem.ReturnType === 'POPUP') {
+                    const popup = mappedLayout?.wrapper?.popup;
+                    if (popup) {
+                        if (popup.position !== 'bottom-right') isWrapperChanged = true;
+                        if (popup.width !== 500) isWrapperChanged = true;
+                        if (popup.widthMode !== 'fixed') isWrapperChanged = true;
+                    }
+                    if ((rawItem.DelayDuration || rawItem.Duration || 0) > 0) isWrapperChanged = true;
+                } else {
+                    const inline = mappedLayout?.wrapper?.inline;
+                    if (inline) {
+                        if (inline.selector !== '#recommendation-slot') isWrapperChanged = true;
+                        if (inline.injectionMode !== 'append') isWrapperChanged = true;
+                    }
+                }
+
+                if (isThemeChanged || isLayoutChanged || isColorChanged || isWrapperChanged) {
+                    setIsCustomizationEnabled(true);
+                }
+            } else {
+                console.warn("Item not found in cache/api for ID:", id);
+            }
+        };
+
+        loadData();
+    }, [id, container?.uuid, mode]);
 
     // Fetch search input configurations
     useEffect(() => {
@@ -101,6 +246,24 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
         fetchSearchInputs();
     }, [container?.uuid, getSearchInputsByDomain, setSearchInputsByDomain]);
 
+
+    // Fetch available attributes for custom fields
+    useEffect(() => {
+        const fetchAttributes = async () => {
+            if (!container?.uuid) return;
+
+            try {
+                const attributes = await returnMethodApi.getItemAttributes(container.uuid);
+                setAvailableAttributes(attributes);
+            } catch (error) {
+                console.error('Failed to fetch item attributes:', error);
+                setAvailableAttributes([]);
+            }
+        };
+
+        fetchAttributes();
+    }, [container?.uuid]);
+
     const sortedFields = useMemo(() => {
         return [...customFields.fields].sort((a, b) => a.position - b.position);
     }, [customFields]);
@@ -111,6 +274,25 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
         setDisplayType(type);
         if (type === 'popup') setLayoutJson(DEFAULT_POPUP_LAYOUT);
         else setLayoutJson(DEFAULT_INLINE_LAYOUT);
+    };
+
+    const handleUpdateFieldStyle = (fieldKey: string, property: 'fontSize' | 'fontWeight' | 'color', value: any) => {
+        setStyleJson(prev => ({
+            ...prev,
+            components: {
+                ...prev.components,
+                fieldRow: {
+                    ...prev.components.fieldRow,
+                    overrides: {
+                        ...prev.components.fieldRow.overrides,
+                        [fieldKey]: {
+                            ...(prev.components.fieldRow.overrides?.[fieldKey] || {}),
+                            [property]: value
+                        }
+                    }
+                }
+            }
+        }));
     };
 
     // Helper updaters
@@ -189,7 +371,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
             const index = sortedList.findIndex(f => f.key === targetKey);
             if (index === -1) return prev;
             const targetIndex = direction === 'up' ? index - 1 : index + 1;
-            if (targetIndex < 0 || targetIndex >= sortedList.length) return prev;
+            if (targetIndex === 0 || targetIndex >= sortedList.length) return prev;
             const temp = sortedList[index];
             sortedList[index] = sortedList[targetIndex];
             sortedList[targetIndex] = temp;
@@ -236,8 +418,6 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
             return;
         }
 
-        console.log(customFields);
-
         setIsSaving(true);
         try {
             const requestData: any = {
@@ -267,20 +447,6 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
         } finally {
             setIsSaving(false);
         }
-        // const requestData = {
-        //     key: container?.uuid,
-        //     ConfigurationName: name,
-        //     ReturnType: displayType === 'popup' ? ReturnType.POPUP : ReturnType.INLINE_INJECTION,
-        //     OperatorId: operatorId,
-        //     Value: value,
-        //     Duration: delayedDuration,
-        //     IsEnabled: true,
-        //     LayoutJson: { ...layoutJson, displayMode: displayType },
-        //     StyleJson: styleJson,
-        //     Customizing: customFields,
-        //     DelayDuration: delayedDuration
-        // };
-        // console.log("Save Data:", requestData);
     };
 
     // --- UI CONFIG PANELS ---
@@ -303,6 +469,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                         type="number" className={styles.textInput}
                                         value={delayedDuration}
                                         onChange={(e) => setDelayedDuration(Number(e.target.value))}
+                                        disabled={isReadOnly}
                                     />
                                 </div>
                             </div>
@@ -315,6 +482,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                         className={styles.selectInput}
                                         value={layoutJson.wrapper?.popup?.position}
                                         onChange={(e) => updatePopupWrapper('position', e.target.value)}
+                                        disabled={isReadOnly}
                                     >
                                         <option value="center">Center (Modal)</option>
                                         <option value="bottom-right">Bottom Right</option>
@@ -328,6 +496,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                         type="number" className={styles.textInput}
                                         value={layoutJson.wrapper?.popup?.width}
                                         onChange={(e) => updatePopupWrapper('width', Number(e.target.value))}
+                                        disabled={isReadOnly}
                                     />
                                 </div>
                             </div>
@@ -384,7 +553,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
         return (
             <div className={styles.instructionBox}>
                 <div className={styles.instructionHeader}>
-                    <BookOpen size={30} />
+                    <BookOpen size={25} />
                     <span>Field Configuration Instructions:</span>
                 </div>
 
@@ -434,7 +603,21 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                             <select 
                                 className={styles.selectInput}
                                 value={styleJson.theme}
-                                onChange={(e) => setStyleJson(prev => ({ ...prev, theme: e.target.value as 'light' | 'dark' }))}
+                                onChange={(e) => {
+                                    const newTheme = e.target.value as 'light' | 'dark';
+                                    const newColors = newTheme === 'dark' ? DARK_MODE_COLORS  : DEFAULT_STYLE_CONFIG.tokens.colors;
+                                    setStyleJson(prev => ({
+                                        ...prev,
+                                        theme: newTheme,
+                                        tokens: {
+                                            ...prev.tokens,
+                                            colors: {
+                                                ...prev.tokens.colors,
+                                                ...newColors 
+                                            }
+                                        }
+                                    }));
+                                }}
                                 disabled={isReadOnly}
                             >
                                 <option value="light">Light Mode</option>
@@ -475,6 +658,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                             <input type="number" className={`${styles.textInput} ${styles.tinyInput}`}
                                                 value={typoConfig.fontSize}
                                                 onChange={(e) => updateTypography(type as any, 'fontSize', Number(e.target.value))}
+                                                disabled={isReadOnly}
                                             />
                                         </div>
                                         <div>
@@ -482,6 +666,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                             <select className={`${styles.selectInput} ${styles.tinyInput}`}
                                                 value={typoConfig.fontWeight}
                                                 onChange={(e) => updateTypography(type as any, 'fontWeight', Number(e.target.value))}
+                                                disabled={isReadOnly}
                                             >
                                                 <option value="400">Regular</option>
                                                 <option value="500">Medium</option>
@@ -494,11 +679,13 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                             <input type="number" step="0.1" className={`${styles.textInput} ${styles.tinyInput}`}
                                                 value={typoConfig.lineHeight}
                                                 onChange={(e) => updateTypography(type as any, 'lineHeight', Number(e.target.value))}
+                                                disabled={isReadOnly}
                                             />
                                         </div>
                                         <input type="color" className={styles.colorPickerFull}
                                             value={styleJson.tokens.colors['textPrimary'] || '#000000'}
                                             onChange={(e) => updateColorToken('textPrimary', e.target.value)}
+                                            disabled={isReadOnly}
                                         />
                                     </div>
                                 </div>
@@ -518,6 +705,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                     <input type="color" 
                                         value={styleJson.tokens.colors[colorKey as keyof typeof styleJson.tokens.colors] as string} 
                                         onChange={(e) => updateColorToken(colorKey, e.target.value)} 
+                                        disabled={isReadOnly}
                                     />
                                     <span className={styles.helperText}>{styleJson.tokens.colors[colorKey as keyof typeof styleJson.tokens.colors]}</span>
                                 </div>
@@ -535,6 +723,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                             <input type="range" min="4" max="32" step="2" className={styles.rangeInput}
                                 value={currentDensity.cardPadding}
                                 onChange={(e) => updateDensity('cardPadding', Number(e.target.value))}
+                                disabled={isReadOnly}
                             />
                         </div>
                         <div className={styles.formCol}>
@@ -542,6 +731,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                             <input type="range" min="4" max="24" step="2" className={styles.rangeInput}
                                 value={currentDensity.rowGap}
                                 onChange={(e) => updateDensity('rowGap', Number(e.target.value))}
+                                disabled={isReadOnly}
                             />
                         </div>
                     </div>
@@ -551,6 +741,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                             <input type="range" min="0" max="24" step="2" className={styles.rangeInput}
                                 value={styleJson.tokens.radius.card}
                                 onChange={(e) => updateRadius('card', Number(e.target.value))}
+                                disabled={isReadOnly}
                             />
                         </div>
                         <div className={styles.formCol}>
@@ -558,6 +749,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                             <select className={styles.selectInput}
                                 value={styleJson.tokens.shadow.card}
                                 onChange={(e) => updateShadow('card', e.target.value)}
+                                disabled={isReadOnly}
                             >
                                 <option value="none">None</option>
                                 <option value="0 1px 3px rgba(0,0,0,0.1)">Light</option>
@@ -573,71 +765,146 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
 
     const renderFieldsConfigPanel = () => {
         return (
-            <div className={`${styles.formContent} ${styles.separatorTop}`}>
+            <div className={`${styles.formContent}`}>
                 {renderFieldInstructions()}
+                <div className={styles.formRow} style={{ marginTop: '0.5rem' }}>
+                    <div className={styles.helperBox}>
+                        When Advanced is enabled, you are allowed to customize style of each field. Click the <Settings className={styles.settingIcon}></Settings> button to open up customization panel. 
+                    </div>
+                </div>
                 
                 <div className={styles.fieldList}>
                     {sortedFields.map((fieldConfig, index) => {
+                        const isExpanded = expandedFieldKey === fieldConfig.key;
+                        const currentStyle = styleJson.components.fieldRow.overrides?.[fieldConfig.key] || {};
+
                         return (
-                            <div key={fieldConfig.key} className={styles.fieldItem}>
-                                <button 
-                                    onClick={() => toggleField(fieldConfig.key)} 
-                                    className={`${styles.checkboxButton} ${fieldConfig.isEnabled ? styles.checkboxActive : styles.checkboxInactive}`}
-                                >
-                                    {fieldConfig.isEnabled && <Check size={14} color="white" />}
-                                </button>
+                            <div key={fieldConfig.key} className={styles.fieldItemWrapper}>
+                                <div className={styles.fieldItemHeader}>
+                                    <button 
+                                        onClick={() => toggleField(fieldConfig.key)} 
+                                        className={`${styles.checkboxButton} ${fieldConfig.isEnabled ? styles.checkboxActive : styles.checkboxInactive}`}
+                                        disabled={isReadOnly}
+                                        style={{ opacity: isReadOnly ? 0.6 : 1, cursor: isReadOnly ? 'not-allowed' : 'pointer' }}
+                                    >
+                                        {fieldConfig.isEnabled && <Check size={14} color="white" />}
+                                    </button>
 
-                                <div className={styles.fieldInfo}>
-                                    <span className={styles.fieldKey}>{fieldConfig.key}</span>
+                                    <div className={styles.fieldInfo}>
+                                        <span className={styles.fieldKey}>{index + 1}. {fieldConfig.key}</span>
+                                    </div>
+
+                                    <div className={styles.actionButtons}>
+                                        {/* Nút Settings*/}
+                                        {isFieldCustomizationEnabled && !fieldConfig.key.includes('image') && (
+                                            <button
+                                                onClick={() => setExpandedFieldKey(isExpanded ? null : fieldConfig.key)}
+                                                className={`${styles.settingsButton} ${isExpanded ? styles.settingsButtonActive : ''}`}
+                                                title="Customize Style"
+                                            >
+                                                <Settings size={14} />
+                                            </button>
+                                        )}
+
+                                        {!isReadOnly && !fieldConfig.key.includes('image') && (
+                                            <>
+                                                <button 
+                                                    onClick={() => moveField(fieldConfig.key, 'up')} 
+                                                    disabled={index <= 1} 
+                                                    className={styles.actionButtonSmall}>
+                                                    <ArrowUp size={14} />
+                                                </button>
+                                                <button 
+                                                    onClick={() => moveField(fieldConfig.key, 'down')} 
+                                                    disabled={index === sortedFields.length - 1} 
+                                                    className={styles.actionButtonSmall}>
+                                                    <ArrowDown size={14} />
+                                                </button>
+                                                <button 
+                                                onClick={() => removeField(fieldConfig.key)} 
+                                                className={styles.deleteButtonSmall}>
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
 
-                                <div className={styles.actionButtons}>
-                                    <button 
-                                        onClick={() => moveField(fieldConfig.key, 'up')} 
-                                        disabled={index === 0}
-                                        className={styles.actionButtonSmall}
-                                        title="Move Up"
-                                    >
-                                        <ArrowUp size={14} />
-                                    </button>
-                                    <button 
-                                        onClick={() => moveField(fieldConfig.key, 'down')}
-                                        disabled={index === sortedFields.length - 1}
-                                        className={styles.actionButtonSmall}
-                                        title="Move Down"
-                                    >
-                                        <ArrowDown size={14} />
-                                    </button>
-
-                                    <button 
-                                            onClick={() => removeField(fieldConfig.key)}
-                                            className={styles.deleteButtonSmall}
-                                            title="Remove Field"
-                                        >
-                                            <Trash2 size={14} />
-                                    </button>
-                                </div>
+                                {/* Phần Style Panel: CHỈ HIỆN KHI EXPAND */}
+                                {isExpanded && isFieldCustomizationEnabled && !fieldConfig.key.includes('image') && (
+                                    <div className={styles.fieldStylePanel}>
+                                        <div className={styles.styleInputGroup}>
+                                            <label className={styles.styleInputLabel}>Font Size (px)</label>
+                                            <input 
+                                                type="number" 
+                                                className={styles.styleInputSmall}
+                                                placeholder="18"
+                                                value={currentStyle.fontSize || ''}
+                                                onChange={(e) => handleUpdateFieldStyle(fieldConfig.key, 'fontSize', Number(e.target.value))}
+                                                disabled={isReadOnly}
+                                            />
+                                        </div>
+                                        <div className={styles.styleInputGroup}>
+                                            <label className={styles.styleInputLabel}>Font Weight</label>
+                                            <select 
+                                                className={styles.styleInputSmall}
+                                                value={currentStyle.fontWeight || ''}
+                                                onChange={(e) => handleUpdateFieldStyle(fieldConfig.key, 'fontWeight', Number(e.target.value))}
+                                                disabled={isReadOnly}
+                                            >
+                                                <option value="400">Regular</option>
+                                                <option value="500">Medium</option>
+                                                <option value="600">Semibold</option>
+                                                <option value="700">Bold</option>
+                                            </select>
+                                        </div>
+                                        <div className={styles.styleInputGroup}>
+                                            <label className={styles.styleInputLabel}>Text Color</label>
+                                            <div style={{display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                                <input 
+                                                    type="color" 
+                                                    className={styles.styleColorInput}
+                                                    value={currentStyle.color || '#000000'}
+                                                    onChange={(e) => handleUpdateFieldStyle(fieldConfig.key, 'color', e.target.value)}
+                                                    disabled={isReadOnly}
+                                                />
+                                                {currentStyle.color && (
+                                                    <span 
+                                                        style={{fontSize: '10px', cursor:'pointer', color: 'red'}} 
+                                                        onClick={() => handleUpdateFieldStyle(fieldConfig.key, 'color', undefined)}
+                                                        disabled={isReadOnly}
+                                                    >
+                                                        Clear
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         );
                     })}
 
-                    <div className={styles.addFieldForm}>
-                        <div style={{ flex: 1 }}>
-                            <input 
-                                placeholder="Key (Ex: discount_percent)" 
-                                value={newFieldKey} onChange={e => setNewFieldKey(e.target.value)}
-                                className={styles.textInput} 
-                                style={{ marginBottom: '8px' }}
-                            />
+                    {/* Add New Field */}
+                    {!isReadOnly && (
+                        <div className={styles.addFieldForm}>
+                            <div style={{ flex: 1 }}>
+                                <input 
+                                    placeholder="Key (Ex: discount_percent)" 
+                                    value={newFieldKey} onChange={e => setNewFieldKey(e.target.value)}
+                                    className={styles.textInput} 
+                                    style={{ marginBottom: '8px' }}
+                                />
+                            </div>
+                            <button 
+                                onClick={addNewField} 
+                                className={styles.addButton} 
+                                disabled={!newFieldKey.trim()}
+                            >
+                                <Plus size={16} /> Add
+                            </button>
                         </div>
-                        <button 
-                            onClick={addNewField} 
-                            className={styles.addButton} 
-                            disabled={!newFieldKey.trim()}
-                        >
-                            <Plus size={16} /> Add
-                        </button>
-                    </div>
+                    )}
                 </div>
             </div>
         );
@@ -691,8 +958,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
         };
 
         const MockProduct = ({ id }: { id: number }) => {
-            const activeTextFields = sortedFields.filter(f => f.isEnabled && f.key !== 'image');
-            const showImage = customFields['image']?.isEnabled ?? true;
+            const activeTextFields = sortedFields.filter(f => f.isEnabled && !f.key.includes('image'));
 
             return (
                 <div key={id} className={styles.mockProductCard} style={{ 
@@ -715,24 +981,44 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                     <div className={styles.mockProductContent}>
                         {activeTextFields.map((fieldConfig) => {
                             const key = fieldConfig.key;
-                            if (key === 'item_name') {
-                                return <div key={key} style={{fontWeight:'bold'}}>Product Sample {id}</div>;
+                            
+                            // Lấy style override từ StyleJson
+                            const override = styleJson.components.fieldRow.overrides?.[key] || {};
+                            
+                            // Style cơ bản mặc định
+                            let baseStyle: React.CSSProperties = { 
+                                fontSize: '11px', 
+                                color: '#6B7280', 
+                                marginTop: '2px' 
+                            };
+
+                            // Logic style cũ (để giữ màu mặc định nếu user chưa custom)
+                            if (key.includes('item_name') || key.includes('title')) {
+                                baseStyle = { fontWeight: 'bold', fontSize: '13px', color: textColor };
+                            } else if (key.includes('price')) {
+                                baseStyle = { color: 'blue', fontWeight: '600' };
+                            } else if (key.includes('categories')) {
+                                baseStyle = { color: 'blue', fontWeight: '400', fontSize: '13px' };
                             }
-                            if (key === 'price') {
-                                return <div key={key} style={{color: 'blue'}}>$100.00</div>;
-                            }
-                            if (key === 'rating') {
-                                return <div key={key} style={{color: 'orange'}}>★★★★★</div>;
-                            }
-                            if (key === 'category') {
-                                return <div key={key} style={{color: 'blue'}}>Category</div>;
-                            }
-                            if (key === 'description') {
-                                return <div key={key} style={{color: 'black', fontSize: '11px'}}>Description</div>;
-                            }
+
+                            // [QUAN TRỌNG] Merge style override vào style cơ bản
+                            const finalStyle = {
+                                ...baseStyle,
+                                ...(override.fontSize ? { fontSize: `${override.fontSize}px` } : {}),
+                                ...(override.fontWeight ? { fontWeight: override.fontWeight } : {}),
+                                ...(override.color ? { color: override.color } : {}),
+                            };
+
+                            // Nội dung hiển thị (Mock data)
+                            let content = 'Sample Value';
+                            if (key.includes('item_name') || key.includes('title')) content = 'Iphone 18 Pro Max';
+                            else if (key.includes('price')) content = '$100.00';
+                            else if (key.includes('rating')) content = '★★★★★';
+                            else if (key.includes('categories')) content = 'Apple, Phone, ...';
+                            else if (key.includes('description')) content = 'This is the most modern phone...';
                             return (
-                                <div key={key} style={{ fontSize: '11px', color: '#6B7280', marginTop: '2px' }}>
-                                    Sample Value
+                                <div key={key} style={finalStyle}>
+                                    {content}
                                 </div>
                             );
                         })}
@@ -949,9 +1235,29 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
             </div>
 
             <div className={styles.sectionCard}>
-                <h2 className={styles.sectionTitle}>
-                    Data Fields Configuration
-                </h2>
+                    <div className={styles.switchAndTitleSection}>
+                        <div className={styles.sectionHeader}>
+                            <h2 className={styles.sectionTitle}>
+                                Data Field Configuration
+                            </h2>
+                        </div>
+
+                        {/* 2. Switch (Bên phải) */}
+                        <div className={styles.switchContainer}>
+                            <label className={styles.switchLabel} style={{ marginRight: '8px' }}>
+                                Advanced
+                            </label>
+                            <label className={styles.switch}>
+                                <input 
+                                    type="checkbox" 
+                                    checked={isFieldCustomizationEnabled}
+                                    onChange={(e) => setIsFieldCustomizationEnabled(e.target.checked)}
+                                    disabled={isReadOnly}
+                                />
+                                <span className={styles.slider}></span>
+                            </label>
+                        </div>
+                </div>
                 {renderFieldsConfigPanel()}
             </div>
 

@@ -36,7 +36,8 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
         getReturnMethodsByDomain, 
         setReturnMethodsByDomain,
         getSearchInputsByDomain,
-        setSearchInputsByDomain 
+        setSearchInputsByDomain,
+        clearReturnMethodsByDomain
     } = useDataCache();
 
     // Fetch return methods from API
@@ -78,10 +79,10 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
                 // Khi Backend cập nhật trả về Id, hãy sửa lại dòng này: const id = item.Id.toString();
 
                 return {
-                    id: item.Key,
+                    key: item.Key,
+                    id: item.Id.toString(),
                     configurationName: item.ConfigurationName,
                     displayType,
-                    operator: parseInt(item.OperatorId),
                     value: item.Value,
                     layoutJson: item.LayoutJson || DEFAULT_POPUP_LAYOUT,
                     styleJson: item.StyleJson || DEFAULT_STYLE_CONFIG,
@@ -93,6 +94,7 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
             });
 
             setConfigurations(transformedConfigs);
+            console.log(configurations)
         };
 
         fetchReturnMethods();
@@ -166,18 +168,20 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
     const handleDelete = async (id: string) => {
         // Cảnh báo: ID hiện tại là ID giả, lệnh delete này sẽ thất bại nếu gửi lên server
         // Trừ khi bạn sửa lại logic lấy ID thực từ response
-        // if (confirm('Are you sure you want to delete this configuration?')) {
-        //     try {
-        //          await returnMethodApi.delete(id); 
-        //         setConfigurations(prev => prev.filter(config => config.id !== id));
-        //         if (container?.uuid) {
-        //             // Logic clear cache nếu cần
-        //         }
-        //     } catch (e) {
-        //         console.error("Delete failed", e);
-        //         alert("Failed to delete (ID might be invalid)");
-        //     }
-        // }
+        if (confirm('Are you sure you want to delete this configuration?')) {
+            try {
+                console.log(id);
+                await returnMethodApi.delete(id);
+                setConfigurations(prev => prev.filter(config => config.id !== id));
+                if (container?.uuid) {
+                    // Logic clear cache nếu cần
+                    clearReturnMethodsByDomain(container.uuid);
+                }
+            } catch (e) {
+                console.error("Delete failed", e);
+                alert("Failed to delete (ID might be invalid)");
+            }
+        }
     };
 
     const getSummary = (config: DisplayConfiguration): string => {
@@ -348,21 +352,21 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
                                                 <td className={styles.actionsCell}>
                                                     <button 
                                                         className={styles.actionButton}
-                                                        onClick={() => handleView(config.Id.toString())}
+                                                        onClick={() => handleView(config.id.toString())}
                                                         title="View details"
                                                     >
                                                         <Eye size={16} />
                                                     </button>
                                                     <button 
                                                         className={styles.actionButton}
-                                                        onClick={() => handleEdit(config.Id.toString())}
+                                                        onClick={() => handleEdit(config.id.toString())}
                                                         title="Edit configuration"
                                                     >
                                                         <Edit2 size={16} />
                                                     </button>
                                                     <button 
                                                         className={styles.deleteButton}
-                                                        onClick={() => handleDelete(config.Id.toString())}
+                                                        onClick={() => handleDelete(config.id.toString())}
                                                         title="Delete configuration"
                                                     >
                                                         <Trash2 size={16} />

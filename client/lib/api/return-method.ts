@@ -10,4 +10,12 @@ export const returnMethodApi = {
             method: 'POST',
             body: JSON.stringify(data),
         }, false),
+
+    getItemAttributes: (domainKey: string) =>
+        apiFetch<string[]>(`/return-method/item-attributes/${domainKey}`, undefined, false, true),
+
+    delete: (id: string) =>
+        apiFetch<{ statusCode: number; message: string }>(`/return-method/${id}`, {
+            method: 'DELETE',
+        }, false, true),
 };

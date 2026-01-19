@@ -273,7 +273,6 @@ export interface DisplayConfiguration {
     id: string;
     configurationName: string;
     displayType: DisplayType;
-    operator: number;
     value: string;
     layoutJson: LayoutJson;
     styleJson: StyleJson;
