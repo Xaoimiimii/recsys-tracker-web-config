@@ -105,8 +105,8 @@ export class DomainService {
             },
             data: {
                 Source: Source,
-                RequestConfig: RequestConfig as Prisma.InputJsonValue,
-                Value: Value,
+                RequestConfig: RequestConfig === null ? Prisma.DbNull : RequestConfig as Prisma.InputJsonValue,
+                Value: Value === null ? null : Value,
                 Field: Field
             }
         })

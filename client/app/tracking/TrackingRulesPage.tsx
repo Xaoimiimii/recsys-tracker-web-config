@@ -352,21 +352,23 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
         }
         // Reset config fields when changing source
         else if (updates.source && updates.source !== newMappings[index].source) {
+            // if (updates.source === MappingSource.REQUEST_URL) {
+            //     updatedMapping = {
+            //         ...updatedMapping,
+            //         value: undefined,
+            //         requestBodyPath: undefined,
+            //     };
+            // } else 
             if (updates.source === MappingSource.REQUEST_BODY) {
-                // When switching to REQUEST_BODY, clear value and set request config fields
                 updatedMapping = {
-                    field: updatedMapping.field,
-                    source: updates.source,
-                    value: null,
+                    ...updatedMapping,
+                    value: undefined,
                     requestUrlPattern: undefined,
-                    requestMethod: 'POST',
-                    requestBodyPath: undefined,
+                    requestMethod: undefined,
                 };
-            } else if ([MappingSource.ELEMENT, MappingSource.COOKIE, MappingSource.LOCAL_STORAGE, MappingSource.SESSION_STORAGE, MappingSource.REQUEST_URL].includes(updates.source)) {
-                // When switching to other sources, clear request config and set value field
+            } else if ([MappingSource.ELEMENT, MappingSource.COOKIE, MappingSource.LOCAL_STORAGE, MappingSource.SESSION_STORAGE].includes(updates.source)) {
                 updatedMapping = {
-                    field: updatedMapping.field,
-                    source: updates.source,
+                    ...updatedMapping,
                     value: undefined,
                     requestUrlPattern: undefined,
                     requestMethod: undefined,
@@ -402,16 +404,6 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                     newErrors.payloadMappings[idx] = 'Body Path is required for request body source';
                 }
             } 
-            // else if (mapping.source === MappingSource.REQUEST_URL) {
-            //     if (!mapping.requestUrlPattern) {
-            //         if (!newErrors.payloadMappings) newErrors.payloadMappings = {};
-            //         newErrors.payloadMappings[idx] = 'URL Pattern is required for request URL source';
-            //     }
-            //     if (!mapping.value) {
-            //         if (!newErrors.payloadMappings) newErrors.payloadMappings = {};
-            //         newErrors.payloadMappings[idx] = 'Path Index is required for request URL source';
-            //     }
-            // } 
             else if (!mapping.value) {
                 if (!newErrors.payloadMappings) newErrors.payloadMappings = {};
                 newErrors.payloadMappings[idx] = 'Path/Value is required';
@@ -436,8 +428,12 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                     RequestMethod: mapping.requestMethod,
                     Value: mapping.value,
                 };
-                value = undefined;
+                value = null;
             } 
+            else {
+                value = mapping.value || '';
+                requestConfig = null;
+            }
             // else if (mapping.source === MappingSource.REQUEST_URL) {
             //     requestConfig = {
             //         RequestUrlPattern: mapping.requestUrlPattern,
@@ -446,11 +442,6 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
             //     };
             //     value = '';
             // }
-            else {
-                // For other sources (element, local_storage, session_storage, cookie)
-                value = mapping.value || null;
-                requestConfig = null;
-            }
             
             await domainApi.updateUserIdentity({
                 Id: userIdentityId,
