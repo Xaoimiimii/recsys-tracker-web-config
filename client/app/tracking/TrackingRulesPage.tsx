@@ -88,6 +88,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
         { field: 'anonymousId', source: MappingSource.LOCAL_STORAGE, value: 'recsys_anon_id' }
     ]);
     const [errors, setErrors] = useState<{ payloadMappings?: { [key: number]: string } }>({});
+    const [isSavingUserConfig, setIsSavingUserConfig] = useState(false);
     
     const [rules, setRules] = useState<RuleListItem[]>([]);
     const [fetchError, setFetchError] = useState(false);
@@ -295,8 +296,21 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
         let updatedMapping = { ...newMappings[index], ...updates };
 
         const nextField = (updates.field ?? newMappings[index].field);
+        const previousField = newMappings[index].field;
 
-        if (nextField === 'anonymousId') {
+        // Reset all config fields when switching from anonymousId to userId
+        if (updates.field && previousField === 'anonymousId' && nextField === 'userId') {
+            updatedMapping = {
+                field: 'userId',
+                source: MappingSource.LOCAL_STORAGE,
+                value: undefined,
+                requestUrlPattern: undefined,
+                requestMethod: undefined,
+                requestBodyPath: undefined,
+            };
+        }
+        // Set default config for anonymousId
+        else if (nextField === 'anonymousId') {
             updatedMapping = {
                 ...updatedMapping,
                 source: MappingSource.LOCAL_STORAGE,
@@ -305,20 +319,26 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                 requestMethod: undefined,
                 requestBodyPath: undefined,
             };
-        } else if (updates.source) {
+        }
+        // Reset config fields when changing source
+        else if (updates.source && updates.source !== newMappings[index].source) {
             if (updates.source === MappingSource.REQUEST_URL) {
                 updatedMapping = {
                     ...updatedMapping,
+                    value: undefined,
                     requestBodyPath: undefined,
                 };
             } else if (updates.source === MappingSource.REQUEST_BODY) {
                 updatedMapping = {
                     ...updatedMapping,
                     value: undefined,
+                    requestUrlPattern: undefined,
+                    requestMethod: undefined,
                 };
             } else if ([MappingSource.ELEMENT, MappingSource.COOKIE, MappingSource.LOCAL_STORAGE, MappingSource.SESSION_STORAGE].includes(updates.source)) {
                 updatedMapping = {
                     ...updatedMapping,
+                    value: undefined,
                     requestUrlPattern: undefined,
                     requestMethod: undefined,
                     requestBodyPath: undefined,
@@ -328,7 +348,18 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
 
         newMappings[index] = updatedMapping;
         setPayloadMappings(newMappings);
+        
+        // Clear error for this field if exists
+        if (errors.payloadMappings?.[index]) {
+            const newPayloadErrors = {...errors.payloadMappings};
+            delete newPayloadErrors[index];
+            setErrors(prev => ({...prev, payloadMappings: newPayloadErrors}));
+        }
     };
+
+    const handleSaveUserConfig = async () => {
+        if (!container) return;
+    }
 
     return (
         <div className={styles.container}>
@@ -636,6 +667,16 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                                     </div>
                                 )}
 
+                                <div className={styles.userConfigActions}>
+                                    <button 
+                                        onClick={handleSaveUserConfig}
+                                        className={styles.saveConfigButton}
+                                        disabled={isSavingUserConfig}
+                                    >
+                                        <Database size={16} />
+                                        {isSavingUserConfig ? 'Saving...' : 'Save Configuration'}
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>
