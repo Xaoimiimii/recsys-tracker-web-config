@@ -39,7 +39,7 @@ interface SectionExample {
 const PAYLOAD_EXAMPLES: SectionExample[] = [
   {
     title: "Request Body Mapping",
-    htmlContext: "// Request Sample (POST)\nURL: /api/v1/user/profile\nBody: { \"username\": \"john_doe\", \"userId\": \"12345\" }\n\n// Response Body\n{ \"status\": \"ok\", \"data\": { \"id\": \"usr_99\" } }",
+    htmlContext: "// Request Sample (POST)\nURL: /api/v1/user/profile\nBody: { \"username\": \"john_doe\", \"UserId\": \"12345\" }\n\n// Response Body\n{ \"status\": \"ok\", \"data\": { \"id\": \"usr_99\" } }",
     config: "Source: request_body | URL Pattern: /api/v1/user/profile | Method: POST | Path: username"
   },
   {
@@ -84,9 +84,9 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
     // User Identity Configuration states
     const [isUserConfigExpanded, setIsUserConfigExpanded] = useState(false);
     const [showUserConfigExamples, setShowUserConfigExamples] = useState(false);
-    const [userIdentityId, setUserIdentityId] = useState<number | null>(null);
+    const [UserIdentityId, setUserIdentityId] = useState<number | null>(null);
     const [payloadMappings, setPayloadMappings] = useState<PayloadMapping[]>([
-        { field: 'anonymousId', source: MappingSource.LOCAL_STORAGE, value: 'recsys_anon_id' }
+        { field: 'AnonymousId', source: MappingSource.LOCAL_STORAGE, value: 'recsys_anon_id' }
     ]);
     const [errors, setErrors] = useState<{ payloadMappings?: { [key: number]: string } }>({});
     const [isSavingUserConfig, setIsSavingUserConfig] = useState(false);
@@ -163,17 +163,17 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
             if (!container?.uuid) return;
             
             try {
-                const userIdentity = await domainApi.getUserIdentity(container.uuid);
-                setUserIdentityId(userIdentity.Id);
+                const UserIdentity = await domainApi.getUserIdentity(container.uuid);
+                setUserIdentityId(UserIdentity.Id);
                 
                 // Transform API response to PayloadMapping format
                 const mapping: PayloadMapping = {
-                    field: userIdentity.Field === 'AnonymousId' ? 'anonymousId' : 'userId',
-                    source: userIdentity.Source as MappingSource,
-                    value: userIdentity.Value || undefined,
-                    requestUrlPattern: userIdentity.RequestConfig?.urlPattern || undefined,
-                    requestMethod: userIdentity.RequestConfig?.method || undefined,
-                    requestBodyPath: userIdentity.RequestConfig?.bodyPath || undefined,
+                    field: UserIdentity.Field === 'AnonymousId' ? 'AnonymousId' : 'UserId',
+                    source: UserIdentity.Source as MappingSource,
+                    value: UserIdentity.Value || undefined,
+                    requestUrlPattern: UserIdentity.RequestConfig?.urlPattern || undefined,
+                    requestMethod: UserIdentity.RequestConfig?.method || undefined,
+                    requestBodyPath: UserIdentity.RequestConfig?.bodyPath || undefined,
                 };
                 
                 setPayloadMappings([mapping]);
@@ -328,10 +328,10 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
         const nextField = (updates.field ?? newMappings[index].field);
         const previousField = newMappings[index].field;
 
-        // Reset all config fields when switching from anonymousId to userId
-        if (updates.field && previousField === 'anonymousId' && nextField === 'userId') {
+        // Reset all config fields when switching from AnonymousId to UserId
+        if (updates.field && previousField === 'AnonymousId' && nextField === 'UserId') {
             updatedMapping = {
-                field: 'userId',
+                field: 'UserId',
                 source: MappingSource.LOCAL_STORAGE,
                 value: undefined,
                 requestUrlPattern: undefined,
@@ -339,8 +339,8 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                 requestBodyPath: undefined,
             };
         }
-        // Set default config for anonymousId
-        else if (nextField === 'anonymousId') {
+        // Set default config for AnonymousId
+        else if (nextField === 'AnonymousId') {
             updatedMapping = {
                 field: 'AnonymousId',
                 source: MappingSource.LOCAL_STORAGE,
@@ -389,7 +389,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
     };
 
     const handleSaveUserConfig = async () => {
-        if (!container || !userIdentityId) return;
+        if (!container || !UserIdentityId) return;
         
         // Validate payload mappings
         const newErrors: { payloadMappings?: { [key: number]: string } } = {};
@@ -444,11 +444,11 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
             // }
             
             await domainApi.updateUserIdentity({
-                Id: userIdentityId,
+                Id: UserIdentityId,
                 Source: mapping.source,
                 RequestConfig: requestConfig,
                 Value: value,
-                Field: mapping.field === 'anonymousId' ? 'AnonymousId' : 'UserId',
+                Field: mapping.field === 'AnonymousId' ? 'AnonymousId' : 'UserId',
             });
         } catch (error) {
             console.error('Failed to save user identity:', error);
@@ -532,7 +532,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                                         </thead>
                                         <tbody>
                                             {payloadMappings.map((mapping, idx) => {
-                                                const isUserIdField = mapping.field === 'anonymousId' || mapping.field === 'userId';
+                                                const isUserIdField = mapping.field === 'AnonymousId' || mapping.field === 'UserId';
                                                 
                                                 return (
                                                     <React.Fragment key={idx}>
@@ -544,8 +544,8 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                                                                             <input 
                                                                                 type="radio" 
                                                                                 name={`user-field-${idx}`} 
-                                                                                checked={mapping.field === 'anonymousId'} 
-                                                                                onChange={() => handleUpdateMapping(idx, { field: 'anonymousId' })} 
+                                                                                checked={mapping.field === 'AnonymousId'} 
+                                                                                onChange={() => handleUpdateMapping(idx, { field: 'AnonymousId' })} 
                                                                             />
                                                                             AnonymousId
                                                                         </label>
@@ -553,8 +553,8 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                                                                             <input 
                                                                                 type="radio" 
                                                                                 name={`user-field-${idx}`} 
-                                                                                checked={mapping.field === 'userId'} 
-                                                                                onChange={() => handleUpdateMapping(idx, { field: 'userId' })} 
+                                                                                checked={mapping.field === 'UserId'} 
+                                                                                onChange={() => handleUpdateMapping(idx, { field: 'UserId' })} 
                                                                             />
                                                                             UserId
                                                                         </label>
@@ -567,7 +567,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                                                                 <select 
                                                                     className={styles.input}
                                                                     value={mapping.source}
-                                                                    disabled={mapping.field === 'anonymousId'}
+                                                                    disabled={mapping.field === 'AnonymousId'}
                                                                     onChange={e => handleUpdateMapping(idx, { source: e.target.value as MappingSource })}
                                                                 >
                                                                     {MAPPING_SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
@@ -583,7 +583,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                                                                                 placeholder="URL Pattern (/api/user/profile)" 
                                                                                 className={`${styles.input} ${styles.urlParsingInputFlex2} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                                                                                 value={mapping.requestUrlPattern || ''}                                                                            
-                                                                                disabled={mapping.field === 'anonymousId'}                                                                                onChange={e => {
+                                                                                disabled={mapping.field === 'AnonymousId'}                                                                                onChange={e => {
                                                                                     handleUpdateMapping(idx, { requestUrlPattern: e.target.value });
                                                                                     if (errors.payloadMappings?.[idx]) {
                                                                                         const newPayloadErrors = {...errors.payloadMappings};
@@ -690,7 +690,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                                                                             placeholder='CSS Selector (e.g. [data-user-id])'
                                                                             className={`${styles.input} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                                                                             value={mapping.value || ''}                                                                            
-                                                                            disabled={mapping.field === 'anonymousId'}                                                                            
+                                                                            disabled={mapping.field === 'AnonymousId'}                                                                            
                                                                             onChange={e => {
                                                                                 handleUpdateMapping(idx, { value: e.target.value });
                                                                                 if (errors.payloadMappings?.[idx]) {
@@ -721,7 +721,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                                                                             placeholder='Path (e.g. user.id)'
                                                                             className={`${styles.input} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                                                                             value={mapping.value || ''}
-                                                                            disabled={mapping.field === 'anonymousId'}
+                                                                            disabled={mapping.field === 'AnonymousId'}
                                                                             onChange={e => {
                                                                                 handleUpdateMapping(idx, { value: e.target.value });
                                                                                 if (errors.payloadMappings?.[idx]) {
@@ -752,12 +752,12 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                                         </tbody>
                                     </table>
                                 </div>
-                                { payloadMappings.some(mapping => mapping.field === 'anonymousId') && (
+                                { payloadMappings.some(mapping => mapping.field === 'AnonymousId') && (
                                     <div className={styles.configNote}>
                                         <p><strong>Note:</strong> Anonymous ID has limitations in tracking user behavior across sessions. We recommend configuring User ID for better tracking accuracy. </p>
                                     </div>
                                 )}
-                                { payloadMappings.some(mapping => mapping.field === 'userId') && (
+                                { payloadMappings.some(mapping => mapping.field === 'UserId') && (
                                     <div className={styles.configNote}>
                                         <p><strong>Note:</strong> We will attempt to capture user information according to this configuration, but will fall back to anonymous ID if capture fails.</p>
                                     </div>
