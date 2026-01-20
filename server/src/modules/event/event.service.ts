@@ -31,6 +31,7 @@ export class EventService {
                 Id: true,
                 EventTypeId: true,
                 UserId: true,
+                ItemId: true,
                 AnonymousId: true,
                 RatingValue: true,
                 ReviewValue: true,
@@ -38,7 +39,8 @@ export class EventService {
                 TrackingRule: {
                     select: {
                         Id: true,
-                        Name: true
+                        Name: true,
+                        ActionType: true
                     }
                 }
             }
@@ -60,6 +62,7 @@ export class EventService {
                 Id: true,
                 EventTypeId: true,
                 UserId: true,
+                ItemId: true,
                 AnonymousId: true,
                 RatingValue: true,
                 ReviewValue: true,
@@ -67,7 +70,8 @@ export class EventService {
                 TrackingRule: {
                     select: {
                         Id: true,
-                        Name: true
+                        Name: true,
+                        ActionType: true
                     }
                 }
             }
