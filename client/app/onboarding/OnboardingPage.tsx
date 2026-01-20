@@ -44,7 +44,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onLogout, onDoma
         type: typeNumber,
         UserIdentity: {
           Source: 'local_storage',
-          RequestConfig: null,
+          RequestConfig: undefined,
           Value: 'recsys_anon_id',
           Field: 'AnonymousId'
         }

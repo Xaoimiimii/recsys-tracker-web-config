@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Container, TrackingRule } from '../../types';
 import { RuleBuilder, DOMAIN_INTERACTION_TYPES } from '../../components/dashboard/RuleBuilder';
 import { Box, Plus, Trash2, Edit2, MousePointer, Eye, Star, ArrowDownCircle, MessageSquareHeart, ChevronDown, ChevronUp, Lightbulb, X, Database, AlertCircle } from 'lucide-react';
-import { ruleApi, RuleListItem, RuleDetailResponse } from '../../lib/api/';
+import { ruleApi, RuleListItem, RuleDetailResponse, domainApi, UserIdentityResponse } from '../../lib/api/';
 import { useDataCache } from '../../contexts/DataCacheContext';
 import styles from './TrackingRulesPage.module.css';
 
 // Mapping Source Types
 enum MappingSource {
   REQUEST_BODY = 'request_body',
-  REQUEST_URL = 'request_url',
+//   REQUEST_URL = 'request_url',
   ELEMENT = 'element',
   COOKIE = 'cookie',
   LOCAL_STORAGE = 'local_storage',
@@ -84,6 +84,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
     // User Identity Configuration states
     const [isUserConfigExpanded, setIsUserConfigExpanded] = useState(false);
     const [showUserConfigExamples, setShowUserConfigExamples] = useState(false);
+    const [userIdentityId, setUserIdentityId] = useState<number | null>(null);
     const [payloadMappings, setPayloadMappings] = useState<PayloadMapping[]>([
         { field: 'anonymousId', source: MappingSource.LOCAL_STORAGE, value: 'recsys_anon_id' }
     ]);
@@ -155,6 +156,35 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
 
         fetchRules();
     }, [container?.uuid]); // Only depend on UUID to avoid infinite loop
+
+    // Fetch user identity configuration
+    useEffect(() => {
+        const fetchUserIdentity = async () => {
+            if (!container?.uuid) return;
+            
+            try {
+                const userIdentity = await domainApi.getUserIdentity(container.uuid);
+                setUserIdentityId(userIdentity.Id);
+                
+                // Transform API response to PayloadMapping format
+                const mapping: PayloadMapping = {
+                    field: userIdentity.Field === 'AnonymousId' ? 'anonymousId' : 'userId',
+                    source: userIdentity.Source as MappingSource,
+                    value: userIdentity.Value || undefined,
+                    requestUrlPattern: userIdentity.RequestConfig?.urlPattern || undefined,
+                    requestMethod: userIdentity.RequestConfig?.method || undefined,
+                    requestBodyPath: userIdentity.RequestConfig?.bodyPath || undefined,
+                };
+                
+                setPayloadMappings([mapping]);
+            } catch (error) {
+                console.error('Failed to fetch user identity:', error);
+                // Keep default values if fetch fails
+            }
+        };
+
+        fetchUserIdentity();
+    }, [container?.uuid]);
 
     const getTriggerTypeFromId = (triggerEventId: number | undefined) => {
         switch(triggerEventId) {
@@ -312,7 +342,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
         // Set default config for anonymousId
         else if (nextField === 'anonymousId') {
             updatedMapping = {
-                ...updatedMapping,
+                field: 'AnonymousId',
                 source: MappingSource.LOCAL_STORAGE,
                 value: 'recsys_anon_id',
                 requestUrlPattern: undefined,
@@ -322,22 +352,21 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
         }
         // Reset config fields when changing source
         else if (updates.source && updates.source !== newMappings[index].source) {
-            if (updates.source === MappingSource.REQUEST_URL) {
+            if (updates.source === MappingSource.REQUEST_BODY) {
+                // When switching to REQUEST_BODY, clear value and set request config fields
                 updatedMapping = {
-                    ...updatedMapping,
-                    value: undefined,
+                    field: updatedMapping.field,
+                    source: updates.source,
+                    value: null,
+                    requestUrlPattern: undefined,
+                    requestMethod: 'POST',
                     requestBodyPath: undefined,
                 };
-            } else if (updates.source === MappingSource.REQUEST_BODY) {
+            } else if ([MappingSource.ELEMENT, MappingSource.COOKIE, MappingSource.LOCAL_STORAGE, MappingSource.SESSION_STORAGE, MappingSource.REQUEST_URL].includes(updates.source)) {
+                // When switching to other sources, clear request config and set value field
                 updatedMapping = {
-                    ...updatedMapping,
-                    value: undefined,
-                    requestUrlPattern: undefined,
-                    requestMethod: undefined,
-                };
-            } else if ([MappingSource.ELEMENT, MappingSource.COOKIE, MappingSource.LOCAL_STORAGE, MappingSource.SESSION_STORAGE].includes(updates.source)) {
-                updatedMapping = {
-                    ...updatedMapping,
+                    field: updatedMapping.field,
+                    source: updates.source,
                     value: undefined,
                     requestUrlPattern: undefined,
                     requestMethod: undefined,
@@ -358,7 +387,83 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
     };
 
     const handleSaveUserConfig = async () => {
-        if (!container) return;
+        if (!container || !userIdentityId) return;
+        
+        // Validate payload mappings
+        const newErrors: { payloadMappings?: { [key: number]: string } } = {};
+        payloadMappings.forEach((mapping, idx) => {
+            if (mapping.source === MappingSource.REQUEST_BODY) {
+                if (!mapping.requestUrlPattern) {
+                    if (!newErrors.payloadMappings) newErrors.payloadMappings = {};
+                    newErrors.payloadMappings[idx] = 'URL Pattern is required for request body source';
+                }
+                if (!mapping.value) {
+                    if (!newErrors.payloadMappings) newErrors.payloadMappings = {};
+                    newErrors.payloadMappings[idx] = 'Body Path is required for request body source';
+                }
+            } 
+            // else if (mapping.source === MappingSource.REQUEST_URL) {
+            //     if (!mapping.requestUrlPattern) {
+            //         if (!newErrors.payloadMappings) newErrors.payloadMappings = {};
+            //         newErrors.payloadMappings[idx] = 'URL Pattern is required for request URL source';
+            //     }
+            //     if (!mapping.value) {
+            //         if (!newErrors.payloadMappings) newErrors.payloadMappings = {};
+            //         newErrors.payloadMappings[idx] = 'Path Index is required for request URL source';
+            //     }
+            // } 
+            else if (!mapping.value) {
+                if (!newErrors.payloadMappings) newErrors.payloadMappings = {};
+                newErrors.payloadMappings[idx] = 'Path/Value is required';
+            }
+        });
+        
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
+        
+        setIsSavingUserConfig(true);
+        try {
+            const mapping = payloadMappings[0];
+        
+            let requestConfig: any = null;
+            let value: string | null = null;
+            
+            if (mapping.source === MappingSource.REQUEST_BODY) {
+                requestConfig = {
+                    RequestUrlPattern: mapping.requestUrlPattern,
+                    RequestMethod: mapping.requestMethod,
+                    Value: mapping.value,
+                };
+                value = undefined;
+            } 
+            // else if (mapping.source === MappingSource.REQUEST_URL) {
+            //     requestConfig = {
+            //         RequestUrlPattern: mapping.requestUrlPattern,
+            //         RequestMethod: mapping.requestMethod,
+            //         Value: mapping.value,
+            //     };
+            //     value = '';
+            // }
+            else {
+                // For other sources (element, local_storage, session_storage, cookie)
+                value = mapping.value || null;
+                requestConfig = null;
+            }
+            
+            await domainApi.updateUserIdentity({
+                Id: userIdentityId,
+                Source: mapping.source,
+                RequestConfig: requestConfig,
+                Value: value,
+                Field: mapping.field === 'anonymousId' ? 'AnonymousId' : 'UserId',
+            });
+        } catch (error) {
+            console.error('Failed to save user identity:', error);
+        } finally {
+            setIsSavingUserConfig(false);
+        }
     }
 
     return (
@@ -532,7 +637,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                                                                     </div>
                                                                 )}
 
-                                                                {mapping.source === MappingSource.REQUEST_URL && (
+                                                                {/* {mapping.source === MappingSource.REQUEST_URL && (
                                                                     <div className={styles.urlParsingContainer}>
                                                                         <div className={styles.urlParsingInputRow}>
                                                                             <input 
@@ -585,7 +690,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                                                                             For example, in request URL <strong>www.example.com/api/users/:id</strong>, the path index for <strong>:id</strong> is <strong>3</strong>.
                                                                         </div>
                                                                     </div>
-                                                                )}
+                                                                )} */}
 
                                                                 {mapping.source === MappingSource.ELEMENT && (
                                                                     <div>
@@ -618,7 +723,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                                                                     </div>
                                                                 )}
                                                             
-                                                                {mapping.source !== MappingSource.REQUEST_BODY && mapping.source !== MappingSource.REQUEST_URL && mapping.source !== MappingSource.ELEMENT && (
+                                                                {mapping.source !== MappingSource.REQUEST_BODY && mapping.source !== MappingSource.ELEMENT && (
                                                                     <div>
                                                                         <input 
                                                                             type="text"

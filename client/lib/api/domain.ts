@@ -1,5 +1,5 @@
 import { apiFetch } from './client';
-import type { CreateDomainDto, DomainResponse } from './types';
+import type { CreateDomainDto, DomainResponse, UserIdentityResponse, UpdateUserIdentityDto } from './types';
 
 export const domainApi = {
 
@@ -18,5 +18,16 @@ export const domainApi = {
     getByTernantId: () =>
         apiFetch<DomainResponse[]>('/domain/ternant', {
             method: 'GET',
+        }, false, true),
+
+    getUserIdentity: (domainKey: string) =>
+        apiFetch<UserIdentityResponse>(`/domain/user-identity?key=${domainKey}`, {
+            method: 'GET',
+        }, false, true),
+
+    updateUserIdentity: (data: UpdateUserIdentityDto) =>
+        apiFetch<UserIdentityResponse>('/domain/user-identity', {
+            method: 'PUT',
+            body: JSON.stringify(data),
         }, false, true),
 };

@@ -41,11 +41,28 @@ export interface UserState {
 // ==================== DOMAIN TYPES ====================
 
 export interface UserIdentityDto {
-  Source: 'local_storage' | 'session_storage' | 'cookie' | 'request_body' | 'element';
+  Source: 'local_storage' | 'session_storage' | 'cookie' | 'request_body' | 'request_url' | 'element';
   RequestConfig: any;
   Value: string;
   Field: string;
   DomainKey?: string;
+}
+
+export interface UserIdentityResponse {
+  Id: number;
+  Source: 'local_storage' | 'session_storage' | 'cookie' | 'request_body' | 'request_url' | 'element';
+  DomainId: number;
+  RequestConfig: any;
+  Value: string;
+  Field: string;
+}
+
+export interface UpdateUserIdentityDto {
+  Source: string;
+  RequestConfig: any;
+  Value: string;
+  Field: string;
+  Id: number;
 }
 
 export interface CreateDomainDto {
