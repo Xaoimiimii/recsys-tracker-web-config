@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { DomainType } from '../../types';
 import { DOMAIN_OPTIONS, DOMAIN_TYPE_TO_NUMBER } from '../../lib/constants';
 import { OnboardingLayout } from '../../components/layout/OnboardingLayout';
-import { domainApi } from '../../lib/api';
+import { domainApi, userIdentityApi } from '../../lib/api';
 import styles from './OnboardingPage.module.css';
+import { Domain } from 'domain';
 
 interface OnboardingPageProps {
   step?: number;
@@ -37,6 +38,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onLogout, onDoma
       setLoading(true);
       setError(null);
       const typeNumber = DOMAIN_TYPE_TO_NUMBER[type];
+      
       const domain = await domainApi.create({ 
         url: enteredUrl,
         type: typeNumber,
@@ -44,9 +46,18 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onLogout, onDoma
           Source: 'local_storage',
           RequestConfig: null,
           Value: 'recsys_anon_id',
-          IsActivated: false
+          Field: 'AnonymousId'
         }
       });
+      
+      // await userIdentityApi.create({
+      //   Source: 'local_storage',
+      //   RequestConfig: null,
+      //   Value: 'recsys_anon_id',
+      //   Field: 'AnonymousId',
+      //   DomainKey: domain.Key
+      // });
+      
       setCreatedDomainKey(domain.Key);
       localStorage.setItem('selectedDomainKey', domain.Key);
       if (onDomainCreated) {

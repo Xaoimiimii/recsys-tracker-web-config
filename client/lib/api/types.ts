@@ -44,13 +44,14 @@ export interface UserIdentityDto {
   Source: 'local_storage' | 'session_storage' | 'cookie' | 'request_body' | 'element';
   RequestConfig: any;
   Value: string;
-  IsActivated: boolean;
+  Field: string;
+  DomainKey?: string;
 }
 
 export interface CreateDomainDto {
   url: string;
   type: number;
-  UserIdentity: UserIdentityDto;
+  UserIdentity?: UserIdentityDto;
 }
 
 export interface DomainResponse {

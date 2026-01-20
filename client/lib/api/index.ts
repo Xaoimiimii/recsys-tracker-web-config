@@ -1,6 +1,7 @@
 // Export all API modules
 export { authApi } from './auth';
 export { domainApi } from './domain';
+export { userIdentityApi } from './user-identity';
 export { returnMethodApi } from './return-method';
 export { searchInputApi } from './search-input';
 export { ruleApi } from './rule';
