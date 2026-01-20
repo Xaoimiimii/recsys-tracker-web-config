@@ -551,6 +551,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1rem;
+    margin-bottom: 0.7rem;
 }
 
 .formCol {
@@ -900,16 +901,24 @@
     margin-bottom: 0;
 }
 
+.switchAndTitleSection {
+    display: flex;
+    justify-content: space-between; 
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
 .switchContainer {
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    margin-bottom: 1.5rem;
 }
 
 .switchLabel {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--color-text-main);
+    font-size: 1rem;
+    font-weight: medium;
+    color: var(--color-primary);
 }
 
 .switch {
@@ -1067,7 +1076,7 @@ input[type="color"]::-webkit-color-swatch {
 }
 
 .separatorTop {
-    margin-top: 2rem;
+    margin-top: 1rem;
     border-top: 1px solid var(--color-border);
     padding-top: 1.5rem;
 }
@@ -1421,7 +1430,6 @@ input[type="color"]::-webkit-color-swatch {
     inset: 0;
     display: flex;
     padding: 24px;
-    z-index: 50;
 }
 
 .mockProductCard {
@@ -1575,7 +1583,7 @@ input[type="color"]::-webkit-color-swatch {
     gap: 0.5rem;
     margin-bottom: 1rem;
     color: #1e293b; /* Màu chữ đậm cho tiêu đề */
-    font-size: 1.5rem;
+    font-size: 1rem;
     font-weight: 700;
 }
 
@@ -1586,7 +1594,7 @@ input[type="color"]::-webkit-color-swatch {
 }
 
 .stepItem {
-    font-size: 1rem;
+    font-size: 0.9rem;
     color: #475569; /* Màu chữ nội dung hơi nhạt */
     line-height: 1.6;
 }
@@ -1614,4 +1622,218 @@ input[type="color"]::-webkit-color-swatch {
     margin-left: 1.5rem; /* Thụt đầu dòng */
     color: #64748b;
     font-size: 0.9rem;
+}
+
+/* --- FLOATING PREVIEW --- */
+.floatingPreviewBtn {
+    position: fixed; 
+    bottom: 30px;    
+    right: 30px;     
+    z-index: 100;   
+    
+    /* Style cho nút đẹp hơn */
+    width: 56px;
+    height: 56px;
+    border-radius: 50%; 
+    background-color: var(--color-primary); 
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4); 
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color 0.2s;
+}
+
+.floatingPreviewBtn:hover {
+    transform: scale(1.1);
+    background-color: var(--color-primary-hover);
+}
+
+.previewModalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease-out;
+}
+
+.previewModalContent {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    animation: slideUp 0.3s ease-out;
+}
+
+.closeModalBtn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #f3f4f6;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #374151;
+}
+
+.closeModalBtn:hover {
+    background-color: #f3f4f6;
+    color: #ef4444;
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* --- ADVANCED MODE SWITCH --- */
+.modeSwitchContainer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+}
+
+.modeInfo h4 {
+    margin: 0 0 4px 0;
+    color: #312e81;
+}
+
+.modeInfo p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #4338ca;
+}
+
+
+
+/* Wrapper cho item để hỗ trợ flex-column khi mở rộng */
+.fieldItemWrapper {
+    display: flex;
+    flex-direction: column;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.fieldItemWrapper:hover {
+    border-color: #d1d5db;
+}
+
+/* Header chính của dòng (chứa checkbox, tên, nút move) */
+.fieldItemHeader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    width: 100%;
+}
+
+/* Panel chứa các input style (chỉ hiện khi expand) */
+.fieldStylePanel {
+    padding: 16px 20px;
+    background-color: #ffffff;
+    border-top: 1px dashed #e5e7eb;
+    display: flex;
+    align-items: flex-start; 
+    gap: 32px; 
+    animation: slideDown 0.4s ease-out;
+}
+
+.styleInputGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 0 0 auto;
+    min-width: 200px;
+    align-items: center;
+}
+
+.styleInputLabel {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+}
+
+.styleInputSmall {
+    width: 100%;
+    padding: 4px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: var(--color-text-main);
+    height: 30px;
+}
+
+.styleColorInput {
+    width: 100%;
+    height: 30px;
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+.settingIcon {
+    size: 1;
+    display: inline;
+    vertical-align: middle; 
+    margin: 0 4px
+}
+
+/* Nút Setting hình bánh răng */
+.settingsButton {
+    padding: 6px;
+    cursor: pointer;
+    border: 1px solid transparent; /* Transparent border để tránh giật layout */
+    border-radius: 4px;
+    background: transparent;
+    color: var(--color-text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.settingsButton:hover {
+    background-color: #e5e7eb;
+    color: var(--color-text-main);
+}
+
+.settingsButtonActive {
+    background-color: var(--color-primary-light);
+    color: var(--color-primary);
+    border-color: var(--color-primary-light);
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
 }

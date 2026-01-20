@@ -21,7 +21,7 @@ import { UpdateReturnMethodDto } from './dto/update-return-method.dto';
 export class ReturnMethodController {
     constructor(private returnMethodService: ReturnMethodService) { }
 
-    @UseGuards(JwtAuthGuard)
+    // @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Get all return methods by domain key' })
     @Get(':key')
     async getReturnMethods(@Param('key') key: string) {

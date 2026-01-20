@@ -1,5 +1,18 @@
 import { LayoutJson, StyleJson } from './types';
 
+export const DARK_MODE_COLORS = {
+    background: "#111827",      
+    surface: "#1F2937",         
+    textPrimary: "#F9FAFB",     
+    textSecondary: "#9CA3AF",   
+    border: "#374151",          
+    muted: "#374151",          
+    primary: "#60A5FA",         
+    success: "#34D399",
+    danger: "#F87171",
+    warning: "#FBBF24",
+};
+
 export const SHARED_MODES_CONFIG = {
     grid: {
         columns: 4,
@@ -86,7 +99,7 @@ export const DEFAULT_POPUP_LAYOUT: LayoutJson = {
     contentMode: 'grid',   
     wrapper: {
         popup: {
-            position: "center",
+            position: "bottom-right",
             widthMode: "fixed",
             width: 500,
         },

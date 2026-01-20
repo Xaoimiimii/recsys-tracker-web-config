@@ -83,6 +83,7 @@ export interface CreateReturnMethod {
 
 export interface ReturnMethodResponse {
   Key: string;
+  Id: number;
   ConfigurationName: string;
   Value: string;
   ReturnType: string;
