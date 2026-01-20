@@ -422,6 +422,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
         try {
             const requestData: any = {
                 Key: container.uuid,
+                Id: parseInt(id),
                 ConfigurationName: name,
                 ReturnType: displayType === 'popup' ? ReturnType.POPUP : ReturnType.INLINE_INJECTION,
                 Value: value,
@@ -437,7 +438,8 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                 requestData.SearchKeywordConfigId = selectedSearchConfigId;
             }
 
-            await returnMethodApi.create(requestData);
+            if (mode === 'create') await returnMethodApi.create(requestData);
+            else if (mode === 'edit') await returnMethodApi.edit(requestData);
             // Clear cache để trang danh sách sẽ fetch lại data mới
             clearReturnMethodsByDomain(container.uuid);
             navigate('/dashboard/recommendation-display');
