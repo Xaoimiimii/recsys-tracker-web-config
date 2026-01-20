@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Query, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { DomainService } from './domain.service';
 import { JwtAuthGuard } from '../auth/guard';
 import { CreateDomainDto } from './dto/create-domain.dto';
@@ -25,5 +25,12 @@ export class DomainController {
         const tenant = req.user;
         if (!tenant) throw new UnauthorizedException();
         return this.domainService.getDomainsByTernantId(tenant['Id']);
+    }
+
+    @Get("/user-identity")
+    async getUserIdentity(
+        @Query('key') key: string
+    ) {
+        return this.domainService.getUserIdentity(key);
     }
 }

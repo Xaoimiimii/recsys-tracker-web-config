@@ -47,7 +47,7 @@ export class DomainService {
                 DomainId: domain.Id,
                 RequestConfig: userIdentity.RequestConfig as Prisma.InputJsonValue,
                 Value: userIdentity.Value,
-                IsActivated: userIdentity.IsActivated
+                Field: userIdentity.Field
             }
         })
 
@@ -72,5 +72,23 @@ export class DomainService {
             }
         });
         return domains;
+    }
+
+    async getUserIdentity(domainKey: string) {
+        const domain = await this.prisma.domain.findUnique({
+            where: {
+                Key: domainKey
+            }
+        });
+
+        if (!domain) throw new NotFoundException(`Key ${domainKey} not found`);
+
+        const userIdentity = await this.prisma.userIdentity.findFirst({
+            where: {
+                DomainId: domain.Id
+            }
+        });
+
+        return userIdentity;
     }
 }
