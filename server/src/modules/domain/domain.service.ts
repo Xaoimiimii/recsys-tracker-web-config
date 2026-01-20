@@ -111,4 +111,30 @@ export class DomainService {
             }
         })
     }
+
+    async createUserIdentity(
+        domainKey: string,
+        Source: UserIdentitySource,
+        Field: UserIdentityField,
+        RequestConfig?: Object,
+        Value?: string,
+    ) {
+        const domain = await this.prisma.domain.findUnique({
+            where: {
+                Key: domainKey
+            }
+        });
+
+        if (!domain) throw new NotFoundException(`Domain with key ${domainKey} does not exist`);
+        
+        return await this.prisma.userIdentity.create({
+            data: {
+                DomainId: domain.Id,
+                Source: Source,
+                Field: Field,
+                RequestConfig: RequestConfig as Prisma.InputJsonValue,
+                Value: Value
+            }
+        })
+    }
 }
