@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { randomBytes } from 'crypto';
 import { UserIdentityDto } from './dto';
-import { Prisma } from 'src/generated/prisma/client';
+import { Prisma, UserIdentityField, UserIdentitySource } from 'src/generated/prisma/client';
 
 @Injectable()
 export class DomainService {
@@ -90,5 +90,51 @@ export class DomainService {
         });
 
         return userIdentity;
+    }
+
+    async updateUserIdentity(
+        Id: number,
+        Source?: UserIdentitySource,
+        RequestConfig?: Object,
+        Value?: string,
+        Field?: UserIdentityField
+    ) {
+        return await this.prisma.userIdentity.update({
+            where: {
+                Id: Id
+            },
+            data: {
+                Source: Source,
+                RequestConfig: RequestConfig as Prisma.InputJsonValue,
+                Value: Value,
+                Field: Field
+            }
+        })
+    }
+
+    async createUserIdentity(
+        domainKey: string,
+        Source: UserIdentitySource,
+        Field: UserIdentityField,
+        RequestConfig?: Object,
+        Value?: string,
+    ) {
+        const domain = await this.prisma.domain.findUnique({
+            where: {
+                Key: domainKey
+            }
+        });
+
+        if (!domain) throw new NotFoundException(`Domain with key ${domainKey} does not exist`);
+        
+        return await this.prisma.userIdentity.create({
+            data: {
+                DomainId: domain.Id,
+                Source: Source,
+                Field: Field,
+                RequestConfig: RequestConfig as Prisma.InputJsonValue,
+                Value: Value
+            }
+        })
     }
 }
