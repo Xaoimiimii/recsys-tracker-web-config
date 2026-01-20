@@ -215,6 +215,7 @@ export interface TrackedEvent {
   Id: number;
   EventTypeId: number;
   UserId?: string;
+  ItemId?: string;
   AnonymousId: string;
   ItemField: string;
   ItemValue: string;
@@ -224,6 +225,7 @@ export interface TrackedEvent {
   TrackingRule: {
     Id: number;
     Name: string;
+    ActionType?: string | null;
   };
 }
 

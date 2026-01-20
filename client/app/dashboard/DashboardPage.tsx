@@ -263,6 +263,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
                     title="Latest Domain Events (Last 10)"
                     selectedRuleId={selectedRuleId}
                     onRuleSelect={handleRuleSelect}
+                    domainType={container?.domainType}
                 />
 
                 {/* Rule-Specific Events Chart */}
@@ -272,6 +273,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
                         loading={loadingRuleEvents}
                         onRefresh={() => fetchLatestRuleEvents(selectedRuleId)}
                         title={`Events for Rule #${selectedRuleId} (Last 10)`}
+                        domainType={container?.domainType}
                     />
                 )}
             </div>

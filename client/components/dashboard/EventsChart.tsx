@@ -11,6 +11,7 @@ interface EventsChartProps {
     title: string;
     selectedRuleId?: number;
     onRuleSelect?: (ruleId: number) => void;
+    domainType?: string;
 }
 
 // Generate distinct colors for different tracking rules
@@ -27,8 +28,62 @@ const EVENT_TYPE_MAP: { [key: number]: string } = {
     5: 'Page View'
 };
 
-function getEventTypeName(eventTypeId: number): string {
-    return EVENT_TYPE_MAP[eventTypeId] || 'Unknown';
+// Domain-specific interaction type mappings
+const DOMAIN_INTERACTION_TYPES: Record<string, Record<string, string>> = {
+  'Music Streaming': {
+    '1-View': 'Play song',
+    '1-AddToFavorite': 'Add song to favorite',
+    '1-AddToWishlist': 'Add song to playlist',
+    '1-AddToCart': 'Download song',
+    '1-Purchase': 'Buy/Unlock song',
+    '2-null': 'Rating song',
+    '3-null': 'Review song',
+  },
+  'Movies & Video': {
+    '1-View': 'Play video',
+    '1-AddToFavorite': 'Add video to favorite',
+    '1-AddToWishlist': 'Add video to watchlist / watch later',
+    '1-AddToCart': 'Download video',
+    '1-Purchase': 'Buy/Unlock video',
+    '2-null': 'Rating movie / video',
+    '3-null': 'Review movie / video',
+  },
+  'E-Commerce': {
+    '1-View': 'View product',
+    '1-AddToFavorite': 'Add product to favorite',
+    '1-AddToWishlist': 'Add product to wishlist',
+    '1-AddToCart': 'Add product to cart',
+    '1-Purchase': 'Purchase / Checkout',
+    '2-null': 'Rating product',
+    '3-null': 'Review product',
+  },
+  'News & Media': {
+    '1-View': 'View article',
+    '1-AddToFavorite': 'Save/Bookmark article',
+    '1-AddToWishlist': 'Add to read later',
+    '1-AddToCart': 'Download article',
+    '1-Purchase': 'Buy/Unlock paywall',
+    '2-null': 'Rating article',
+    '3-null': 'Review article',
+  },
+  'General': {
+    '1-View': 'View product',
+    '1-AddToFavorite': 'Add to favorite',
+    '1-AddToWishlist': 'Add to wishlist',
+    '1-AddToCart': 'Add to cart',
+    '1-Purchase': 'Purchase / Checkout',
+    '2-null': 'Rating product',
+    '3-null': 'Review product',
+  },
+};
+
+function getEventTypeName(eventTypeId: number, actionType?: string | null, domainType: string = 'General'): string {
+    // Create lookup key: eventTypeId-actionType
+    const key = `${eventTypeId}-${actionType || 'null'}`;
+    const domainMappings = DOMAIN_INTERACTION_TYPES[domainType] || DOMAIN_INTERACTION_TYPES['General'];
+    
+    // Return domain-specific label if found, otherwise fallback to generic event type
+    return domainMappings[key] || EVENT_TYPE_MAP[eventTypeId] || 'Unknown';
 }
 
 export const EventsChart: React.FC<EventsChartProps> = ({
@@ -37,7 +92,8 @@ export const EventsChart: React.FC<EventsChartProps> = ({
     onRefresh,
     title,
     selectedRuleId,
-    onRuleSelect
+    onRuleSelect,
+    domainType = 'General'
 }) => {
     // Group events by rule ID
     const ruleIds = [...new Set(events.map(e => e.TrackingRule.Id))].sort((a, b) => (a as number) - (b as number));
@@ -74,6 +130,7 @@ export const EventsChart: React.FC<EventsChartProps> = ({
             anonymousId: event.AnonymousId,
             item: event.ItemId,
             eventType: event.EventTypeId,
+            actionType: event.TrackingRule.ActionType,
             ratingValue: event.RatingValue,
             reviewValue: event.ReviewValue,
             fullTimestamp: new Date(event.Timestamp).toLocaleString(),
@@ -97,7 +154,7 @@ export const EventsChart: React.FC<EventsChartProps> = ({
                 <div className={styles.customTooltip}>
                     <p className={styles.tooltipLabel}>Event #{data.eventId}</p>
                     <p className={styles.tooltipItem}>Rule name: {data.ruleName}</p>
-                    <p className={styles.tooltipItem}>Event type: {getEventTypeName(data.eventType)}</p>
+                    <p className={styles.tooltipItem}>Event type: {getEventTypeName(data.eventType, data.actionType, domainType)}</p>
                     <p className={styles.tooltipItem}>Item ID: {data.item}</p>
                     <p className={styles.tooltipItem}>User ID: {data.userId}</p>
                     <p className={styles.tooltipItem}>Anonymous ID: {data.anonymousId}</p>
