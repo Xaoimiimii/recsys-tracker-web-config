@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Put, Query, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { DomainService } from './domain.service';
 import { JwtAuthGuard } from '../auth/guard';
 import { CreateDomainDto, UserIdentityDto } from './dto/create-domain.dto';
@@ -38,7 +38,7 @@ export class DomainController {
         return this.domainService.getUserIdentity(key);
     }
 
-    @Patch("user-identity")
+    @Put("user-identity")
     @ApiOperation({ summary: 'Modify user identity' })
     async updateUserIdentity(@Body() dto: UpdateUserIdentityDto) {
         return this.domainService.updateUserIdentity(dto.Id, dto.Source, dto.RequestConfig, dto.Value, dto.Field);
