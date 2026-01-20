@@ -407,7 +407,10 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
         }));
     };
 
-    // Save Handler
+    const handleCancel = () => {
+        navigate('/dashboard/recommendation-display');
+    };
+    
     const handleSave = async () => {
         setErrors({});
         const newErrors: typeof errors = {};
@@ -1087,17 +1090,6 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
 
     return (
         <div className={styles.container}>
-            <div className={styles.pageHeader}>
-                <div className={styles.headerGroup}>
-                    <button className={styles.closeButton} onClick={() => navigate('/dashboard/recommendation-display')}>
-                        <ArrowLeft size={24} />
-                    </button>
-                    <h1 className={styles.pageTitle}>
-                        {mode === 'create' ? 'Create New Configuration' : 'Edit Configuration'}
-                    </h1>
-                </div>
-            </div>
-
             {mode === 'create' && (
                 <div className={styles.sectionCard}>
                     <div className={styles.sectionHeader}>
@@ -1330,6 +1322,13 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
 
             {!isReadOnly && (
                 <div className={styles.formActions}>
+                    <button 
+                        className={styles.cancelButton} 
+                        onClick={handleCancel}
+                        disabled={isSaving}
+                    >
+                        Cancel
+                    </button>
                     <button 
                         className={styles.saveButton} 
                         onClick={handleSave}

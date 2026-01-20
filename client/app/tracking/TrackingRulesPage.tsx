@@ -82,7 +82,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
     const [currentRuleDetails, setCurrentRuleDetails] = useState<RuleDetailResponse | undefined>(undefined);
     
     // User Identity Configuration states
-    const [isUserConfigExpanded, setIsUserConfigExpanded] = useState(true);
+    const [isUserConfigExpanded, setIsUserConfigExpanded] = useState(false);
     const [showUserConfigExamples, setShowUserConfigExamples] = useState(false);
     const [payloadMappings, setPayloadMappings] = useState<PayloadMapping[]>([
         { field: 'anonymousId', source: MappingSource.LOCAL_STORAGE, value: 'recsys_anon_id' }
