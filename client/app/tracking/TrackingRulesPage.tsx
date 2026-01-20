@@ -24,7 +24,7 @@ interface PayloadMapping {
   source: MappingSource;
   value?: string;
   requestUrlPattern?: string;
-  requestMethod?: 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'GET';
+  requestMethod?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   requestBodyPath?: string;
 }
 
@@ -425,7 +425,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
             if (mapping.source === MappingSource.REQUEST_BODY) {
                 requestConfig = {
                     RequestUrlPattern: mapping.requestUrlPattern,
-                    RequestMethod: mapping.requestMethod,
+                    RequestMethod: mapping.requestMethod || 'GET',
                     Value: mapping.value,
                 };
                 value = null;
@@ -594,10 +594,10 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                                                                             />
                                                                             <select 
                                                                                 className={`${styles.input} ${styles.urlParsingInputFlex1}`}
-                                                                                value={mapping.requestMethod || 'POST'}
+                                                                                value={mapping.requestMethod || 'GET'}
                                                                                 onChange={e => handleUpdateMapping(idx, { requestMethod: e.target.value as any })}
                                                                             >
-                                                                                <option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option><option>GET</option>
+                                                                                <option>GET</option><option>POST</option><option>PUT</option><option>PATCH</option><option>DELETE</option>
                                                                             </select>
                                                                         </div>
                                                                         <input 
