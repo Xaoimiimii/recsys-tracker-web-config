@@ -488,6 +488,38 @@
   transform: scale(1.1);
 }
 
+.lightbulbInline {
+  cursor: pointer;
+  color: #f59e0b;
+  margin-left: 0.5rem;
+  transition: transform 0.2s;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.lightbulbInline:hover {
+  transform: scale(1.1);
+}
+
+.chevronButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  padding: 0.25rem;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  border-radius: 0.25rem;
+}
+
+.chevronButton:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: var(--color-text-main);
+}
+
 .grid2 {
   display: grid;
   grid-template-columns: 1fr;

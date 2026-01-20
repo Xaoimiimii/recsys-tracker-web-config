@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Lightbulb, X, Fingerprint, Target, Database, AlertCircle, Loader2, Save } from 'lucide-react';
+import { Lightbulb, X, Fingerprint, Target, Database, AlertCircle, Loader2, Save, ChevronDown, ChevronUp } from 'lucide-react';
 import styles from './RuleBuilder.module.css';
 import { ruleApi } from '../../lib/api/rule';
 
@@ -173,10 +173,60 @@ export const SECTION_EXAMPLES: Record<string, Record<EventType, SectionExample[]
   }
 };
 
-export const INITIAL_MAPPINGS: Record<string, string[]> = {
-  [EventType.CLICK]: ['itemId'],
-  [EventType.RATING]: ['itemId', 'rating_value'],
-  [EventType.REVIEW]: ['itemId', 'review_text']
+export interface InitialMappingConfig {
+  field: string;
+  source: MappingSource;
+  value?: string;
+  requestUrlPattern?: string;
+  requestMethod?: 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'GET';
+  urlExtractType?: 'pathname' | 'query';
+}
+
+export const INITIAL_MAPPINGS: Record<string, InitialMappingConfig[]> = {
+  [EventType.CLICK]: [
+    {
+      field: 'itemId',
+      source: MappingSource.REQUEST_URL,
+      value: '3',
+      requestUrlPattern: '/api/song/:id/player',
+      requestMethod: 'GET',
+      urlExtractType: 'pathname'
+    }
+  ],
+  [EventType.RATING]: [
+    {
+      field: 'itemId',
+      source: MappingSource.REQUEST_URL,
+      value: '3',
+      requestUrlPattern: '/api/song/:id/player',
+      requestMethod: 'GET',
+      urlExtractType: 'pathname'
+    },
+    {
+      field: 'rating_value',
+      source: MappingSource.REQUEST_BODY,
+      value: 'rating',
+      requestUrlPattern: '/api/rating/:id/add-review',
+      requestMethod: 'POST'
+    }
+  ],
+  [EventType.REVIEW]: [
+    {
+      field: 'itemId',
+      source: MappingSource.REQUEST_URL,
+      value: '3',
+      requestUrlPattern: '/api/song/:id/player',
+      requestMethod: 'GET',
+      urlExtractType: 'pathname'
+    },
+    {
+      field: 'review_text',
+      source: MappingSource.REQUEST_BODY,
+      value: 'comment',
+      requestUrlPattern: '/api/rating/:id/add-review',
+      requestMethod: 'POST'
+    }
+  ]
 };
 
 // ==================== COMPONENT ====================
@@ -214,6 +264,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     payloadMappings?: { [key: number]: string };
   }>({});
   const [modalContent, setModalContent] = useState<{title: string, examples: SectionExample[]} | null>(null);
+  const [isPayloadMappingOpen, setIsPayloadMappingOpen] = useState(false);
 
   // Initialize payloadMappings when interaction type changes
   useEffect(() => {
@@ -229,19 +280,14 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     };
     
     const eventType = eventTypeMap[selectedInteraction.eventTypeId] || EventType.CLICK;
-    const initialFields = INITIAL_MAPPINGS[eventType] || [];
+    const initialMappings = INITIAL_MAPPINGS[eventType] || [];
     
     setRule(prev => ({
       ...prev,
       eventType: eventType,
       actionType: selectedInteraction.actionType as any,
       targetElement: { selector: '' },
-      payloadMappings: initialFields.map(field => ({
-        field,
-        source: MappingSource.ELEMENT,
-        value: '',
-        urlExtractType: 'pathname'
-      }))
+      payloadMappings: initialMappings.map(mapping => ({ ...mapping }))
     }));
   }, [selectedInteractionType, interactionTypes]);
 
@@ -413,20 +459,46 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     });
   };
 
-  const SectionHeader = ({ title, icon, sectionKey, required = false }: { title: string, icon: React.ReactNode, sectionKey?: string, required?: boolean }) => (
+  const SectionHeader = ({ 
+    title, 
+    icon, 
+    sectionKey, 
+    required = false, 
+    isCollapsible = false,
+    isOpen,
+    onToggle
+  }: { 
+    title: string, 
+    icon: React.ReactNode, 
+    sectionKey?: string, 
+    required?: boolean,
+    isCollapsible?: boolean,
+    isOpen?: boolean,
+    onToggle?: () => void
+  }) => (
     <div className={styles.sectionHeader}>
       <div className={styles.headerIcon}>{icon}</div>
       <h3 className={styles.sectionTitle}>
         {title}
         {required && <span className={styles.required}>*</span>}
+        {sectionKey && (
+          <Lightbulb
+            className={styles.lightbulbInline}
+            size={16}
+            title="View example configs" 
+            onClick={() => openExamples(sectionKey)}
+          />
+        )}
       </h3>
-      {sectionKey && (
-        <Lightbulb
-          className={styles.lightbulb}
-          size={18}
-          title="View example configs" 
-          onClick={() => openExamples(sectionKey)}
-        />
+      {isCollapsible && (
+        <button 
+          className={styles.chevronButton}
+          onClick={onToggle}
+          type="button"
+          aria-label={isOpen ? "Collapse section" : "Expand section"}
+        >
+          {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+        </button>
       )}
     </div>
   );
@@ -439,7 +511,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <X className={styles.modalClose} size={24} onClick={() => setModalContent(null)} />
             <h2 className={styles.modalTitle}>
-              <Lightbulb className={styles.modalLightbulbIcon} size={24} />
+              <Lightbulb className={styles.modalLightbulbIcon} size={16} />
               {modalContent.title}
             </h2>
             {modalContent.examples.length === 0 ? (
@@ -534,7 +606,15 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
 
         {/* 3. Payload Mapping */}
         <div className={styles.card}>
-          <SectionHeader title="Payload Mapping" icon={<Database size={14} />} sectionKey="payload" />
+          <SectionHeader 
+            title="Payload Mapping" 
+            icon={<Database size={14} />} 
+            sectionKey="payload" 
+            isCollapsible={true}
+            isOpen={isPayloadMappingOpen}
+            onToggle={() => setIsPayloadMappingOpen(!isPayloadMappingOpen)}
+          />
+          {isPayloadMappingOpen && (
           <div className={styles.tableWrapper}>
             <table className={styles.table}>
               <thead>
@@ -754,6 +834,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
               </tbody>
             </table>
           </div>
+          )}
         </div>
 
         {/* Important Notes */}
