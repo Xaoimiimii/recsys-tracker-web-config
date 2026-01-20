@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { randomBytes } from 'crypto';
 import { UserIdentityDto } from './dto';
-import { Prisma } from 'src/generated/prisma/client';
+import { Prisma, UserIdentityField, UserIdentitySource } from 'src/generated/prisma/client';
 
 @Injectable()
 export class DomainService {
@@ -90,5 +90,25 @@ export class DomainService {
         });
 
         return userIdentity;
+    }
+
+    async updateUserIdentity(
+        Id: number,
+        Source?: UserIdentitySource,
+        RequestConfig?: Object,
+        Value?: string,
+        Field?: UserIdentityField
+    ) {
+        return await this.prisma.userIdentity.update({
+            where: {
+                Id: Id
+            },
+            data: {
+                Source: Source,
+                RequestConfig: RequestConfig as Prisma.InputJsonValue,
+                Value: Value,
+                Field: Field
+            }
+        })
     }
 }
