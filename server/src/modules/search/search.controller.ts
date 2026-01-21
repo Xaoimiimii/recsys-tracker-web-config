@@ -1,4 +1,4 @@
-import { Controller, Get, ParseIntPipe, Query } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
 import { SearchService } from './search.service';
 import { ApiQuery } from '@nestjs/swagger/dist/decorators/api-query.decorator';
 
@@ -14,5 +14,10 @@ export class SearchController {
         @Query('keyword') keyword: string,
     ) {
         return this.searchService.search(domainId, keyword);
+    }
+
+    @Post("sync/:domainId")
+    async syncItems(@Param('domainId', ParseIntPipe) domainId: number) {
+        return await this.searchService.syncItemsFromDatabase(domainId);
     }
 }
