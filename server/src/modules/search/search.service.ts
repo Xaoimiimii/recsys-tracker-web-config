@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { Item, Prisma } from 'src/generated/prisma/client';
 import { Logger } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 
 type ItemWithCategories = Prisma.ItemGetPayload<{
   include: {
@@ -15,7 +16,10 @@ type ItemWithCategories = Prisma.ItemGetPayload<{
 export class SearchService {
     private readonly logger = new Logger(SearchService.name);
     private readonly INDEX_NAME = 'items';
-    constructor(private readonly elasticsearchService: ElasticsearchService) { }
+    constructor(
+        private readonly elasticsearchService: ElasticsearchService,
+        private readonly prisma: PrismaService
+    ) { }
 
     async search(domainId: number, keyword: string) {
         const result = await this.elasticsearchService.search({
@@ -96,6 +100,36 @@ export class SearchService {
             }
         } catch (error) {
             this.logger.error(`Failed to bulk index: ${error.message}`);
+        }
+    }
+
+    async syncItemsFromDatabase(domainId: number) {
+        try {
+            this.logger.log(`Starting sync elastic search for domain: ${domainId}`);
+            const items = await this.prisma.item.findMany({
+                where: {
+                    DomainId: domainId
+                },
+                include: {
+                    ItemCategories: {
+                        include: {
+                            Category: true
+                        }
+                    }
+                }
+            });
+
+            if (items.length === 0) {
+                this.logger.log(`No items found to sync for domain: ${domainId}`);
+                return;
+            }
+
+            await this.createItemInBulk(items, domainId);
+            this.logger.log(`Sync ${items.length} items to Elastic Search`);
+            return;
+        } catch (error) {
+            this.logger.error(`Failed to sync items for domain: ${domainId}. Error: ${error.message}`);
+            throw error;
         }
     }
 }
