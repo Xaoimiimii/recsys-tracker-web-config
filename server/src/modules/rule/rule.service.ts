@@ -70,6 +70,10 @@ export class RuleService {
             where: {
                 Id: id,
             },
+            include: {
+                EventType: true,
+                PayloadMappings: true
+            }
         });
         return rule;
     }
@@ -87,7 +91,8 @@ export class RuleService {
                 DomainID: domain.Id,
             },
             include: {
-                EventType: true
+                EventType: true,
+                PayloadMappings: true
             },
         });
         return rules;
@@ -106,17 +111,18 @@ export class RuleService {
         });
         if (!existingRule) throw new NotFoundException(`Rule id ${id} not found`);
 
-        await this.prisma.payloadMapping.deleteMany({
-            where: {
-                Id: id
-            }
-        });
-
-        await this.prisma.trackingRule.delete({
-            where: {
-                Id: id,
-            },
-        });
+        await this.prisma.$transaction([
+            this.prisma.payloadMapping.deleteMany({
+                where: {
+                    TrackingRuleId: id,
+                },
+            }),
+            this.prisma.trackingRule.delete({
+                where: {
+                    Id: id,
+                },
+            }),
+        ]);
     }
 
     async updateRule(data: UpdateRuleDto) {

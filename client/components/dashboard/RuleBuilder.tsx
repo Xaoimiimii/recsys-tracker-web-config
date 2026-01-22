@@ -236,19 +236,25 @@ interface RuleBuilderProps {
   onCancel: () => void;
   domainKey: string;
   domainType?: string;
+  initialRule?: TrackingRule;
+  ruleDetails?: any; // Accepting any to handle backend response flexibility
+  isViewMode?: boolean;
 }
 
 export const RuleBuilder: React.FC<RuleBuilderProps> = ({ 
   onSave, 
   onCancel, 
   domainKey,
-  domainType = 'General'
+  domainType = 'General',
+  initialRule,
+  ruleDetails,
+  isViewMode = false
 }) => {
   
   const interactionTypes = DOMAIN_INTERACTION_TYPES[domainType] || DOMAIN_INTERACTION_TYPES['General'];
   const [selectedInteractionType, setSelectedInteractionType] = useState<string>(interactionTypes[0]?.label || '');
   
-  const [rule, setRule] = useState<TrackingRule>({
+  const [rule, setRule] = useState<TrackingRule>(initialRule || {
     id: 'new-rule-' + Date.now(),
     name: '',
     eventType: EventType.CLICK,
@@ -266,8 +272,60 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
   const [modalContent, setModalContent] = useState<{title: string, examples: SectionExample[]} | null>(null);
   const [isPayloadMappingOpen, setIsPayloadMappingOpen] = useState(false);
 
-  // Initialize payloadMappings when interaction type changes
+  // Initialize payloadMappings when interaction type changes or when editing
   useEffect(() => {
+    // If we have initial data, don't reset when component mounts
+    if (initialRule && ruleDetails) {
+        // Map backend details to frontend state
+        const eventTypeMapRev: Record<number, EventType> = {
+            1: EventType.CLICK,
+            2: EventType.RATING,
+            3: EventType.REVIEW
+        };
+
+        const eventType = eventTypeMapRev[ruleDetails.EventTypeID] || EventType.CLICK;
+        
+        // Find corresponding interaction type label
+        const interaction = interactionTypes.find(it => 
+            it.eventTypeId === ruleDetails.EventTypeID && 
+            (it.actionType === ruleDetails.ActionType || (!it.actionType && !ruleDetails.ActionType))
+        );
+        
+        if (interaction) {
+            setSelectedInteractionType(interaction.label);
+        }
+
+        // Map PayloadMappings from backend to frontend representation
+        const mappings: PayloadMapping[] = (ruleDetails.PayloadMappings || []).map((m: any) => {
+            const fieldNameRevMap: Record<string, string> = {
+                'ItemId': 'itemId',
+                'Rating': 'rating_value',
+                'Review': 'review_text'
+            };
+
+            const config = m.Config || {};
+            return {
+                field: fieldNameRevMap[m.Field] || m.Field,
+                source: m.Source as MappingSource,
+                value: config.Value || config.SelectorPattern || '',
+                requestUrlPattern: config.RequestUrlPattern || undefined,
+                requestMethod: config.RequestMethod || undefined,
+                urlExtractType: config.ExtractType || undefined
+            };
+        });
+
+        setRule({
+            id: ruleDetails.Id.toString(),
+            name: ruleDetails.Name,
+            eventType: eventType,
+            actionType: ruleDetails.ActionType as ActionType,
+            targetElement: { selector: ruleDetails.TrackingTarget || '' },
+            payloadMappings: mappings
+        });
+        
+        return;
+    }
+
     if (!selectedInteractionType) return;
     
     const selectedInteraction = interactionTypes.find(it => it.label === selectedInteractionType);
@@ -429,7 +487,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
         payloadMapping.push(mappingItem);
       });
 
-      const payload = {
+      const payload: any = {
         Name: rule.name,
         DomainKey: domainKey,
         EventTypeId: eventTypeId,
@@ -438,7 +496,13 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
         TrackingTarget: trackingTarget
       };
 
-      const response = await ruleApi.create(payload);
+      let response;
+      if (ruleDetails?.Id) {
+        payload.Id = ruleDetails.Id;
+        response = await ruleApi.update(payload);
+      } else {
+        response = await ruleApi.create(payload);
+      }
       
       setIsSaving(false);
       onSave(response);
@@ -551,6 +615,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                 placeholder="e.g., Click Buy Button"
                 className={`${styles.input} ${errors.ruleName ? styles.inputError : ''}`}
                 value={rule.name}
+                disabled={isViewMode}
                 onChange={e => {
                   setRule({...rule, name: e.target.value});
                   if (errors.ruleName) setErrors(prev => ({...prev, ruleName: undefined}));
@@ -568,6 +633,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
               <select 
                 className={styles.input}
                 value={selectedInteractionType}
+                disabled={isViewMode}
                 onChange={e => setSelectedInteractionType(e.target.value)}
               >
                 {interactionTypes.map(it => (
@@ -589,6 +655,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
               placeholder=".my-element"
               className={`${styles.input} ${styles.monospaceInput} ${errors.targetElement ? styles.inputError : ''}`}
               value={rule.targetElement?.selector || ''}
+              disabled={isViewMode}
               onChange={e => {
                 setRule({...rule, targetElement: {selector: e.target.value}});
                 if (errors.targetElement) setErrors(prev => ({...prev, targetElement: undefined}));
@@ -634,6 +701,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                       <select 
                         className={styles.input}
                         value={mapping.source}
+                        disabled={isViewMode}
                         onChange={e => handleUpdateMapping(idx, { source: e.target.value as MappingSource })}
                       >
                         <option value={MappingSource.REQUEST_BODY}>request_body</option>
@@ -651,6 +719,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                               placeholder="URL Pattern (/api/song/:id)" 
                               className={`${styles.input} ${styles.urlParsingInputFlex2} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                               value={mapping.requestUrlPattern || ''}
+                              disabled={isViewMode}
                               onChange={e => {
                                 handleUpdateMapping(idx, { requestUrlPattern: e.target.value });
                                 if (errors.payloadMappings?.[idx]) {
@@ -663,6 +732,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                             <select 
                               className={`${styles.input} ${styles.urlParsingInputFlex1}`}
                               value={mapping.requestMethod || 'POST'}
+                              disabled={isViewMode}
                               onChange={e => handleUpdateMapping(idx, { requestMethod: e.target.value as any })}
                             >
                               <option>POST</option>
@@ -677,6 +747,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                             placeholder="Body Path (e.g., content.id)" 
                             className={`${styles.input} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                             value={mapping.value || ''}
+                            disabled={isViewMode}
                             onChange={e => {
                               handleUpdateMapping(idx, { value: e.target.value });
                               if (errors.payloadMappings?.[idx]) {
@@ -707,6 +778,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                               placeholder="URL Pattern (/api/product/{id})" 
                               className={`${styles.input} ${styles.urlParsingInputFlex2} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                               value={mapping.requestUrlPattern || ''}
+                              disabled={isViewMode}
                               onChange={e => {
                                 handleUpdateMapping(idx, { requestUrlPattern: e.target.value });
                                 if (errors.payloadMappings?.[idx]) {
@@ -719,6 +791,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                             <select 
                               className={`${styles.input} ${styles.urlParsingInputFlex1}`}
                               value={mapping.requestMethod || 'GET'}
+                              disabled={isViewMode}
                               onChange={e => handleUpdateMapping(idx, { requestMethod: e.target.value as any })}
                             >
                               <option>GET</option>
@@ -736,6 +809,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                                 type="radio" 
                                 name={`extract-type-${idx}`} 
                                 checked={mapping.urlExtractType === 'pathname'} 
+                                disabled={isViewMode}
                                 onChange={() => handleUpdateMapping(idx, { urlExtractType: 'pathname' })} 
                               />
                               PathName
@@ -745,6 +819,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                                 type="radio" 
                                 name={`extract-type-${idx}`} 
                                 checked={mapping.urlExtractType === 'query'} 
+                                disabled={isViewMode}
                                 onChange={() => handleUpdateMapping(idx, { urlExtractType: 'query' })} 
                               />
                               Query Parameter
@@ -757,6 +832,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                               placeholder="Segment Index (e.g., 3)" 
                               className={`${styles.input} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                               value={mapping.value || ''}
+                              disabled={isViewMode}
                               onChange={e => {
                                 handleUpdateMapping(idx, { value: e.target.value });
                                 if (errors.payloadMappings?.[idx]) {
@@ -774,6 +850,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                               placeholder="Query Key (e.g., item_id)" 
                               className={`${styles.input} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                               value={mapping.value || ''}
+                              disabled={isViewMode}
                               onChange={e => {
                                 handleUpdateMapping(idx, { value: e.target.value });
                                 if (errors.payloadMappings?.[idx]) {
@@ -808,6 +885,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                             placeholder='CSS Selector (e.g., .product-id)'
                             className={`${styles.input} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
                             value={mapping.value || ''}
+                            disabled={isViewMode}
                             onChange={e => {
                               handleUpdateMapping(idx, { value: e.target.value });
                               if (errors.payloadMappings?.[idx]) {
@@ -852,12 +930,14 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
         {/* Action Buttons */}
         <div className={styles.buttonActions}>
           <button onClick={onCancel} className={styles.btnSecondary}>
-            Cancel
+            {isViewMode ? 'Close' : 'Cancel'}
           </button>
-          <button onClick={handleSave} disabled={isSaving} className={styles.btnPrimary}>
-            {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} style={{ marginRight: '4px' }} />}
-            Save
-          </button>
+          {!isViewMode && (
+            <button onClick={handleSave} disabled={isSaving} className={styles.btnPrimary}>
+              {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} style={{ marginRight: '4px' }} />}
+              Save
+            </button>
+          )}
         </div>
       </div>
     </div>

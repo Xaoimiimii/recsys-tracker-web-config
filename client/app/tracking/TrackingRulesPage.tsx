@@ -10,7 +10,7 @@ import styles from './TrackingRulesPage.module.css';
 enum MappingSource {
   REQUEST_BODY = 'request_body',
 //   REQUEST_URL = 'request_url',
-  ELEMENT = 'element',
+  ELEMENT = 'element',  
   COOKIE = 'cookie',
   LOCAL_STORAGE = 'local_storage',
   SESSION_STORAGE = 'session_storage',
@@ -281,7 +281,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                 ItemIdentities: ruleToView.ItemIdentities
             };
             setCurrentRule(mappedRule);
-            setCurrentRuleDetails(details);
+            setCurrentRuleDetails(ruleToView); // Pass raw rule object which contains PayloadMappings
             setIsViewMode(true);
             setIsEditingRule(true);
         }
@@ -310,15 +310,38 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                 ItemIdentities: ruleToEdit.ItemIdentities
             };
             setCurrentRule(mappedRule);
-            setCurrentRuleDetails(details);
+            setCurrentRuleDetails(ruleToEdit); // Pass raw rule object which contains PayloadMappings
             setIsViewMode(false);
             setIsEditingRule(true);
         }
     };
 
-    const handleDelete = (id: string) => {
+const handleDelete = async (id: string) => {
         if (!container) return;
-        setContainer({ ...container, rules: container.rules.filter(r => r.id !== id) });
+        
+        const confirmed = window.confirm('Are you sure you want to delete this rule?');
+        if (!confirmed) return;
+
+        try {
+            await ruleApi.delete(id);
+            
+            // Update rules state
+            const updatedRules = rules.filter(r => r.Id.toString() !== id);
+            setRules(updatedRules);
+            
+            // Update cache
+            setRulesByDomain(container.uuid, updatedRules);
+
+            // Update container rules
+            setContainer({ 
+                ...container, 
+                rules: container.rules.filter(r => r.id !== id) 
+            });
+            
+        } catch (error) {
+            console.error('Failed to delete rule:', error);
+            alert('Failed to delete rule. Please try again.');
+        }
     };
 
     const handleUpdateMapping = (index: number, updates: Partial<PayloadMapping>) => {

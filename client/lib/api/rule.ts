@@ -19,4 +19,14 @@ export const ruleApi = {
     getRulesByDomain: (domainKey: string) => 
         apiFetch<RuleListItem[]>(`/rule/domain/${domainKey}`, undefined, true),
 
+    delete: (id: string | number) => 
+        apiFetch<{ statusCode: number; message: string }>(`/rule/${id}`, {
+            method: 'DELETE',
+        }, false, true),
+
+    update: (data: any) =>
+        apiFetch<{ statusCode: number; message: string }>('/rule', {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        }, false, true),
 };
