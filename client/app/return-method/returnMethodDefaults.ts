@@ -15,11 +15,11 @@ export const DARK_MODE_COLORS = {
 
 export const SHARED_MODES_CONFIG = {
     grid: {
-        columns: 4,
+        columns: 2,
         gap: "md",
         responsive: {
-            lg: { columns: 4 },
-            md: { columns: 3 },
+            lg: { columns: 2 },
+            md: { columns: 2 },
             sm: { columns: 2 },
             xs: { columns: 1 }
         }
@@ -53,9 +53,9 @@ export const SHARED_CARD_CONFIG = {
         },
         // Tự động đổi kích thước/tỷ lệ dựa trên mode
         sizeByMode: {
-            grid: { height: 140, aspectRatio: "16:9" },
+            grid: { width: 0, height: 0, aspectRatio: "1:1" },   
             list: { width: 96, height: 96, aspectRatio: "1:1" },
-            carousel: { height: 140, aspectRatio: "16:9" }
+            carousel: { width: 0, height: 0, aspectRatio: "1:1" } 
         }
     },
 
@@ -101,7 +101,7 @@ export const DEFAULT_POPUP_LAYOUT: LayoutJson = {
         popup: {
             position: "bottom-right",
             widthMode: "fixed",
-            width: 500,
+            width: 340,
         },
     },
 
@@ -163,11 +163,7 @@ export const DEFAULT_STYLE_CONFIG: StyleJson = {
         },
 
         typography: {
-            fontFamily: "Inter",
             title: { fontSize: 18, fontWeight: 600, lineHeight: 1.25 },
-            body: { fontSize: 14, fontWeight: 400, lineHeight: 1.4 },
-            meta: { fontSize: 12, fontWeight: 500, lineHeight: 1.3 },
-            label: { fontSize: 12, fontWeight: 600, lineHeight: 1.3 }
         },
 
         spacingScale: {

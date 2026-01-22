@@ -254,6 +254,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
 
             try {
                 const attributes = await returnMethodApi.getItemAttributes(container.uuid);
+                console.log(attributes);
                 setAvailableAttributes(attributes);
             } catch (error) {
                 console.error('Failed to fetch item attributes:', error);
@@ -930,10 +931,9 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
         const borderColor = styleJson.tokens.colors.border;
 
         const typoTitle = styleJson.tokens.typography.title;
-        const typoBody = styleJson.tokens.typography.body;
         const previewBg = '#f3f4f6';
 
-        // Dynamic container styles
+        // --- 1. CONFIG STYLE ---
         const dynamicPreviewContainer = {
             backgroundColor: previewBg,
             fontFamily: styleJson.tokens.typography.fontFamily
@@ -950,20 +950,34 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
             ...(isPopup && shadow === 'none' ? { filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))' } : {})
         };
 
-        const getDynamicMockValue = (key: string) => {
-            const k = key.toLowerCase();
-            if (k.includes('price') || k.includes('cost')) return '$150.00';
-            if (k.includes('percent') || k.includes('rate')) return '20%';
-            if (k.includes('date') || k.includes('time')) return '24/12/2024';
-            if (k.includes('sku') || k.includes('code')) return 'SKU-9999';
-            if (k.includes('color')) return 'Blue / Red';
-            if (k.includes('size')) return 'XL';
-            // Mặc định
-            return 'Sample Value';
-        };
-
+        // --- 2. MOCK PRODUCT (GIỮ NGUYÊN) ---
         const MockProduct = ({ id }: { id: number }) => {
             const activeTextFields = sortedFields.filter(f => f.isEnabled && !f.key.includes('image'));
+            const colors = styleJson.tokens.colors;
+            const isCarousel = layoutJson.contentMode === 'carousel';
+            const isList = layoutJson.contentMode === 'list';
+
+            const carouselItemStyle: React.CSSProperties = isCarousel ? {
+                width: '100%', 
+                flexShrink: 0,
+                scrollSnapAlign: 'center'
+            } : {};
+
+            const imgConfig = (layoutJson.card?.image?.sizeByMode as any)?.[layoutJson.contentMode || 'grid'] || {};
+            
+            let imgW = '100%';
+            let imgH = `${currentDensity.imageHeight}px`;
+
+            if (isList) {
+                imgW = '96px'; imgH = '96px';
+            } else if (isCarousel) {
+                imgW = imgConfig.width ? `${imgConfig.width}px` : '100%';
+                imgH = imgConfig.height ? `${imgConfig.height}px` : '140px'; 
+                if(imgConfig.aspectRatio === '1:1' && imgConfig.width) imgH = `${imgConfig.width}px`;
+            } else {
+                 imgW = imgConfig.width ? `${imgConfig.width}px` : '100%';
+                 imgH = imgConfig.height ? `${imgConfig.height}px` : `${currentDensity.imageHeight}px`;
+            }
 
             return (
                 <div key={id} className={styles.mockProductCard} style={{ 
@@ -971,42 +985,50 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                     gap: `${currentDensity.rowGap}px`, 
                     borderColor: borderColor, 
                     borderRadius: `${Math.max(4, radius - 4)}px`,
-                    backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : '#fff'
+                    backgroundColor: colors.surface,
+                    ...carouselItemStyle
                 }}>
-                    {/* KHỐI ẢNH */}
                     {showImage && (
                         <div className={styles.mockProductImage} style={{ 
-                            width: layoutJson.contentMode === 'list' ? '96px' : '100%', 
-                            height: layoutJson.contentMode === 'list' ? '96px' : `${currentDensity.imageHeight}px`,
+                            width: imgW, 
+                            height: imgH,
                             borderRadius: `${Math.max(2, radius - 6)}px`, 
+                            flexShrink: 0,
+                            margin: isList ? '0' : '0 auto'
                         }}></div>
                     )}
 
-                    {/* KHỐI TEXT DYNAMIC */}
                     <div className={styles.mockProductContent}>
                         {activeTextFields.map((fieldConfig) => {
                             const key = fieldConfig.key;
-                            
-                            // Lấy style override từ StyleJson
                             const override = styleJson.components.fieldRow.overrides?.[key] || {};
                             
-                            // Style cơ bản mặc định
-                            let baseStyle: React.CSSProperties = { 
-                                fontSize: '11px', 
-                                color: '#6B7280', 
-                                marginTop: '2px' 
-                            };
-
-                            // Logic style cũ (để giữ màu mặc định nếu user chưa custom)
+                            let baseStyle: React.CSSProperties = { fontSize: '11px', color: colors.textSecondary, marginTop: '2px' };
                             if (key.includes('item_name') || key.includes('title')) {
-                                baseStyle = { fontWeight: 'bold', fontSize: '13px', color: textColor };
+                                baseStyle = { 
+                                    fontWeight: '600', 
+                                    fontSize: '14px', 
+                                    color: colors.textPrimary 
+                                };
                             } else if (key.includes('price')) {
-                                baseStyle = { color: 'blue', fontWeight: '600' };
+                                baseStyle = { 
+                                    fontWeight: '700', 
+                                    fontSize: '14px',
+                                    color: colors.primary 
+                                };
                             } else if (key.includes('categories')) {
-                                baseStyle = { color: 'blue', fontWeight: '400', fontSize: '13px' };
+                                baseStyle = { 
+                                    fontWeight: '400', 
+                                    fontSize: '11px',
+                                    color: colors.primary 
+                                };
+                            } else if (key.includes('rating')) {
+                                baseStyle = { 
+                                    color: colors.warning, 
+                                    fontSize: '12px'
+                                };
                             }
 
-                            // [QUAN TRỌNG] Merge style override vào style cơ bản
                             const finalStyle = {
                                 ...baseStyle,
                                 ...(override.fontSize ? { fontSize: `${override.fontSize}px` } : {}),
@@ -1014,7 +1036,6 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                 ...(override.color ? { color: override.color } : {}),
                             };
 
-                            // Nội dung hiển thị (Mock data)
                             let content = 'Sample Value';
                             if (key.includes('item_name') || key.includes('title')) content = 'Iphone 18 Pro Max';
                             else if (key.includes('price')) content = '$100.00';
@@ -1027,6 +1048,73 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                 </div>
                             );
                         })}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- 3. HELPER RENDER BODY (XỬ LÝ CAROUSEL/GRID/LIST) ---
+        const renderWidgetBody = () => {
+            const isCarousel = layoutJson.contentMode === 'carousel';
+            const isList = layoutJson.contentMode === 'list';
+
+            // Style cho nút điều hướng (Đẹp hơn)
+            const navBtnStyle: React.CSSProperties = {
+                position: 'absolute',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                backgroundColor: theme === 'dark' ? '#374151' : '#fff', // Màu nền nút
+                border: `1px solid ${borderColor}`,
+                color: textColor,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                zIndex: 10,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15)', // Đổ bóng đẹp hơn
+                fontSize: '18px',
+                lineHeight: 1,
+                paddingBottom: '2px' // Căn chỉnh icon mũi tên
+            };
+
+            // Style container chứa items
+            const containerStyle: React.CSSProperties = {
+                display: isList ? 'flex' : (isCarousel ? 'flex' : 'grid'), 
+                flexDirection: isList ? 'column' : 'row',
+                gridTemplateColumns: !isList && !isCarousel ? '1fr 1fr' : undefined, 
+                gap: '12px',
+                padding: isCarousel ? '0 12px' : '0', // Padding nội bộ để item không dính sát biên khi trượt
+                overflow: 'hidden',
+                position: 'relative',
+                alignItems: 'stretch'
+            };
+
+            return (
+                <div style={{ position: 'relative', padding: isCarousel ? '0 24px' : '0' }}> 
+                    {/* Padding ngoài 24px để chừa chỗ cho nút bấm nằm đè lên biên */}
+                    
+                    {isCarousel && (
+                        <>
+                            <button style={{ ...navBtnStyle, left: '-12px' }}>‹</button>
+                            <button style={{ ...navBtnStyle, right: '-12px' }}>›</button>
+                        </>
+                    )}
+
+                    <div style={containerStyle}>
+                        <MockProduct id={1} />
+                        {/* Carousel hiển thị 1 cái chính, Grid/List hiển thị nhiều */}
+                        {!isCarousel && <MockProduct id={2} />}
+                        
+                        {/* Nếu là Grid Inline thì hiện thêm cho đầy đặn */}
+                        {!isCarousel && !isPopup && !isList && (
+                            <>
+                                <MockProduct id={3} />
+                                <MockProduct id={4} />
+                            </>
+                        )}
                     </div>
                 </div>
             );
@@ -1048,12 +1136,8 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                     <h4 className={styles.widgetHeader} style={{ margin: '0 0 12px 0', color: textColor, fontSize: `${typoTitle.fontSize}px`, fontWeight: typoTitle.fontWeight }}>
                                         Recommended
                                     </h4>
-                                    <div style={{ display: 'grid', gridTemplateColumns: layoutJson.contentMode === 'list' ? '1fr' : '1fr 1fr', gap: '10px' }}>
-                                        <MockProduct id={1} />
-                                        <MockProduct id={2} />
-                                        <MockProduct id={3} />
-                                        <MockProduct id={4} />
-                                    </div>
+                                    {/* SỬ DỤNG HÀM RENDER BODY MỚI */}
+                                    {renderWidgetBody()}
                                 </div>
                             </div>
                         )}
@@ -1073,9 +1157,9 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                     </h4>
                                     <span style={{ cursor: 'pointer', opacity: 0.6, color: secondaryColor }}>✕</span>
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: layoutJson.contentMode === 'list' ? '1fr' : '1fr 1fr', gap: '10px' }}>
-                                    <MockProduct id={1} />
-                                    {layoutJson.contentMode !== 'list' && <MockProduct id={2} />}
+                                {/* SỬ DỤNG HÀM RENDER BODY MỚI */}
+                                <div style={{ paddingTop: '12px' }}>
+                                    {renderWidgetBody()}
                                 </div>
                             </div>
                         </div>
