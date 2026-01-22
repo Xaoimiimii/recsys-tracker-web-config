@@ -1348,7 +1348,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                             </label>
                         </div>
                 </div>
-                {renderFieldsConfigPanel()}
+                {isFieldCustomizationEnabled && renderFieldsConfigPanel()}
             </div>
 
             <div className={styles.sectionCard}>
