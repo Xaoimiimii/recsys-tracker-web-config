@@ -170,11 +170,15 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
                 const mapping: PayloadMapping = {
                     field: UserIdentity.Field === 'AnonymousId' ? 'AnonymousId' : 'UserId',
                     source: UserIdentity.Source as MappingSource,
-                    value: UserIdentity.Value || undefined,
-                    requestUrlPattern: UserIdentity.RequestConfig?.urlPattern || undefined,
-                    requestMethod: UserIdentity.RequestConfig?.method || undefined,
-                    requestBodyPath: UserIdentity.RequestConfig?.bodyPath || undefined,
                 };
+
+                if (UserIdentity.Source === MappingSource.REQUEST_BODY && UserIdentity.RequestConfig) {
+                    mapping.requestUrlPattern = UserIdentity.RequestConfig.RequestUrlPattern || undefined;
+                    mapping.requestMethod = UserIdentity.RequestConfig.RequestMethod || undefined;
+                    mapping.value = UserIdentity.RequestConfig.Value || undefined;
+                } else {
+                    mapping.value = UserIdentity.Value || undefined;
+                }
                 
                 setPayloadMappings([mapping]);
             } catch (error) {
