@@ -956,6 +956,8 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
             const colors = styleJson.tokens.colors;
             const isCarousel = layoutJson.contentMode === 'carousel';
             const isList = layoutJson.contentMode === 'list';
+            const contentAlign = isList ? 'flex-start' : 'center'; 
+            const textAlignment = isList ? 'left' : 'center';
 
             const carouselItemStyle: React.CSSProperties = isCarousel ? {
                 width: '100%', 
@@ -998,7 +1000,10 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                         }}></div>
                     )}
 
-                    <div className={styles.mockProductContent}>
+                    <div className={styles.mockProductContent} style={{
+                        alignItems: contentAlign,
+                        textAlign: textAlignment as any 
+                    }}>
                         {activeTextFields.map((fieldConfig) => {
                             const key = fieldConfig.key;
                             const override = styleJson.components.fieldRow.overrides?.[key] || {};
@@ -1057,6 +1062,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
         const renderWidgetBody = () => {
             const isCarousel = layoutJson.contentMode === 'carousel';
             const isList = layoutJson.contentMode === 'list';
+            const gridColumns = (layoutJson.modes?.grid as any)?.columns || 2;
 
             // Style cho nút điều hướng (Đẹp hơn)
             const navBtnStyle: React.CSSProperties = {
@@ -1084,7 +1090,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
             const containerStyle: React.CSSProperties = {
                 display: isList ? 'flex' : (isCarousel ? 'flex' : 'grid'), 
                 flexDirection: isList ? 'column' : 'row',
-                gridTemplateColumns: !isList && !isCarousel ? '1fr 1fr' : undefined, 
+                gridTemplateColumns: !isList && !isCarousel ? `repeat(${gridColumns}, 1fr)` : undefined,
                 gap: '12px',
                 padding: isCarousel ? '0 12px' : '0', // Padding nội bộ để item không dính sát biên khi trượt
                 overflow: 'hidden',
@@ -1113,6 +1119,12 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                             <>
                                 <MockProduct id={3} />
                                 <MockProduct id={4} />
+                            </>
+                        )}
+                        {/* Nếu là Grid Inline thì hiện thêm cho đầy đặn */}
+                        {!isCarousel && !isPopup && !isList && displayType === 'inline-injection' && (
+                            <>
+                                <MockProduct id={5} />
                             </>
                         )}
                     </div>

@@ -13,17 +13,8 @@ export const DARK_MODE_COLORS = {
     warning: "#FBBF24",
 };
 
-export const SHARED_MODES_CONFIG = {
-    grid: {
-        columns: 2,
-        gap: "md",
-        responsive: {
-            lg: { columns: 2 },
-            md: { columns: 2 },
-            sm: { columns: 2 },
-            xs: { columns: 1 }
-        }
-    },
+// Cấu hình chung cho List và Carousel (Dùng chung cho cả 2 loại)
+const COMMON_MODES_BASE = {
     list: {
         rowGap: "md",
         showDivider: true,
@@ -39,19 +30,16 @@ export const SHARED_MODES_CONFIG = {
 };
 
 // 2. CẤU HÌNH CHI TIẾT THẺ SẢN PHẨM (CARD CONFIG)
-// Quy định ảnh, text, nút bấm hiển thị ra sao tương ứng với từng Mode
 export const SHARED_CARD_CONFIG = {
     blocks: ["image", "fields", "actions"],
 
     image: {
         enabled: true,
-        // Tự động đổi vị trí dựa trên mode
         positionByMode: {
             grid: "top",
             list: "left",
             carousel: "top"
         },
-        // Tự động đổi kích thước/tỷ lệ dựa trên mode
         sizeByMode: {
             grid: { width: 0, height: 0, aspectRatio: "1:1" },   
             list: { width: 96, height: 96, aspectRatio: "1:1" },
@@ -61,11 +49,10 @@ export const SHARED_CARD_CONFIG = {
 
     fields: {
         enabled: true,
-        source: "customizingFields", // Mapping với cột CustomizingFields bên ngoài
+        source: "customizingFields",
         orderBy: "order",
         direction: "asc" as const,
         render: "stack" as const,
-        // Giới hạn số dòng hiển thị khác nhau cho mỗi mode
         maxItemsByMode: {
             grid: 6,
             list: 8,
@@ -93,7 +80,7 @@ export const SHARED_CARD_CONFIG = {
     }
 };
 
-
+// --- CẤU HÌNH POPUP (MẶC ĐỊNH 3 CỘT) ---
 export const DEFAULT_POPUP_LAYOUT: LayoutJson = {
     displayMode: 'popup',   
     contentMode: 'grid',   
@@ -101,27 +88,51 @@ export const DEFAULT_POPUP_LAYOUT: LayoutJson = {
         popup: {
             position: "bottom-right",
             widthMode: "fixed",
-            width: 340,
+            width: 500, // Tăng width lên chút để chứa đủ 3 cột
         },
     },
 
-    modes: SHARED_MODES_CONFIG,
+    modes: {
+        ...COMMON_MODES_BASE,
+        grid: {
+            columns: 2, // <--- POPUP 3 CỘT
+            gap: "sm", // Popup nhỏ nên gap nhỏ hơn
+            responsive: {
+                lg: { columns: 2 },
+                md: { columns: 2 }, // Tablet xuống 2
+                sm: { columns: 2 },
+                xs: { columns: 1 }  // Mobile xuống 1
+            }
+        }
+    },
     card: SHARED_CARD_CONFIG
 };
 
-
+// --- CẤU HÌNH INLINE (MẶC ĐỊNH 6 CỘT) ---
 export const DEFAULT_INLINE_LAYOUT: LayoutJson = {
     displayMode: 'inline-injection',
     contentMode: 'grid',
     
     wrapper: {
         inline: {
-            selector: '#recommendation-slot', // Selector mặc định
+            selector: '#recommendation-slot',
             injectionMode: 'append'
         }
     }, 
 
-    modes: SHARED_MODES_CONFIG,
+    modes: {
+        ...COMMON_MODES_BASE,
+        grid: {
+            columns: 5, // <--- INLINE 6 CỘT
+            gap: "md",
+            responsive: {
+                lg: { columns: 5 }, // Màn hình lớn giữ 6
+                md: { columns: 3 }, // Tablet ngang xuống 4
+                sm: { columns: 3 }, // Tablet dọc xuống 3
+                xs: { columns: 2 }  // Mobile xuống 2
+            }
+        }
+    },
     card: SHARED_CARD_CONFIG
 };
 
@@ -201,7 +212,7 @@ export const DEFAULT_STYLE_CONFIG: StyleJson = {
         },
         image: {
             radiusFollowsCard: true,
-            objectFit: "cover" as const, // Dùng as const để fix lỗi Type
+            objectFit: "cover" as const,
             placeholder: {
                 backgroundToken: "muted",
                 iconOpacity: 0.5
