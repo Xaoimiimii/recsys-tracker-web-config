@@ -103,6 +103,63 @@ export class SearchService {
         }
     }
 
+    async updateItemInBulk(items: ItemWithCategories[], domainId: number) {
+        try {
+            const operations = items.flatMap((item: any) => {
+                const categoryNames = item.ItemCategories?.map(
+                    (ic: any) => ic.Category?.Name
+                ).filter((name: string) => name) || [];
+
+                const categoryIds = item.ItemCategories?.map(
+                    (ic: any) => ic.CategoryId
+                ) || [];
+
+                return [
+                    {
+                        update: { _index: this.INDEX_NAME, _id: item.Id.toString() },
+                    },
+                    {
+                        doc: {
+                            id: item.Id,
+                            domainId: domainId,
+                            title: item.Title,
+                            description: item.Description,
+                            category_names: categoryNames, 
+                            category_ids: categoryIds 
+                        },
+                        doc_as_upsert: true
+                    },
+                ];
+            });
+
+            const bulkResponse = await this.elasticsearchService.bulk({
+                operations: operations,
+            });
+
+            if (bulkResponse.errors) {
+                const erroredItems: any[] = [];
+
+                bulkResponse.items.forEach((action: any, i) => {
+                    const operation = Object.keys(action)[0];
+
+                    if (action[operation].error) {
+                        erroredItems.push({
+                            status: action[operation].status,
+                            error: action[operation].error,
+                            itemId: items[i].Id,
+                        });
+                    }
+                });
+
+                this.logger.error(`Bulk update errors: ${JSON.stringify(erroredItems)}`,);
+            } else {
+                this.logger.log(`Updated ${items.length} items in Elastic successfully.`,);
+            }
+        } catch (error) {
+            this.logger.error(`Failed to bulk update: ${error.message}`);
+        }
+    }
+
     async syncItemsFromDatabase(domainId: number) {
         try {
             this.logger.log(`Starting sync elastic search for domain: ${domainId}`);

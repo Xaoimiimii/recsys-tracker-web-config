@@ -9,6 +9,7 @@ import { Container } from "@/types";
 import {
   CreateItemInput,
   CreateReviewInput,
+  UpdateItemInput,
   itemApi,
   reviewApi,
 } from "@/lib/api/item";
@@ -53,6 +54,7 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({
   container,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>("metadata");
+  const [importMode, setImportMode] = useState<"create" | "update">("create");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -169,7 +171,7 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({
       if (activeTab === "metadata") {
         const customFieldNames = customFields.map((f) => f.name);
         jsonData = await parseItemImportExcelFile(file, customFieldNames);
-        const mappedData: CreateItemInput[] = jsonData.map((row) => ({
+        const mappedData: CreateItemInput[] | UpdateItemInput[] = jsonData.map((row) => ({
           TernantItemId: row.sku || "",
           Title: row.name || "No Title",
           Description: row.description || "",
@@ -185,7 +187,11 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({
           throw new Error("No valid items found in the file.");
         }
 
-        await itemApi.createBulk(validItems);
+        if (importMode === "create") {
+          await itemApi.createBulk(validItems as CreateItemInput[]);
+        } else {
+          await itemApi.updateBulk(validItems as UpdateItemInput[]);
+        }
       } else {
         jsonData = await parseReviewExcelFile(file);
 
@@ -210,8 +216,9 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({
         jsonData = validReviews;
       }
 
+      const action = importMode === "create" ? "imported" : "updated";
       setSuccess(
-        `Successfully imported ${jsonData.length} ${
+        `Successfully ${action} ${jsonData.length} ${
           activeTab === "metadata" ? "items" : "reviews"
         } from "${file.name}"!`
       );
@@ -289,6 +296,54 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({
             Item Reviews
           </button>
         </div>
+
+        {/* Import Mode Toggle - Only show for Item Metadata tab */}
+        {activeTab === "metadata" && (
+          <div style={{
+            display: "flex",
+            justifyContent: "center",
+            gap: "12px",
+            padding: "16px 0",
+            borderBottom: "1px solid #e0e0e0",
+          }}>
+            <button
+              className={`${styles.modeButton} ${
+                importMode === "create" ? styles.modeButtonActive : ""
+              }`}
+              onClick={() => setImportMode("create")}
+              style={{
+                padding: "8px 24px",
+                borderRadius: "6px",
+                border: importMode === "create" ? "2px solid #0078d4" : "1px solid #d0d0d0",
+                background: importMode === "create" ? "#e6f2ff" : "white",
+                color: importMode === "create" ? "#0078d4" : "#666",
+                cursor: "pointer",
+                fontWeight: importMode === "create" ? "600" : "normal",
+                transition: "all 0.2s",
+              }}
+            >
+              Create New Items
+            </button>
+            <button
+              className={`${styles.modeButton} ${
+                importMode === "update" ? styles.modeButtonActive : ""
+              }`}
+              onClick={() => setImportMode("update")}
+              style={{
+                padding: "8px 24px",
+                borderRadius: "6px",
+                border: importMode === "update" ? "2px solid #0078d4" : "1px solid #d0d0d0",
+                background: importMode === "update" ? "#e6f2ff" : "white",
+                color: importMode === "update" ? "#0078d4" : "#666",
+                cursor: "pointer",
+                fontWeight: importMode === "update" ? "600" : "normal",
+                transition: "all 0.2s",
+              }}
+            >
+              Update Existing Items
+            </button>
+          </div>
+        )}
 
         <div className={styles.tabContent}>
           <div className={styles.uploadSection}>
@@ -431,7 +486,9 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({
                 onClick={handleUpload}
                 disabled={!file || uploading}
               >
-                {uploading ? "Uploading..." : "Import Data"}
+                {uploading 
+                  ? (importMode === "create" ? "Importing..." : "Updating...") 
+                  : (importMode === "create" ? "Import Data" : "Update Data")}
               </button>
             </div>
           </div>
@@ -485,7 +542,9 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({
             </div>
 
             <p className={styles.descriptionText}>
-              Please upload an Excel (.xlsx) file with the exact headers below:
+              {importMode === "create" 
+                ? "Please upload an Excel (.xlsx) file with the exact headers below:"
+                : "Please upload an Excel (.xlsx) file with item SKUs and fields to update. Only provided fields will be updated."}
             </p>
 
             {activeTab === "metadata" ? (
