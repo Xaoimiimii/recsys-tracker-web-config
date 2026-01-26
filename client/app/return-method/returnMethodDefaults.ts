@@ -150,10 +150,10 @@ export const DEFAULT_STYLE_CONFIG: StyleJson = {
     tokens: {
         colors: {
             background: "#FFFFFF",
-            surface: "#FFFFFF",
+            surface: "transparent",
             textPrimary: "#111827",
             textSecondary: "#6B7280",
-            border: "#E5E7EB",
+            border: "transparent",
             muted: "#F3F4F6",
             primary: "#2563EB",
             success: "#16A34A",
