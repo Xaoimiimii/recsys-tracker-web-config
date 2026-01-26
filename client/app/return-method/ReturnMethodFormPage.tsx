@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Container } from '../../types';
-import { Save, X, Layers, Monitor, Puzzle, ArrowLeft, ArrowUp, ArrowDown, Trash2, Plus, Check, BookOpen, Construction, Settings, Eye, Image, Divide } from 'lucide-react';
+import { Save, X, Layers, Monitor, Puzzle, ArrowLeft, ArrowUp, ArrowDown, Trash2, Plus, Check, BookOpen, Settings, Image, Droplet, DropletOff } from 'lucide-react';
 import styles from './returnMethodPage.module.css';
 import { DisplayType, LayoutJson, StyleJson, CustomizingFields, FieldConfig } from './types';
 import { useDataCache } from '../../contexts/DataCacheContext';
@@ -704,19 +704,49 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                 <div className={styles.formGroup}>
                     <label className={styles.fieldLabel}>Color Palette</label>
                     <div className={styles.formRow}>
-                        {['surface', 'border'].map(colorKey => (
-                             <div className={styles.formCol} key={colorKey}>
-                                <label className={styles.inputLabel}>{colorKey.charAt(0).toUpperCase() + colorKey.slice(1)}</label>
-                                <div className={styles.colorSwatchWrapper}>
-                                    <input type="color" 
-                                        value={styleJson.tokens.colors[colorKey as keyof typeof styleJson.tokens.colors] as string} 
-                                        onChange={(e) => updateColorToken(colorKey, e.target.value)} 
-                                        disabled={isReadOnly}
-                                    />
-                                    <span className={styles.helperText}>{styleJson.tokens.colors[colorKey as keyof typeof styleJson.tokens.colors]}</span>
+                        {['surface', 'border'].map(colorKey => {
+                            const currentColor = styleJson.tokens.colors[colorKey as keyof typeof styleJson.tokens.colors] as string;
+                            const isTransparent = currentColor === 'transparent';
+
+                            return (
+                                <div className={styles.formCol} key={colorKey}>
+                                    <label className={styles.inputLabel}>{colorKey.charAt(0).toUpperCase() + colorKey.slice(1)}</label>
+                                    
+                                    <div className={styles.colorSwatchWrapper}>
+                                        {/* 1. Ô Input Color */}
+                                        <input 
+                                            type="color" 
+                                            value={isTransparent ? '#ffffff' : currentColor} 
+                                            onChange={(e) => updateColorToken(colorKey, e.target.value)} 
+                                            disabled={isReadOnly || isTransparent}
+                                            style={{ 
+                                                opacity: isTransparent ? 0.3 : 1, 
+                                                cursor: isTransparent ? 'not-allowed' : 'pointer'
+                                            }}
+                                        />
+
+                                        {/* 2. Nút Transparent mới (Hình tròn) */}
+                                        <button
+                                            onClick={() => {
+                                                if (isTransparent) {
+                                                    updateColorToken(colorKey, styleJson.theme === 'dark' ? '#1F2937' : '#FFFFFF');
+                                                } else {
+                                                    updateColorToken(colorKey, 'transparent');
+                                                }
+                                            }}
+                                            className={`${styles.iconButton} ${isTransparent ? styles.iconButtonActive : ''}`}
+                                            title={isTransparent ? "Remove Transparency" : "Set Transparent"}
+                                            disabled={isReadOnly}
+                                        >
+                                            {isTransparent ? <DropletOff size={16} /> : <Droplet size={16} />}
+                                        </button>
+                                    </div>
+                                    <span className={styles.helperText} style={{ fontSize: '10px', marginTop: '4px' }}>
+                                        {currentColor}
+                                    </span>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
 
@@ -1348,7 +1378,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                             </label>
                         </div>
                 </div>
-                {isFieldCustomizationEnabled && renderFieldsConfigPanel()}
+                {renderFieldsConfigPanel()}
             </div>
 
             <div className={styles.sectionCard}>
