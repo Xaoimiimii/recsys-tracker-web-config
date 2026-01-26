@@ -513,48 +513,6 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
         );
     };
 
-    const renderInlineConfigPanel = () => (
-        <div className={styles.formContent}>
-             <div className={styles.formGroup}>
-                {/* [SỬA] Chỉ hiển thị khi Switch BẬT */}
-                {isCustomizationEnabled && (
-                    <>
-                    <div className={styles.sectionLabelWithIcon}>
-                        <Monitor size={16} className="text-gray-500"/>
-                        <label className={styles.sectionLabel}>Inline Settings</label>
-                    </div>
-                    <div className={styles.formRow}>
-                        <div className={styles.formCol}>
-                            <label className={styles.inputLabel}>Target Selector (DOM)</label>
-                            <input 
-                                type="text" className={styles.textInput}
-                                placeholder="#product-recommendations"
-                                value={layoutJson.wrapper?.inline?.selector || ''}
-                                onChange={(e) => updateInlineWrapper('selector', e.target.value)}
-                                disabled={isReadOnly}
-                            />
-                             <p className={styles.helperText}>Use the top "Selector Value" to trigger...</p>
-                        </div>
-                        <div className={styles.formCol}>
-                            <label className={styles.inputLabel}>Injection Mode</label>
-                            <select 
-                                className={styles.selectInput}
-                                value={layoutJson.wrapper?.inline?.injectionMode}
-                                onChange={(e) => updateInlineWrapper('injectionMode', e.target.value)}
-                                disabled={isReadOnly}
-                            >
-                                <option value="append">Append (Bottom)</option>
-                                <option value="prepend">Prepend (Top)</option>
-                                <option value="replace">Replace</option>
-                            </select>
-                        </div>
-                    </div>
-                    </>
-                )}
-            </div>
-        </div>
-    );
-
     const renderFieldInstructions = () => {
         return (
             <div className={styles.instructionBox}>
@@ -1415,25 +1373,27 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                 <div className={styles.configGrid}>
                     
                     <div>
-                        {displayType === 'popup' ? renderPopupConfigPanel() : renderInlineConfigPanel()}
+                        {displayType === 'popup' ? renderPopupConfigPanel() : ''}
                         
                         {isCustomizationEnabled && (
                             <>
-                                <div className={`${styles.formRow} ${styles.separatorTop}`} style={{marginTop: '1.5rem', paddingTop: '1rem'}}>
-                                    <div className={styles.formCol}>
-                                        <label className={styles.inputLabel}>Content Layout</label>
-                                        <select 
-                                            className={styles.selectInput}
-                                            value={layoutJson.contentMode}
-                                            onChange={(e) => handleLayoutModeChange(e.target.value)}
-                                            disabled={isReadOnly}
-                                        >
-                                            {LAYOUT_MODE_OPTIONS.map(opt => (
-                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                            ))}
-                                        </select>
-                                    </div>
+                            <div 
+                                className={`${displayType === 'popup' ? styles.separatorTop : ''}`} 
+                            >
+                                <div className={styles.formCol}>
+                                    <label className={styles.inputLabel}>Content Layout</label>
+                                    <select 
+                                        className={styles.selectInput}
+                                        value={layoutJson.contentMode}
+                                        onChange={(e) => handleLayoutModeChange(e.target.value)}
+                                        disabled={isReadOnly}
+                                    >
+                                        {LAYOUT_MODE_OPTIONS.map(opt => (
+                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                        ))}
+                                    </select>
                                 </div>
+                            </div>
 
                                 {renderStyleConfigPanel()}
                             </>
