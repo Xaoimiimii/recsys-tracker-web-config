@@ -293,7 +293,7 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({
             }`}
             onClick={() => setActiveTab("review")}
           >
-            Item Reviews
+            Item Rating
           </button>
         </div>
 
