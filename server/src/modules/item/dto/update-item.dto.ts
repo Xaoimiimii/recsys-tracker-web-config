@@ -10,7 +10,7 @@ export class UpdateItemDto {
     
     @ApiProperty({ example: "This is a new item title" })
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     Title?: string;
 
     @ApiProperty({ example: "This is a new item title" })    

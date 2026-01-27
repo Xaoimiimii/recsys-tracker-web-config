@@ -19,7 +19,7 @@ export interface ReviewImportData {
   review: string;
 }
 
-export const parseItemImportExcelFile = async (file: File, customFieldNames: string[] = []): Promise<ProductImportData[]> => {
+export const parseItemImportExcelFile = async (file: File, customFieldNames: string[] = [], mode: 'create' | 'update' = 'create'): Promise<ProductImportData[]> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -43,14 +43,17 @@ export const parseItemImportExcelFile = async (file: File, customFieldNames: str
 
         const fileHeaders = headerRow.map(h => h?.toString().trim().toLowerCase());
 
-        const missingHeaders = REQUIRED_HEADERS.filter(reqHeader => {
+        const requiredHeaders = mode === 'update' ? ['SKU'] : REQUIRED_HEADERS;
+        
+        const missingHeaders = requiredHeaders.filter(reqHeader => {
           return !fileHeaders.includes(reqHeader.toLowerCase());
         });
 
         if (missingHeaders.length > 0) {
-          throw new Error(
-            `File Excel sai mẫu! Đang thiếu các cột: [ ${missingHeaders.join(', ')} ].\nVui lòng đảm bảo file có đủ 5 cột: SKU, Item Name, Category, Description, Image`
-          );
+          const errorMsg = mode === 'update' 
+            ? `File Excel sai mẫu! Đang thiếu cột: [ ${missingHeaders.join(', ')} ].\nĐể update item, file cần có ít nhất cột SKU và các cột bạn muốn cập nhật (ví dụ: Image, Artist)`
+            : `File Excel sai mẫu! Đang thiếu các cột: [ ${missingHeaders.join(', ')} ].\nVui lòng đảm bảo file có đủ 5 cột: SKU, Item Name, Category, Description, Image`;
+          throw new Error(errorMsg);
         }
 
         const rawData = XLSX.utils.sheet_to_json(sheet);
@@ -73,7 +76,8 @@ export const parseItemImportExcelFile = async (file: File, customFieldNames: str
             return;
           }
 
-          if (!name || !name.toString().trim()) {
+          // Khi update, name không bắt buộc
+          if (mode === 'create' && (!name || !name.toString().trim())) {
             errors.push(`Dòng ${rowIndex}: Thiếu dữ liệu 'Item Name'`);
             return;
           }
@@ -108,7 +112,7 @@ export const parseItemImportExcelFile = async (file: File, customFieldNames: str
 
           processedData.push({
             sku: sku.toString().trim(),
-            name: name.toString().trim(),
+            name: name ? name.toString().trim() : (mode === 'update' ? '' : 'No Title'),
             categories: categoriesList,
             description: description,
             imageUrl: imageUrl,

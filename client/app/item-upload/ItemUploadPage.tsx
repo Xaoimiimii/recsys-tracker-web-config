@@ -170,26 +170,56 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({
 
       if (activeTab === "metadata") {
         const customFieldNames = customFields.map((f) => f.name);
-        jsonData = await parseItemImportExcelFile(file, customFieldNames);
-        const mappedData: CreateItemInput[] | UpdateItemInput[] = jsonData.map((row) => ({
-          TernantItemId: row.sku || "",
-          Title: row.name || "No Title",
-          Description: row.description || "",
-          Categories: row.categories || [],
-          ImageUrl: row.imageUrl || "",
-          DomainKey: currentDomainId,
-          Attributes: row.customAttributes || {},
-        }));
-        const validItems = mappedData.filter(
-          (item) => item.Title && item.TernantItemId
-        );
-        if (validItems.length === 0) {
-          throw new Error("No valid items found in the file.");
-        }
-
+        jsonData = await parseItemImportExcelFile(file, customFieldNames, importMode);
+        
+        let mappedData: CreateItemInput[] | UpdateItemInput[];
+        
         if (importMode === "create") {
+          mappedData = jsonData.map((row) => ({
+            TernantItemId: row.sku || "",
+            Title: row.name || "No Title",
+            Description: row.description || "",
+            Categories: row.categories || [],
+            ImageUrl: row.imageUrl || "",
+            DomainKey: currentDomainId,
+            Attributes: row.customAttributes || {},
+          }));
+          
+          const validItems = mappedData.filter(
+            (item) => item.Title && item.TernantItemId
+          );
+          if (validItems.length === 0) {
+            throw new Error("No valid items found in the file.");
+          }
+          
           await itemApi.createBulk(validItems as CreateItemInput[]);
         } else {
+          mappedData = jsonData.map((row) => {
+            const item: any = {
+              TernantItemId: row.sku || "",
+              DomainKey: currentDomainId,
+            };
+            
+            if (row.name !== undefined && row.name !== null && row.name.trim()) {
+              item.Title = row.name.trim();
+            }
+            if (row.description !== undefined && row.description !== null && row.description.trim()) {
+              item.Description = row.description.trim();
+            }
+            if (row.categories && row.categories.length > 0) item.Categories = row.categories;
+            if (row.imageUrl && row.imageUrl.trim()) item.ImageUrl = row.imageUrl.trim();
+            if (row.customAttributes && Object.keys(row.customAttributes).length > 0) {
+              item.Attributes = row.customAttributes;
+            }
+            
+            return item;
+          });
+          
+          const validItems = mappedData.filter((item) => item.TernantItemId);
+          if (validItems.length === 0) {
+            throw new Error("No valid items found in the file.");
+          }
+          
           await itemApi.updateBulk(validItems as UpdateItemInput[]);
         }
       } else {

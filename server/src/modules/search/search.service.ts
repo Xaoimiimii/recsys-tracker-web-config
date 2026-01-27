@@ -152,11 +152,13 @@ export class SearchService {
                 });
 
                 this.logger.error(`Bulk update errors: ${JSON.stringify(erroredItems)}`,);
+                throw new Error(`Failed to update ${erroredItems.length} items in Elasticsearch`);
             } else {
                 this.logger.log(`Updated ${items.length} items in Elastic successfully.`,);
             }
         } catch (error) {
             this.logger.error(`Failed to bulk update: ${error.message}`);
+            throw error;
         }
     }
 
