@@ -117,6 +117,11 @@ export class RuleService {
                     TrackingRuleId: id,
                 },
             }),
+            this.prisma.event.deleteMany({
+                where: {
+                    TrackingRuleId: id
+                }
+            }),
             this.prisma.trackingRule.delete({
                 where: {
                     Id: id,
