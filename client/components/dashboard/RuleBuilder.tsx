@@ -111,9 +111,9 @@ export const EVENT_DESCRIPTIONS: Record<EventType, string> = {
 };
 
 export const TARGET_SUGGESTIONS: Record<EventType, string> = {
-  [EventType.CLICK]: "Suggested: #add-to-cart, .add-to-cart, favorite-btn, .bookmark-icon",
-  [EventType.RATING]: "Suggested: .rating, .rating-stars, .star, input[type=radio][name*=rating]",
-  [EventType.REVIEW]: "Suggested: #review, .review-box, textarea[name*=review], .submit-review"
+  [EventType.CLICK]: "Suggested: .play-button, .btn-play, #heart-icon, .add-to-cart",
+  [EventType.RATING]: "Suggested: .rating-submit, .submot-button, #star-rating",
+  [EventType.REVIEW]: "Suggested: .review-submit, .submit-button, #review-form"
 };
 
 export interface SectionExample {
@@ -167,15 +167,15 @@ export const SECTION_EXAMPLES: Record<string, Record<EventType, SectionExample[]
     [EventType.RATING]: [
       { 
         title: "Star Rating Component", 
-        htmlContext: '<div class="rating-stars" data-value="5"></div>',
-        config: "Target Type: 'CSS Selector' | Value: '.submit-rating' or '#submit-rating'"
+        htmlContext: '<div class="rating-stars" data-value="5"></div> <button class="submit-rating">Submit</button>',
+        config: "Target Type: 'CSS Selector' | Value: '.submit-rating'"
       }
     ],
     [EventType.REVIEW]: [
       { 
         title: "Submit Feedback Form", 
-        htmlContext: '<form id="review-form">\n  <textarea name="review"></textarea>\n  <button type="submit">Submit</button>\n</form>',
-        config: "Target Type: 'CSS Selector' | Value: '#review-form' or 'textarea[name=review]'"
+        htmlContext: '<form id="review-form"> <textarea name="review-text"></textarea> <button class="submit-review" type="submit">Submit Review</button> </form>',
+        config: "Target Type: 'CSS Selector' | Value: '.submit-review'"
       }
     ]
   },
