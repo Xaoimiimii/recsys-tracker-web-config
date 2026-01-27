@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Container } from '../../types';
-import { Save, X, Layers, Monitor, Puzzle, ArrowLeft, ArrowUp, ArrowDown, Trash2, Plus, Check, BookOpen, Construction, Settings, Eye, Image, Divide } from 'lucide-react';
+import { Save, X, Layers, Monitor, Puzzle, ArrowLeft, ArrowUp, ArrowDown, Trash2, Plus, Check, BookOpen, Settings, Image, Droplet, DropletOff } from 'lucide-react';
 import styles from './returnMethodPage.module.css';
 import { DisplayType, LayoutJson, StyleJson, CustomizingFields, FieldConfig } from './types';
 import { useDataCache } from '../../contexts/DataCacheContext';
@@ -513,48 +513,6 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
         );
     };
 
-    const renderInlineConfigPanel = () => (
-        <div className={styles.formContent}>
-             <div className={styles.formGroup}>
-                {/* [SỬA] Chỉ hiển thị khi Switch BẬT */}
-                {isCustomizationEnabled && (
-                    <>
-                    <div className={styles.sectionLabelWithIcon}>
-                        <Monitor size={16} className="text-gray-500"/>
-                        <label className={styles.sectionLabel}>Inline Settings</label>
-                    </div>
-                    <div className={styles.formRow}>
-                        <div className={styles.formCol}>
-                            <label className={styles.inputLabel}>Target Selector (DOM)</label>
-                            <input 
-                                type="text" className={styles.textInput}
-                                placeholder="#product-recommendations"
-                                value={layoutJson.wrapper?.inline?.selector || ''}
-                                onChange={(e) => updateInlineWrapper('selector', e.target.value)}
-                                disabled={isReadOnly}
-                            />
-                             <p className={styles.helperText}>Use the top "Selector Value" to trigger...</p>
-                        </div>
-                        <div className={styles.formCol}>
-                            <label className={styles.inputLabel}>Injection Mode</label>
-                            <select 
-                                className={styles.selectInput}
-                                value={layoutJson.wrapper?.inline?.injectionMode}
-                                onChange={(e) => updateInlineWrapper('injectionMode', e.target.value)}
-                                disabled={isReadOnly}
-                            >
-                                <option value="append">Append (Bottom)</option>
-                                <option value="prepend">Prepend (Top)</option>
-                                <option value="replace">Replace</option>
-                            </select>
-                        </div>
-                    </div>
-                    </>
-                )}
-            </div>
-        </div>
-    );
-
     const renderFieldInstructions = () => {
         return (
             <div className={styles.instructionBox}>
@@ -704,19 +662,49 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                 <div className={styles.formGroup}>
                     <label className={styles.fieldLabel}>Color Palette</label>
                     <div className={styles.formRow}>
-                        {['surface', 'border'].map(colorKey => (
-                             <div className={styles.formCol} key={colorKey}>
-                                <label className={styles.inputLabel}>{colorKey.charAt(0).toUpperCase() + colorKey.slice(1)}</label>
-                                <div className={styles.colorSwatchWrapper}>
-                                    <input type="color" 
-                                        value={styleJson.tokens.colors[colorKey as keyof typeof styleJson.tokens.colors] as string} 
-                                        onChange={(e) => updateColorToken(colorKey, e.target.value)} 
-                                        disabled={isReadOnly}
-                                    />
-                                    <span className={styles.helperText}>{styleJson.tokens.colors[colorKey as keyof typeof styleJson.tokens.colors]}</span>
+                        {['surface', 'border'].map(colorKey => {
+                            const currentColor = styleJson.tokens.colors[colorKey as keyof typeof styleJson.tokens.colors] as string;
+                            const isTransparent = currentColor === 'transparent';
+
+                            return (
+                                <div className={styles.formCol} key={colorKey}>
+                                    <label className={styles.inputLabel}>{colorKey.charAt(0).toUpperCase() + colorKey.slice(1)}</label>
+                                    
+                                    <div className={styles.colorSwatchWrapper}>
+                                        {/* 1. Ô Input Color */}
+                                        <input 
+                                            type="color" 
+                                            value={isTransparent ? '#ffffff' : currentColor} 
+                                            onChange={(e) => updateColorToken(colorKey, e.target.value)} 
+                                            disabled={isReadOnly || isTransparent}
+                                            style={{ 
+                                                opacity: isTransparent ? 0.3 : 1, 
+                                                cursor: isTransparent ? 'not-allowed' : 'pointer'
+                                            }}
+                                        />
+
+                                        {/* 2. Nút Transparent mới (Hình tròn) */}
+                                        <button
+                                            onClick={() => {
+                                                if (isTransparent) {
+                                                    updateColorToken(colorKey, styleJson.theme === 'dark' ? '#1F2937' : '#FFFFFF');
+                                                } else {
+                                                    updateColorToken(colorKey, 'transparent');
+                                                }
+                                            }}
+                                            className={`${styles.iconButton} ${isTransparent ? styles.iconButtonActive : ''}`}
+                                            title={isTransparent ? "Remove Transparency" : "Set Transparent"}
+                                            disabled={isReadOnly}
+                                        >
+                                            {isTransparent ? <DropletOff size={16} /> : <Droplet size={16} />}
+                                        </button>
+                                    </div>
+                                    <span className={styles.helperText} style={{ fontSize: '10px', marginTop: '4px' }}>
+                                        {currentColor}
+                                    </span>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
 
@@ -1348,7 +1336,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                             </label>
                         </div>
                 </div>
-                {isFieldCustomizationEnabled && renderFieldsConfigPanel()}
+                {renderFieldsConfigPanel()}
             </div>
 
             <div className={styles.sectionCard}>
@@ -1385,25 +1373,27 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                 <div className={styles.configGrid}>
                     
                     <div>
-                        {displayType === 'popup' ? renderPopupConfigPanel() : renderInlineConfigPanel()}
+                        {displayType === 'popup' ? renderPopupConfigPanel() : ''}
                         
                         {isCustomizationEnabled && (
                             <>
-                                <div className={`${styles.formRow} ${styles.separatorTop}`} style={{marginTop: '1.5rem', paddingTop: '1rem'}}>
-                                    <div className={styles.formCol}>
-                                        <label className={styles.inputLabel}>Content Layout</label>
-                                        <select 
-                                            className={styles.selectInput}
-                                            value={layoutJson.contentMode}
-                                            onChange={(e) => handleLayoutModeChange(e.target.value)}
-                                            disabled={isReadOnly}
-                                        >
-                                            {LAYOUT_MODE_OPTIONS.map(opt => (
-                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                            ))}
-                                        </select>
-                                    </div>
+                            <div 
+                                className={`${displayType === 'popup' ? styles.separatorTop : ''}`} 
+                            >
+                                <div className={styles.formCol}>
+                                    <label className={styles.inputLabel}>Content Layout</label>
+                                    <select 
+                                        className={styles.selectInput}
+                                        value={layoutJson.contentMode}
+                                        onChange={(e) => handleLayoutModeChange(e.target.value)}
+                                        disabled={isReadOnly}
+                                    >
+                                        {LAYOUT_MODE_OPTIONS.map(opt => (
+                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                        ))}
+                                    </select>
                                 </div>
+                            </div>
 
                                 {renderStyleConfigPanel()}
                             </>
