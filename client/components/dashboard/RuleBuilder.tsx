@@ -197,51 +197,96 @@ export interface InitialMappingConfig {
   pageUrlExtractType?: 'pathname' | 'query';
 }
 
-export const INITIAL_MAPPINGS: Record<string, InitialMappingConfig[]> = {
-  [EventType.CLICK]: [
-    {
-      field: 'itemId',
-      source: MappingSource.REQUEST_URL,
-      value: '3',
-      requestUrlPattern: '/api/song/:id/player',
-      requestMethod: 'GET',
-      urlExtractType: 'pathname'
-    }
-  ],
-  [EventType.RATING]: [
-    {
-      field: 'itemId',
-      source: MappingSource.REQUEST_URL,
-      value: '3',
-      requestUrlPattern: '/api/song/:id/player',
-      requestMethod: 'GET',
-      urlExtractType: 'pathname'
-    },
-    {
-      field: 'rating_value',
-      source: MappingSource.REQUEST_BODY,
-      value: 'rating',
-      requestUrlPattern: '/api/rating/:id/add-review',
-      requestMethod: 'POST'
-    }
-  ],
-  [EventType.REVIEW]: [
-    {
-      field: 'itemId',
-      source: MappingSource.REQUEST_URL,
-      value: '3',
-      requestUrlPattern: '/api/song/:id/player',
-      requestMethod: 'GET',
-      urlExtractType: 'pathname'
-    },
-    {
-      field: 'review_text',
-      source: MappingSource.REQUEST_BODY,
-      value: 'comment',
-      requestUrlPattern: '/api/rating/:id/add-review',
-      requestMethod: 'POST'
-    }
-  ]
+export const INITIAL_MAPPINGS: Record<string, Record<string, InitialMappingConfig[]>> = {
+  [EventType.CLICK]: {
+    [ActionType.VIEW]: [
+      {
+        field: 'itemId',
+        source: MappingSource.REQUEST_URL,
+        value: '3',
+        requestUrlPattern: '/api/song/:id/player',
+        requestMethod: 'GET',
+        urlExtractType: 'pathname'
+      }
+    ],
+    [ActionType.ADD_TO_FAVORITE]: [
+      {
+        field: 'itemId',
+        source: MappingSource.REQUEST_URL,
+        value: '3',
+        requestUrlPattern: '/api/song/:id/favorite-toggle',
+        requestMethod: 'POST',
+        urlExtractType: 'pathname'
+      }
+    ],
+    [ActionType.ADD_TO_WISHLIST]: [
+      {
+        field: 'itemId',
+        source: MappingSource.REQUEST_URL,
+        value: '3',
+        requestUrlPattern: '/api/song/:id/player',
+        requestMethod: 'GET',
+        urlExtractType: 'pathname'
+      }
+    ],
+    [ActionType.ADD_TO_CART]: [
+      {
+        field: 'itemId',
+        source: MappingSource.PAGE_URL,
+        value: '2',
+        pageUrlPattern: '/song/:id',
+        pageUrlExtractType: 'pathname'
+      }
+    ],
+    [ActionType.PURCHASE]: [
+      {
+        field: 'itemId',
+        source: MappingSource.REQUEST_URL,
+        value: '3',
+        requestUrlPattern: '/api/song/:id/player',
+        requestMethod: 'GET',
+        urlExtractType: 'pathname'
+      }
+    ]
+  },
+  [EventType.RATING]: {
+    'default': [
+      {
+        field: 'itemId',
+        source: MappingSource.REQUEST_URL,
+        value: '3',
+        requestUrlPattern: '/api/rating/:id/add-review',
+        requestMethod: 'POST',
+        urlExtractType: 'pathname'
+      },
+      {
+        field: 'rating_value',
+        source: MappingSource.REQUEST_BODY,
+        value: 'rating',
+        requestUrlPattern: '/api/rating/:id/add-review',
+        requestMethod: 'POST'
+      }
+    ]
+  },
+  [EventType.REVIEW]: {
+    'default': [
+      {
+        field: 'itemId',
+        source: MappingSource.REQUEST_URL,
+        value: '3',
+        requestUrlPattern: '/api/rating/:id/add-review',
+        requestMethod: 'POST',
+        urlExtractType: 'pathname'
+      },
+      {
+        field: 'review_text',
+        source: MappingSource.REQUEST_BODY,
+        value: 'comment',
+        requestUrlPattern: '/api/rating/:id/add-review',
+        requestMethod: 'POST'
+      }
+    ]
+  }
 };
 
 // ==================== COMPONENT ====================
@@ -355,7 +400,18 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     };
     
     const eventType = eventTypeMap[selectedInteraction.eventTypeId] || EventType.CLICK;
-    const initialMappings = INITIAL_MAPPINGS[eventType] || [];
+    const actionType = selectedInteraction.actionType;
+    
+    // Get initial mappings based on eventType and actionType
+    let initialMappings: InitialMappingConfig[] = [];
+    const eventMappings = INITIAL_MAPPINGS[eventType];
+    if (eventMappings) {
+      if (actionType && eventMappings[actionType]) {
+        initialMappings = eventMappings[actionType];
+      } else if (eventMappings['default']) {
+        initialMappings = eventMappings['default'];
+      }
+    }
     
     setRule(prev => ({
       ...prev,
