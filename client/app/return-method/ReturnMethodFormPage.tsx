@@ -1179,7 +1179,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                         <label className={styles.fieldLabel}>Target Type</label>
                         <input 
                             className={styles.selectInput}
-                            value="Page URL"
+                            value={displayType === 'inline-injection' ? 'CSS Selector' : 'Page URL'}
                             disabled
                         >
                         </input>
@@ -1209,7 +1209,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                 <div className={styles.formRow} style={{ marginTop: '0.5rem' }}>
                     <p className={styles.helperText}>
                         {displayType === 'inline-injection' 
-                            ? `The widget will appear inside elements where the class/id contains this value.` 
+                            ? `The widget will appear inside elements where the selector class/id contains this value.` 
                             : `The popup will appear when the page URL contains this value.`}
                     </p>
                 </div>
