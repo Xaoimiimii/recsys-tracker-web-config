@@ -51,8 +51,8 @@ export const LivePreview: React.FC<LivePreviewProps> = ({
         const colors = styleJson.tokens.colors;
         const isCarousel = layoutJson.contentMode === 'carousel';
         const isList = layoutJson.contentMode === 'list';
-        const contentAlign = isList ? 'flex-start' : 'center';
-        const textAlignment = isList ? 'left' : 'center';
+        const contentAlign = isList ? 'flex-start' : 'left';
+        const textAlignment = isList ? 'left' : 'left';
 
         const carouselItemStyle: React.CSSProperties = isCarousel ? {
             width: '100%',

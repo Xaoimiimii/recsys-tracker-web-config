@@ -489,7 +489,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                         <label className={styles.fieldLabel}>Target Type</label>
                         <input 
                             className={styles.selectInput}
-                            value="Page URL"
+                            value= {displayType === 'pop-up' ? 'Page URL' : 'CSS Selector'}
                             disabled
                         >
                         </input>
