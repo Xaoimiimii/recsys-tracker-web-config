@@ -201,20 +201,37 @@ export class ItemService {
                             });
                         }
 
+                        // Build update data with only provided fields
+                        const updateData: any = {
+                            ModifiedAt: new Date(),
+                        };
+
+                        // Only update fields that are explicitly provided
+                        if (item.Title !== undefined && item.Title !== null) {
+                            updateData.Title = item.Title;
+                        }
+                        if (item.Description !== undefined && item.Description !== null) {
+                            updateData.Description = item.Description;
+                        }
+                        if (item.ImageUrl !== undefined && item.ImageUrl !== null) {
+                            updateData.ImageUrl = item.ImageUrl;
+                        }
+                        if (item.Attributes !== undefined) {
+                            updateData.Attributes = item.Attributes;
+                        }
+
+                        // Add categories if provided
+                        if (categoryIds.length > 0) {
+                            updateData.ItemCategories = {
+                                create: categoryIds.map((catId) => ({
+                                    CategoryId: catId,
+                                })),
+                            };
+                        }
+
                         return tx.item.update({
                             where: { Id: existingItem.Id },
-                            data: {
-                                Title: item.Title,
-                                Description: item.Description || '',
-                                ModifiedAt: new Date(),
-                                ItemCategories: categoryIds.length > 0 ? {
-                                    create: categoryIds.map((catId) => ({
-                                        CategoryId: catId,
-                                    })),
-                                } : undefined,
-                                ImageUrl: item.ImageUrl || null,
-                                Attributes: item.Attributes || undefined,
-                            },
+                            data: updateData,
                             include: {
                                 ItemCategories: {
                                     include: {
