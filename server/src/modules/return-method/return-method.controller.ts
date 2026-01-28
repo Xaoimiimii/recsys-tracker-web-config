@@ -41,7 +41,6 @@ export class ReturnMethodController {
             dto.CustomizingFields || [],
             dto.LayoutJson,
             dto.StyleJson,
-            dto.SearchKeywordConfigId,
         );
 
         if (!result) {
@@ -69,7 +68,6 @@ export class ReturnMethodController {
             dto.LayoutJson,
             dto.StyleJson,
             dto.DelayDuration,
-            dto.SearchKeywordConfigId,
         );
 
         if (!result) {

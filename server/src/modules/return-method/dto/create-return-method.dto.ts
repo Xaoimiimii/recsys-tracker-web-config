@@ -110,9 +110,4 @@ export class CreateReturnMethodDto {
     @IsNotEmpty()
     @ApiProperty({ example: 60 })
     DelayDuration: number;
-
-    @IsOptional()
-    @IsNumber()
-    @ApiProperty({ example: 1 })
-    SearchKeywordConfigId?: number;
 }
