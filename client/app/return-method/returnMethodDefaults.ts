@@ -7,7 +7,7 @@ export const DARK_MODE_COLORS = {
     textSecondary: "#9CA3AF",   
     border: "#374151",          
     muted: "#374151",          
-    primary: "#60A5FA",         
+    primary: "#dfecaa",         
     success: "#34D399",
     danger: "#F87171",
     warning: "#FBBF24",
@@ -83,7 +83,9 @@ export const SHARED_CARD_CONFIG = {
 // --- CẤU HÌNH POPUP (MẶC ĐỊNH 3 CỘT) ---
 export const DEFAULT_POPUP_LAYOUT: LayoutJson = {
     displayMode: 'popup',   
-    contentMode: 'grid',   
+    contentMode: 'grid',
+    maxItems: 50,
+    itemUrlPattern: "/song/{:id}",
     wrapper: {
         popup: {
             position: "bottom-right",
@@ -112,7 +114,8 @@ export const DEFAULT_POPUP_LAYOUT: LayoutJson = {
 export const DEFAULT_INLINE_LAYOUT: LayoutJson = {
     displayMode: 'inline-injection',
     contentMode: 'grid',
-    
+    maxItems: 50,
+    itemUrlPattern: "/song/{:id}",
     wrapper: {
         inline: {
             selector: '#recommendation-slot',
@@ -150,10 +153,10 @@ export const DEFAULT_STYLE_CONFIG: StyleJson = {
     tokens: {
         colors: {
             background: "#FFFFFF",
-            surface: "transparent",
+            surface: "#FFFFFF",
             textPrimary: "#111827",
             textSecondary: "#6B7280",
-            border: "transparent",
+            border: "#FFFFFF",
             muted: "#F3F4F6",
             primary: "#2563EB",
             success: "#16A34A",
