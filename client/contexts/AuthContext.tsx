@@ -24,11 +24,9 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
                 const res = await authApi.refresh();
                 if (res?.accessToken) {
                     setAccessToken(res.accessToken);
-                    localStorage.setItem('accessToken', res.accessToken);
                     setUser({ username: res.user.username, name: res.user.name, id: res.user.id });
                 } else {
                     setAccessToken(null);
-                    localStorage.removeItem('accessToken');
                     setUser(null);
                 }
             } catch {
@@ -44,7 +42,6 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
     const signin = async (dto: AuthDto) => {
         const res = await authApi.signin(dto);
         setAccessToken(res.accessToken);
-        localStorage.setItem('accessToken', res.accessToken);
         setUser({ username: dto.username, name: res.user.name, id: res.user.id });
     };
 
@@ -55,7 +52,6 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
     const signout = async () => {
         await authApi.signout();
         setAccessToken(null);
-        localStorage.removeItem('accessToken');
         setUser(null);
     };
 
