@@ -50,11 +50,6 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
     // Popup fields
     const [isSaving, setIsSaving] = useState(false);
     
-    // Search keyword signals
-    const [enableSearchKeyword, setEnableSearchKeyword] = useState(false);
-    const [selectedSearchConfigId, setSelectedSearchConfigId] = useState<number | null>(null);
-    const [searchInputConfigs, setSearchInputConfigs] = useState<SearchInputResponse[]>([]);
-    
     // Available attributes for custom fields
     const [availableAttributes, setAvailableAttributes] = useState<string[]>([]);
     const [showImage, setShowImage] = useState(true);
@@ -176,11 +171,6 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                     }
                 }
 
-                if (rawItem.SearchKeywordConfigId) {
-                    setEnableSearchKeyword(true);
-                    setSelectedSearchConfigId(rawItem.SearchKeywordConfigId);
-                }
-
                 const hasFieldOverrides = mappedStyle?.components?.fieldRow?.overrides 
                     && Object.keys(mappedStyle.components.fieldRow.overrides).length > 0;
                 
@@ -219,33 +209,6 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
 
         loadData();
     }, [id, container?.uuid, mode]);
-
-    // Fetch search input configurations
-    useEffect(() => {
-        const fetchSearchInputs = async () => {
-            if (!container?.uuid) return;
-            
-            // Check cache first
-            const cachedSearchInputs = getSearchInputsByDomain(container.uuid);
-            if (cachedSearchInputs) {
-                setSearchInputConfigs(cachedSearchInputs);
-                return;
-            }
-
-            // Fetch from API if not in cache
-            try {
-                const response = await searchInputApi.getByDomainKey(container.uuid);
-                setSearchInputsByDomain(container.uuid, response);
-                setSearchInputConfigs(response);
-            } catch (error) {
-                console.error('Failed to fetch search inputs:', error);
-                setSearchInputConfigs([]);
-            }
-        };
-
-        fetchSearchInputs();
-    }, [container?.uuid, getSearchInputsByDomain, setSearchInputsByDomain]);
-
 
     // Fetch available attributes for custom fields
     useEffect(() => {
@@ -436,11 +399,6 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                 CustomizingFields: customFields.fields,
                 DelayDuration: delayedDuration || 0
             };
-
-            // Add SearchKeywordConfigId if enabled and selected
-            if (enableSearchKeyword && selectedSearchConfigId) {
-                requestData.SearchKeywordConfigId = selectedSearchConfigId;
-            }
 
             if (mode === 'create') await returnMethodApi.create(requestData);
             else if (mode === 'edit') await returnMethodApi.edit(requestData);
@@ -1254,61 +1212,6 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                             ? `The widget will appear inside elements where the class/id contains this value.` 
                             : `The popup will appear when the page URL contains this value.`}
                     </p>
-                </div>
-            </div>
-
-            {/* Section: Search Keyword Signals */}
-            <div className={styles.sectionCard}>
-                <div className={styles.sectionHeader}>
-                    <h2 className={styles.sectionTitle}>Search Keyword Signals</h2>
-                </div>
-                <div className={styles.sectionContent}>
-                    <div className={styles.formGroup}>
-                        <div className={styles.switchContainer}>
-                            <label className={styles.switchLabel}>
-                                Apply search keyword to this display rule
-                            </label>
-                            <label className={styles.switch}>
-                                <input
-                                    type="checkbox"
-                                    checked={enableSearchKeyword}
-                                    onChange={(e) => {
-                                        setEnableSearchKeyword(e.target.checked);
-                                        if (!e.target.checked) {
-                                            setSelectedSearchConfigId(null);
-                                        }
-                                    }}
-                                    disabled={isReadOnly}
-                                />
-                                <span className={styles.slider}></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    {enableSearchKeyword && (
-                        <div className={styles.formGroup}>
-                            <label className={styles.fieldLabel}>
-                                Choose search keyword configuration
-                            </label>
-                            <select 
-                                className={styles.selectInput}
-                                value={selectedSearchConfigId || ''}
-                                onChange={(e) => setSelectedSearchConfigId(e.target.value ? Number(e.target.value) : null)}
-                                disabled={isReadOnly}
-                            >
-                                <option value="">Select a search keyword configuration...</option>
-                                {searchInputConfigs.map(config => (
-                                    <option key={config.Id} value={config.Id}>
-                                        {config.ConfigurationName}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
-
-                    <div className={styles.helperBox}>
-                        When enabled, the system will use the keywords entered in the search bar (if any) to filter/rearrange the recommended results.
-                    </div>
                 </div>
             </div>
 

@@ -151,7 +151,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onLogout, onDoma
                         </button>
                     ))}
                 </div>
-                <div className={styles.skipSection}>
+                {/* <div className={styles.skipSection}>
                     <button 
                       onClick={() => handleSelectDomainType('General')} 
                       className={styles.skipButton}
@@ -159,7 +159,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onLogout, onDoma
                     >
                         Skip this step
                     </button>
-                </div>
+                </div> */}
               </>
             )}
             <div className={styles.progressContainer}>
