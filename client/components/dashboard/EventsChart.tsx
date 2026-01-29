@@ -162,7 +162,10 @@ export const EventsChart: React.FC<EventsChartProps> = ({
                     <p className={styles.tooltipItem}>Rule name: {data.ruleName}</p>
                     <p className={styles.tooltipItem}>Event type: {getEventTypeName(data.eventType, data.actionType, domainType)}</p>
                     <p className={styles.tooltipItem}>Item ID: {data.item}</p>
-                    <p className={styles.tooltipItem}>User ID: {data.userId}</p>
+                    {data.userId && (
+                        <p className={styles.tooltipItem}>User ID: {data.userId}</p>
+                    )}
+                    
                     <p className={styles.tooltipItem}>Anonymous ID: {data.anonymousId}</p>
                     
                     {data.eventType === 2 && data.ratingValue !== null && (
