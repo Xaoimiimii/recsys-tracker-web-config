@@ -126,7 +126,7 @@ const PAYLOAD_COMMON_EXAMPLES: SectionExample[] = [
   {
     title: "Request Body Mapping",
     htmlContext: "// Request Sample (POST)\nURL: /api/v1/reviews/submit\nBody: { \"content\": \"Great!\", \"user_id\": 501 }",
-    config: "Source: request_body | URL Pattern: /api/v1/reviews/submit | Method: POST | Path: content"
+    config: "Source: request/response_body | URL Pattern: /api/v1/reviews/submit | Method: POST | Path: content"
   },
   {
     title: "Request URL - PathName Mapping",
@@ -808,7 +808,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                         disabled={isViewMode}
                         onChange={e => handleUpdateMapping(idx, { source: e.target.value as MappingSource })}
                       >
-                        <option value={MappingSource.REQUEST_BODY}>request_body</option>
+                        <option value={MappingSource.REQUEST_BODY}>request/response_body</option>
                         <option value={MappingSource.REQUEST_URL}>request_url</option>
                         <option value={MappingSource.PAGE_URL}>page_url</option>
                         <option value={MappingSource.ELEMENT}>element</option>

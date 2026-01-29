@@ -4,10 +4,11 @@ import { Plus } from 'lucide-react';
 import { domainApi } from '../../lib/api';
 import type { DomainResponse } from '../../lib/api/types';
 import { OnboardingLayout } from '../../components/layout/OnboardingLayout';
+import { useContainer } from '../../contexts/ContainerContext';
 import styles from './DomainSelectionPage.module.css';
 
 interface DomainSelectionPageProps {
-  onSelectDomain: (domainKey: string, domainsList: DomainResponse[]) => void;
+  onSelectDomain: (domainKey: string) => void;
   onLogout?: () => void;
 }
 
@@ -16,7 +17,7 @@ export const DomainSelectionPage: React.FC<DomainSelectionPageProps> = ({
   onLogout
 }) => {
   const navigate = useNavigate();
-  const [domains, setDomains] = useState<DomainResponse[]>([]);
+  const { domains, setDomains } = useContainer();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,11 +35,15 @@ export const DomainSelectionPage: React.FC<DomainSelectionPageProps> = ({
       }
     };
 
-    fetchDomains();
-  }, []);
+    if (domains.length === 0) {
+      fetchDomains();
+    } else {
+      setLoading(false);
+    }
+  }, [domains, setDomains]);
 
   const handleDomainClick = (domain: DomainResponse) => {
-    onSelectDomain(domain.Key, domains);
+    onSelectDomain(domain.Key);
     navigate('/dashboard');
   };
 

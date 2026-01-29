@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth, useContainer } from './hooks';
+import { useAuth } from './hooks';
+import { useContainer } from './contexts/ContainerContext';
 import { AuthPage } from './app/auth/AuthPage';
 import { DashboardPage } from './app/dashboard/DashboardPage';
 import { TrackingRulesPage } from './app/tracking/TrackingRulesPage';
@@ -14,16 +15,16 @@ import { OnboardingPage } from './app/onboarding/OnboardingPage';
 import { AdminPage } from './app/admin/AdminPage';
 import { MainLayout } from './components/layout/MainLayout';
 import { DataCacheProvider } from './contexts/DataCacheContext';
+import { ContainerProvider } from './contexts/ContainerContext';
 import type { DomainResponse } from './lib/api/types';
 import type { Container, DomainType } from './types';
 
 function AppContent() {
   const { user, loading, signin, signout } = useAuth();
-  const { container, setContainer } = useContainer();
+  const { container, setContainer, domains, setDomains } = useContainer();
   const [selectedDomainKey, setSelectedDomainKey] = useState<string | null>(
     localStorage.getItem('selectedDomainKey')
   );
-  const [domains, setDomains] = useState<DomainResponse[]>([]);
 
   const isAuthenticated = user !== null;
 
@@ -67,10 +68,9 @@ function AppContent() {
     }
   }, [user]);
 
-  const handleSelectDomain = (domainKey: string, domainsList: DomainResponse[]) => {
+  const handleSelectDomain = (domainKey: string) => {
     setSelectedDomainKey(domainKey);
     localStorage.setItem('selectedDomainKey', domainKey);
-    setDomains(domainsList);
   };
 
   const handleDomainCreated = (newDomain: DomainResponse) => {
@@ -244,7 +244,9 @@ function AppContent() {
 export default function App() {
   return (
     <DataCacheProvider>
-      <AppContent />
+      <ContainerProvider>
+        <AppContent />
+      </ContainerProvider>
     </DataCacheProvider>
   );
 }

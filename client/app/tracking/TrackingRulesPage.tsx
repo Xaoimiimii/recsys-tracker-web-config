@@ -40,7 +40,7 @@ const PAYLOAD_EXAMPLES: SectionExample[] = [
   {
     title: "Request Body Mapping",
     htmlContext: "// Request Sample (POST)\nURL: /api/v1/user/profile\nBody: { \"username\": \"john_doe\", \"UserId\": \"12345\" }\n\n// Response Body\n{ \"status\": \"ok\", \"data\": { \"id\": \"usr_99\" } }",
-    config: "Source: request_body | URL Pattern: /api/v1/user/profile | Method: POST | Path: username"
+    config: "Source: request/response_body | URL Pattern: /api/v1/user/profile | Method: POST | Path: username"
   },
   {
     title: "Element Mapping",
