@@ -172,6 +172,13 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({
       ...prev,
       [columnName]: customName,
     }));
+    
+    // Auto-enable checkbox when custom name is entered
+    if (customName.trim()) {
+      setEnabledFields((prev) => ({ ...prev, [columnName]: true }));
+    } else {
+      setEnabledFields((prev) => ({ ...prev, [columnName]: false }));
+    }
   };
 
   const validateMapping = (): { valid: boolean; message?: string } => {
@@ -711,6 +718,11 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({
                     .filter(([col, val]) => col !== header && val !== "unmapped")
                     .map(([_, val]) => val);
                   
+                  const currentFieldValue = columnMapping[header];
+                  const isMapped = currentFieldValue && currentFieldValue !== "unmapped";
+                  const hasCustomName = customFieldNames[header]?.trim();
+                  const isCheckable = isMapped || hasCustomName;
+                  
                   return (
                     <div key={idx} className={styles.tableRow}>
                       {((activeTab === "metadata" && importMode === "create") || activeTab === "review") && (
@@ -718,12 +730,16 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({
                           <input
                             type="checkbox"
                             className={styles.fieldCheckbox}
-                            checked={enabledFields[columnMapping[header] || ""] !== false}
-                            disabled={!columnMapping[header]}
+                            checked={isMapped 
+                              ? enabledFields[currentFieldValue] !== false 
+                              : enabledFields[header] === true
+                            }
+                            disabled={!isCheckable}
                             onChange={() => {
-                              const fieldValue = columnMapping[header];
-                              if (fieldValue) {
-                                handleFieldToggle(fieldValue);
+                              if (isMapped) {
+                                handleFieldToggle(currentFieldValue);
+                              } else if (hasCustomName) {
+                                handleFieldToggle(header);
                               }
                             }}
                           />
