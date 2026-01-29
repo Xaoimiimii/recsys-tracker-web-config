@@ -140,7 +140,6 @@ export const EventsChart: React.FC<EventsChartProps> = ({
             actionType: event.TrackingRule.ActionType,
             ratingValue: event.RatingValue,
             reviewValue: event.ReviewValue,
-            fullTimestamp: formatTimestamp(event.Timestamp),
             timestampMs: new Date(event.Timestamp).getTime()
         }));
 
@@ -172,7 +171,7 @@ export const EventsChart: React.FC<EventsChartProps> = ({
                     {data.eventType === 3 && data.reviewValue !== null && (
                         <p className={styles.tooltipItem}>Review: {data.reviewValue}</p>
                     )}
-                    <p className={styles.tooltipItem}>Timestamp: {data.fullTimestamp}</p>
+                    <p className={styles.tooltipItem}>Timestamp: {data.timestamp}</p>
                     
                 </div>
             );
