@@ -1,6 +1,13 @@
 const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://recsys-tracker-web-config.onrender.com';
 const SERVER_API_BASE_URL = import.meta.env.SERVER_API_BASE_URL || 'https://recsys-tracker-module.onrender.com';
 
+// Global token storage
+let globalAccessToken: string | null = null;
+
+export function setGlobalAccessToken(token: string | null) {
+    globalAccessToken = token;
+}
+
 export async function apiFetch<T>(
     endpoint: string,
     options?: RequestInit,
@@ -16,11 +23,8 @@ export async function apiFetch<T>(
     };
 
     // Add Authorization header if needed
-    if (useAuthHeader) {
-        const accessToken = localStorage.getItem('accessToken');
-        if (accessToken) {
-            headers['Authorization'] = `Bearer ${accessToken}`;
-        }
+    if (useAuthHeader && globalAccessToken) {
+        headers['Authorization'] = `Bearer ${globalAccessToken}`;
     }
   
     try {

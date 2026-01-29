@@ -1,4 +1,5 @@
 import { authApi, AuthDto, SignUpDto, Role } from "@/lib/api";
+import { setGlobalAccessToken } from "@/lib/api/client";
 import { s } from "motion/react-client";
 import React, { createContext, useState, useEffect } from "react";
 
@@ -24,15 +25,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const res = await authApi.refresh();
                 if (res?.accessToken) {
                     setAccessToken(res.accessToken);
-                    setUser({ username: res.user.username, name: res.user.name, id: res.user.id, role: res.user.role });
+                    setGlobalAccessToken(res.accessToken);
+                    setUser({ username: res.user.username, name: res.user.name, id: res.user.id });
                 } else {
                     setAccessToken(null);
-                    localStorage.removeItem('accessToken');
+                    setGlobalAccessToken(null);
                     setUser(null);
                 }
             } catch {
                 setAccessToken(null);
-                localStorage.removeItem('accessToken');
+                setGlobalAccessToken(null);
                 setUser(null);
             }
             setLoading(false);
@@ -43,7 +45,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const signin = async (dto: AuthDto) => {
         const res = await authApi.signin(dto);
         setAccessToken(res.accessToken);
-        setUser({ username: dto.username, name: res.user.name, id: res.user.id, role: res.user.role });
+        setGlobalAccessToken(res.accessToken);
+        setUser({ username: dto.username, name: res.user.name, id: res.user.id });
     };
 
     const signup = async (dto: SignUpDto) => {
@@ -53,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const signout = async () => {
         await authApi.signout();
         setAccessToken(null);
-        localStorage.removeItem('accessToken');
+        setGlobalAccessToken(null);
         setUser(null);
     };
 

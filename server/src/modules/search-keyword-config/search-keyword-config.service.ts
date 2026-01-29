@@ -34,4 +34,45 @@ export class SearchKeywordConfigService {
 
         return configs;
     }
+
+    async updateSearchKeywordConfigs(
+        id: number,
+        configurationName?: string,
+        inputSelector?: string
+    ) {
+        const config = await this.prisma.searchKeywordConfig.findUnique({
+            where: {
+                Id: id
+            }
+        });
+
+        if (!config) throw new BadRequestException(`Search keyword config with id ${id} does not exist`);
+
+        const newConfig = await this.prisma.searchKeywordConfig.update({
+            where: {
+                Id: id
+            },
+            data: {
+                ConfigurationName: configurationName,
+                InputSelector: inputSelector
+            }
+        })
+
+        return newConfig;
+    }
+
+    async deleteSearchKeywordConfig(id: number) {
+        const config = await this.prisma.searchKeywordConfig.findUnique({
+            where: {
+                Id: id
+            }
+        });
+
+        if (!config) throw new BadRequestException(`Search keyword config with id ${id} does not exist`);
+        await this.prisma.searchKeywordConfig.delete({
+            where: {
+                Id: id
+            }
+        });
+    }
 }

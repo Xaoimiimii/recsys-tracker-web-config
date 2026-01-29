@@ -68,6 +68,7 @@ export enum EventType {
 export enum MappingSource {
   REQUEST_BODY = 'request_body',
   REQUEST_URL = 'request_url',
+  PAGE_URL = 'page_url',
   ELEMENT = 'element'
 }
 
@@ -86,6 +87,8 @@ export interface PayloadMapping {
   requestUrlPattern?: string;
   requestMethod?: 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'GET';
   urlExtractType?: 'pathname' | 'query';
+  pageUrlPattern?: string;
+  pageUrlExtractType?: 'pathname' | 'query';
 }
 
 export interface TrackingRule {
@@ -108,9 +111,9 @@ export const EVENT_DESCRIPTIONS: Record<EventType, string> = {
 };
 
 export const TARGET_SUGGESTIONS: Record<EventType, string> = {
-  [EventType.CLICK]: "Suggested: #add-to-cart, .add-to-cart, favorite-btn, .bookmark-icon",
-  [EventType.RATING]: "Suggested: .rating, .rating-stars, .star, input[type=radio][name*=rating]",
-  [EventType.REVIEW]: "Suggested: #review, .review-box, textarea[name*=review], .submit-review"
+  [EventType.CLICK]: "Suggested: .play-button, .btn-play, #heart-icon, .add-to-cart",
+  [EventType.RATING]: "Suggested: .rating-submit, .submot-button, #star-rating",
+  [EventType.REVIEW]: "Suggested: .review-submit, .submit-button, #review-form"
 };
 
 export interface SectionExample {
@@ -139,6 +142,16 @@ const PAYLOAD_COMMON_EXAMPLES: SectionExample[] = [
     title: "Element Mapping",
     htmlContext: "// Target div containing item ID\n<div class=\"product-card\" data-id=\"item_404\"></div>",
     config: "Source: element | Path: .product-card"
+  },
+  {
+    title: "Page URL - PathName Mapping",
+    htmlContext: "// Sample page URL\nhttps://example.com/product/2912917937/details",
+    config: "PageUrlPattern: \"/product/{id}\" | PathName - SegmentIndex: 2 (gets '2912917937')"
+  },
+  {
+    title: "Page URL - Query Parameter Mapping",
+    htmlContext: "// Sample page URL\nhttps://example.com/search?item_id=2912917937&category=music",
+    config: "PageUrlPattern: \"/search\" | QueryParam - Key: item_id"
   }
 ];
 
@@ -154,15 +167,15 @@ export const SECTION_EXAMPLES: Record<string, Record<EventType, SectionExample[]
     [EventType.RATING]: [
       { 
         title: "Star Rating Component", 
-        htmlContext: '<div class="rating-stars" data-value="5"></div>',
-        config: "Target Type: 'CSS Selector' | Value: '.submit-rating' or '#submit-rating'"
+        htmlContext: '<div class="rating-stars" data-value="5"></div> <button class="submit-rating">Submit</button>',
+        config: "Target Type: 'CSS Selector' | Value: '.submit-rating'"
       }
     ],
     [EventType.REVIEW]: [
       { 
         title: "Submit Feedback Form", 
-        htmlContext: '<form id="review-form">\n  <textarea name="review"></textarea>\n  <button type="submit">Submit</button>\n</form>',
-        config: "Target Type: 'CSS Selector' | Value: '#review-form' or 'textarea[name=review]'"
+        htmlContext: '<form id="review-form"> <textarea name="review-text"></textarea> <button class="submit-review" type="submit">Submit Review</button> </form>',
+        config: "Target Type: 'CSS Selector' | Value: '.submit-review'"
       }
     ]
   },
@@ -180,53 +193,100 @@ export interface InitialMappingConfig {
   requestUrlPattern?: string;
   requestMethod?: 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'GET';
   urlExtractType?: 'pathname' | 'query';
+  pageUrlPattern?: string;
+  pageUrlExtractType?: 'pathname' | 'query';
 }
 
-export const INITIAL_MAPPINGS: Record<string, InitialMappingConfig[]> = {
-  [EventType.CLICK]: [
-    {
-      field: 'itemId',
-      source: MappingSource.REQUEST_URL,
-      value: '3',
-      requestUrlPattern: '/api/song/:id/player',
-      requestMethod: 'GET',
-      urlExtractType: 'pathname'
-    }
-  ],
-  [EventType.RATING]: [
-    {
-      field: 'itemId',
-      source: MappingSource.REQUEST_URL,
-      value: '3',
-      requestUrlPattern: '/api/song/:id/player',
-      requestMethod: 'GET',
-      urlExtractType: 'pathname'
-    },
-    {
-      field: 'rating_value',
-      source: MappingSource.REQUEST_BODY,
-      value: 'rating',
-      requestUrlPattern: '/api/rating/:id/add-review',
-      requestMethod: 'POST'
-    }
-  ],
-  [EventType.REVIEW]: [
-    {
-      field: 'itemId',
-      source: MappingSource.REQUEST_URL,
-      value: '3',
-      requestUrlPattern: '/api/song/:id/player',
-      requestMethod: 'GET',
-      urlExtractType: 'pathname'
-    },
-    {
-      field: 'review_text',
-      source: MappingSource.REQUEST_BODY,
-      value: 'comment',
-      requestUrlPattern: '/api/rating/:id/add-review',
-      requestMethod: 'POST'
-    }
-  ]
+export const INITIAL_MAPPINGS: Record<string, Record<string, InitialMappingConfig[]>> = {
+  [EventType.CLICK]: {
+    [ActionType.VIEW]: [
+      {
+        field: 'itemId',
+        source: MappingSource.REQUEST_URL,
+        value: '3',
+        requestUrlPattern: '/api/song/:id/player',
+        requestMethod: 'GET',
+        urlExtractType: 'pathname'
+      }
+    ],
+    [ActionType.ADD_TO_FAVORITE]: [
+      {
+        field: 'itemId',
+        source: MappingSource.REQUEST_URL,
+        value: '3',
+        requestUrlPattern: '/api/song/:id/favorite-toggle',
+        requestMethod: 'POST',
+        urlExtractType: 'pathname'
+      }
+    ],
+    [ActionType.ADD_TO_WISHLIST]: [
+      {
+        field: 'itemId',
+        source: MappingSource.REQUEST_URL,
+        value: '3',
+        requestUrlPattern: '/api/song/:id/player',
+        requestMethod: 'GET',
+        urlExtractType: 'pathname'
+      }
+    ],
+    [ActionType.ADD_TO_CART]: [
+      {
+        field: 'itemId',
+        source: MappingSource.PAGE_URL,
+        value: '2',
+        pageUrlPattern: '/song/:id',
+        pageUrlExtractType: 'pathname'
+      }
+    ],
+    [ActionType.PURCHASE]: [
+      {
+        field: 'itemId',
+        source: MappingSource.REQUEST_URL,
+        value: '3',
+        requestUrlPattern: '/api/song/:id/player',
+        requestMethod: 'GET',
+        urlExtractType: 'pathname'
+      }
+    ]
+  },
+  [EventType.RATING]: {
+    'default': [
+      {
+        field: 'itemId',
+        source: MappingSource.REQUEST_URL,
+        value: '3',
+        requestUrlPattern: '/api/rating/:id/add-review',
+        requestMethod: 'POST',
+        urlExtractType: 'pathname'
+      },
+      {
+        field: 'rating_value',
+        source: MappingSource.REQUEST_BODY,
+        value: 'rating',
+        requestUrlPattern: '/api/rating/:id/add-review',
+        requestMethod: 'POST'
+      }
+    ]
+  },
+  [EventType.REVIEW]: {
+    'default': [
+      {
+        field: 'itemId',
+        source: MappingSource.REQUEST_URL,
+        value: '3',
+        requestUrlPattern: '/api/rating/:id/add-review',
+        requestMethod: 'POST',
+        urlExtractType: 'pathname'
+      },
+      {
+        field: 'review_text',
+        source: MappingSource.REQUEST_BODY,
+        value: 'comment',
+        requestUrlPattern: '/api/rating/:id/add-review',
+        requestMethod: 'POST'
+      }
+    ]
+  }
 };
 
 // ==================== COMPONENT ====================
@@ -310,7 +370,9 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                 value: config.Value || config.SelectorPattern || '',
                 requestUrlPattern: config.RequestUrlPattern || undefined,
                 requestMethod: config.RequestMethod || undefined,
-                urlExtractType: config.ExtractType || undefined
+                urlExtractType: config.ExtractType || undefined,
+                pageUrlPattern: config.PageUrlPattern || undefined,
+                pageUrlExtractType: config.PageUrlExtractType || undefined
             };
         });
 
@@ -338,7 +400,18 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
     };
     
     const eventType = eventTypeMap[selectedInteraction.eventTypeId] || EventType.CLICK;
-    const initialMappings = INITIAL_MAPPINGS[eventType] || [];
+    const actionType = selectedInteraction.actionType;
+    
+    // Get initial mappings based on eventType and actionType
+    let initialMappings: InitialMappingConfig[] = [];
+    const eventMappings = INITIAL_MAPPINGS[eventType];
+    if (eventMappings) {
+      if (actionType && eventMappings[actionType]) {
+        initialMappings = eventMappings[actionType];
+      } else if (eventMappings['default']) {
+        initialMappings = eventMappings['default'];
+      }
+    }
     
     setRule(prev => ({
       ...prev,
@@ -362,7 +435,9 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
           value: '',
           requestUrlPattern: '',
           requestMethod: 'GET',
-          urlExtractType: 'pathname'
+          urlExtractType: 'pathname',
+          pageUrlPattern: undefined,
+          pageUrlExtractType: undefined
         };
       } else if (updates.source === MappingSource.REQUEST_BODY) {
         updatedMapping = {
@@ -370,7 +445,19 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
           value: '',
           requestUrlPattern: '',
           requestMethod: 'POST',
-          urlExtractType: undefined
+          urlExtractType: undefined,
+          pageUrlPattern: undefined,
+          pageUrlExtractType: undefined
+        };
+      } else if (updates.source === MappingSource.PAGE_URL) {
+        updatedMapping = {
+          ...updatedMapping,
+          value: '',
+          requestUrlPattern: undefined,
+          requestMethod: undefined,
+          urlExtractType: undefined,
+          pageUrlPattern: '',
+          pageUrlExtractType: 'pathname'
         };
       } else if (updates.source === MappingSource.ELEMENT) {
         updatedMapping = {
@@ -378,13 +465,20 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
           value: '',
           requestUrlPattern: undefined,
           requestMethod: undefined,
-          urlExtractType: undefined
+          urlExtractType: undefined,
+          pageUrlPattern: undefined,
+          pageUrlExtractType: undefined
         };
       }
     }
 
     // Reset value when urlExtractType changes for request_url
     if (updates.urlExtractType && newMappings[index].source === MappingSource.REQUEST_URL) {
+      updatedMapping.value = '';
+    }
+
+    // Reset value when pageUrlExtractType changes for page_url
+    if (updates.pageUrlExtractType && newMappings[index].source === MappingSource.PAGE_URL) {
       updatedMapping.value = '';
     }
 
@@ -421,6 +515,10 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
       } else if (mapping.source === MappingSource.REQUEST_URL) {
         if (!mapping.requestUrlPattern?.trim() || !mapping.value?.trim()) {
           payloadErrors[idx] = 'URL Pattern and value are required.';
+        }
+      } else if (mapping.source === MappingSource.PAGE_URL) {
+        if (!mapping.pageUrlPattern?.trim() || !mapping.value?.trim()) {
+          payloadErrors[idx] = 'Page URL Pattern and value are required.';
         }
       } else if (mapping.source === MappingSource.ELEMENT) {
         if (!mapping.value?.trim()) {
@@ -477,6 +575,12 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
             RequestMethod: mapping.requestMethod || 'GET',
             Value: mapping.value || null,
             ExtractType: mapping.urlExtractType || 'pathname'
+          };
+        } else if (mapping.source === MappingSource.PAGE_URL) {
+          mappingItem.Config = {
+            PageUrlPattern: mapping.pageUrlPattern || null,
+            Value: mapping.value || null,
+            PageUrlExtractType: mapping.pageUrlExtractType || 'pathname'
           };
         } else if (mapping.source === MappingSource.ELEMENT) {
           mappingItem.Config = {
@@ -706,6 +810,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                       >
                         <option value={MappingSource.REQUEST_BODY}>request_body</option>
                         <option value={MappingSource.REQUEST_URL}>request_url</option>
+                        <option value={MappingSource.PAGE_URL}>page_url</option>
                         <option value={MappingSource.ELEMENT}>element</option>
                       </select>
                     </td>
@@ -872,6 +977,100 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
                             {mapping.urlExtractType === 'pathname' 
                               ? "Specify segment index. Example: /api/product/123/details → index 3 gets '123'"
                               : "Specify query key. Example: ?item_id=123&ref=home → key 'item_id' gets '123'"
+                            }
+                          </div>
+                        </div>
+                      )}
+
+                      {/* PAGE_URL Configuration */}
+                      {mapping.source === MappingSource.PAGE_URL && (
+                        <div className={styles.urlParsingContainer}>
+                          <input 
+                            type="text" 
+                            placeholder="Page URL Pattern (/product/{id})" 
+                            className={`${styles.input} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
+                            value={mapping.pageUrlPattern || ''}
+                            disabled={isViewMode}
+                            onChange={e => {
+                              handleUpdateMapping(idx, { pageUrlPattern: e.target.value });
+                              if (errors.payloadMappings?.[idx]) {
+                                const newPayloadErrors = {...errors.payloadMappings};
+                                delete newPayloadErrors[idx];
+                                setErrors(prev => ({...prev, payloadMappings: newPayloadErrors}));
+                              }
+                            }}
+                          />
+                          
+                          {/* Radio buttons for extract type */}
+                          <div className={styles.radioGroup}>
+                            <label className={styles.radioLabel}>
+                              <input 
+                                type="radio" 
+                                name={`page-extract-type-${idx}`} 
+                                checked={mapping.pageUrlExtractType === 'pathname'} 
+                                disabled={isViewMode}
+                                onChange={() => handleUpdateMapping(idx, { pageUrlExtractType: 'pathname' })} 
+                              />
+                              PathName
+                            </label>
+                            <label className={styles.radioLabel}>
+                              <input 
+                                type="radio" 
+                                name={`page-extract-type-${idx}`} 
+                                checked={mapping.pageUrlExtractType === 'query'} 
+                                disabled={isViewMode}
+                                onChange={() => handleUpdateMapping(idx, { pageUrlExtractType: 'query' })} 
+                              />
+                              Query Parameter
+                            </label>
+                          </div>
+
+                          {mapping.pageUrlExtractType === 'pathname' && (
+                            <input 
+                              type="number" 
+                              placeholder="Segment Index (e.g., 2)" 
+                              className={`${styles.input} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
+                              value={mapping.value || ''}
+                              disabled={isViewMode}
+                              onChange={e => {
+                                handleUpdateMapping(idx, { value: e.target.value });
+                                if (errors.payloadMappings?.[idx]) {
+                                  const newPayloadErrors = {...errors.payloadMappings};
+                                  delete newPayloadErrors[idx];
+                                  setErrors(prev => ({...prev, payloadMappings: newPayloadErrors}));
+                                }
+                              }}
+                            />
+                          )}
+
+                          {mapping.pageUrlExtractType === 'query' && (
+                            <input 
+                              type="text" 
+                              placeholder="Query Key (e.g., item_id)" 
+                              className={`${styles.input} ${errors.payloadMappings?.[idx] ? styles.inputError : ''}`}
+                              value={mapping.value || ''}
+                              disabled={isViewMode}
+                              onChange={e => {
+                                handleUpdateMapping(idx, { value: e.target.value });
+                                if (errors.payloadMappings?.[idx]) {
+                                  const newPayloadErrors = {...errors.payloadMappings};
+                                  delete newPayloadErrors[idx];
+                                  setErrors(prev => ({...prev, payloadMappings: newPayloadErrors}));
+                                }
+                              }}
+                            />
+                          )}
+
+                          {errors.payloadMappings?.[idx] && (
+                            <p className={styles.errorText}>
+                              <AlertCircle size={14} />
+                              {errors.payloadMappings[idx]}
+                            </p>
+                          )}
+                          <div className={styles.fieldNote}>
+                            {mapping.pageUrlExtractType === 'pathname' 
+                              ? "Specify segment index from page URL. Example: /product/123/details → index 2 gets '123'"
+                              : "Specify query key from page URL. Example: ?item_id=123&category=music → key 'item_id' gets '123'"
                             }
                           </div>
                         </div>
