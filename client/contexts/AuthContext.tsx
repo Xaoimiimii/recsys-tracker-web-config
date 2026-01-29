@@ -1,4 +1,5 @@
 import { authApi, AuthDto, SignUpDto, Role } from "@/lib/api";
+import { setGlobalAccessToken } from "@/lib/api/client";
 import { s } from "motion/react-client";
 import React, { createContext, useState, useEffect } from "react";
 
@@ -24,13 +25,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const res = await authApi.refresh();
                 if (res?.accessToken) {
                     setAccessToken(res.accessToken);
+                    setGlobalAccessToken(res.accessToken);
                     setUser({ username: res.user.username, name: res.user.name, id: res.user.id });
                 } else {
                     setAccessToken(null);
+                    setGlobalAccessToken(null);
                     setUser(null);
                 }
             } catch {
                 setAccessToken(null);
+                setGlobalAccessToken(null);
                 setUser(null);
             }
             setLoading(false);
@@ -42,6 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const res = await authApi.signin(dto);
         console.log(res);
         setAccessToken(res.accessToken);
+        setGlobalAccessToken(res.accessToken);
         setUser({ username: dto.username, name: res.user.name, id: res.user.id });
     };
 
@@ -52,6 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const signout = async () => {
         await authApi.signout();
         setAccessToken(null);
+        setGlobalAccessToken(null);
         setUser(null);
     };
 
