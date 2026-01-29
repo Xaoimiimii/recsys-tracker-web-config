@@ -2,7 +2,8 @@ import React, { useState, useEffect, JSX } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Container } from '../../types';
 import { Plus, Eye, Edit2, Trash2, Layers, Puzzle } from 'lucide-react';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+// import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { ConfirmModal } from '../../components/common/ConfirmModal';
 import styles from './returnMethodPage.module.css';
 import { DisplayConfiguration, DisplayType } from './types';
 import { returnMethodApi } from '../../lib/api/return-method';
@@ -32,6 +33,13 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
     const [filterType, setFilterType] = useState<DisplayType | 'all'>('all');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    
+    // Confirm modal state
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        id: string | null;
+        configName: string;
+    }>({ isOpen: false, id: null, configName: '' });
     
     const { 
         getReturnMethodsByDomain, 
@@ -168,9 +176,22 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this configuration?')) {
-            return;
+        // Get the configuration name for the modal
+        let configName = '';
+        if (activeTab === 'display-method') {
+            const config = configurations.find(c => c.id === id);
+            configName = config?.configurationName || 'this configuration';
+        } else {
+            const config = searchInputConfigs.find(c => c.Id.toString() === id);
+            configName = config?.ConfigurationName || 'this configuration';
         }
+        
+        setConfirmModal({ isOpen: true, id, configName });
+    };
+
+    const handleConfirmDelete = async () => {
+        const id = confirmModal.id;
+        if (!id) return;
 
         try {
             if (activeTab === 'display-method') {
@@ -195,8 +216,14 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
             }
         } catch (e) {
             console.error("Delete failed", e);
-            alert("Failed to delete configuration");
+            setError('Failed to delete configuration. Please try again.');
+        } finally {
+            setConfirmModal({ isOpen: false, id: null, configName: '' });
         }
+    };
+
+    const handleCancelDelete = () => {
+        setConfirmModal({ isOpen: false, id: null, configName: '' });
     };
 
     const getSummary = (config: DisplayConfiguration): string => {
@@ -208,9 +235,9 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
         return `${config.value}`;
     };
 
-    if (isLoading) {
-        return <LoadingSpinner />;
-    }
+    // if (isLoading) {
+    //     return <LoadingSpinner />;
+    // }
 
     return (
         <div className={styles.container}>
@@ -393,6 +420,17 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
                     </>
                 )}
             </div>
+
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title="Delete Configuration"
+                message={`You will not be able to recover this configuration once deleted.`}
+                confirmText="Delete"
+                cancelText="Cancel"
+                onConfirm={handleConfirmDelete}
+                onCancel={handleCancelDelete}
+                variant="danger"
+            />
         </div>
     );
 };

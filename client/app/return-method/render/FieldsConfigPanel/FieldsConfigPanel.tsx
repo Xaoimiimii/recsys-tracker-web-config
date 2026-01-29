@@ -18,6 +18,7 @@ interface FieldsConfigPanelProps {
     newFieldKey: string;
     setNewFieldKey: (key: string) => void;
     addNewField: () => void;
+    newFieldKeyError?: string;
 }
 
 export const FieldsConfigPanel: React.FC<FieldsConfigPanelProps> = ({
@@ -33,7 +34,8 @@ export const FieldsConfigPanel: React.FC<FieldsConfigPanelProps> = ({
     handleUpdateFieldStyle,
     newFieldKey,
     setNewFieldKey,
-    addNewField
+    addNewField,
+    newFieldKeyError
 }) => {
     return (
         <div className={styles.formContent}>

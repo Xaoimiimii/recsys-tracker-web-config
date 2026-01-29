@@ -53,7 +53,7 @@ export const SearchInputFormPage: React.FC<SearchInputFormPageProps> = ({ contai
                         setErrors({ general: 'Configuration not found.' });
                     }
                 } catch (error) {
-                    // console.error('Error loading search input config:', error);
+                    console.error('Error loading search input config:', error);
                     setErrors({ general: 'Failed to load configuration data.' });
                 } finally {
                     setIsLoading(false);

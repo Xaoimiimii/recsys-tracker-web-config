@@ -61,6 +61,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
         name?: string;
         value?: string;
         general?: string;
+        newFieldKey?: string;
     }>({});
     
     // --- CONFIG STATE ---
@@ -335,9 +336,12 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
     };
 
     const addNewField = () => {
-        if (!newFieldKey.trim()) return;
+        if (!newFieldKey.trim()) {
+            setErrors(prev => ({ ...prev, newFieldKey: 'Field key cannot be empty' }));
+            return;
+        }
         if (customFields.fields.some(f => f.key === newFieldKey)) {
-            alert("Key already exists.");
+            setErrors(prev => ({ ...prev, newFieldKey: 'Key already exists' }));
             return;
         }
         const maxPos = Math.max(...customFields.fields.map(f => f.position), 0);
@@ -348,6 +352,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
             ]
         }));
         setNewFieldKey('');
+        setErrors(prev => ({ ...prev, newFieldKey: undefined }));
     };
 
     const removeField = (targetKey: string) => {
@@ -522,6 +527,7 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                     newFieldKey={newFieldKey}
                     setNewFieldKey={setNewFieldKey}
                     addNewField={addNewField}
+                    newFieldKeyError={errors.newFieldKey}
                 />
             </div>
 

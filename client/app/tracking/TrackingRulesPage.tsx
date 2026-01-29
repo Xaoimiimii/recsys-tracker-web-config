@@ -5,6 +5,7 @@ import { Box, Plus, Trash2, Edit2, MousePointer, Eye, Star, ArrowDownCircle, Mes
 import { ruleApi, RuleListItem, RuleDetailResponse, domainApi, UserIdentityResponse } from '../../lib/api/';
 import { useDataCache } from '../../contexts/DataCacheContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { ConfirmModal } from '../../components/common/ConfirmModal';
 import styles from './TrackingRulesPage.module.css';
 
 // Mapping Source Types
@@ -94,6 +95,13 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
     
     const [rules, setRules] = useState<RuleListItem[]>([]);
     const [fetchError, setFetchError] = useState(false);
+    
+    // Confirm modal state
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        id: string | null;
+        ruleName: string;
+    }>({ isOpen: false, id: null, ruleName: '' });
     
     const { getRulesByDomain, setRulesByDomain } = useDataCache();
 
@@ -256,7 +264,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
             setCurrentRuleDetails(undefined);
         } catch (error) {
             console.error('Failed to save rule:', error);
-            alert('Failed to save tracking rule. Please try again.');
+            setErrors({ ...errors, payloadMappings: { 0: 'Failed to save tracking rule. Please try again.' } });
         } finally {
             setIsLoading(false);
         }
@@ -324,8 +332,16 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
 const handleDelete = async (id: string) => {
         if (!container) return;
         
-        const confirmed = window.confirm('Are you sure you want to delete this rule?');
-        if (!confirmed) return;
+        // Get the rule name for the modal
+        const rule = rules.find(r => r.Id.toString() === id);
+        const ruleName = rule?.Name || 'this rule';
+        
+        setConfirmModal({ isOpen: true, id, ruleName });
+    };
+
+    const handleConfirmDelete = async () => {
+        const id = confirmModal.id;
+        if (!id || !container) return;
 
         try {
             await ruleApi.delete(id);
@@ -345,8 +361,14 @@ const handleDelete = async (id: string) => {
             
         } catch (error) {
             console.error('Failed to delete rule:', error);
-            alert('Failed to delete rule. Please try again.');
+            setErrors({ ...errors, payloadMappings: { 0: 'Failed to delete rule. Please try again.' } });
+        } finally {
+            setConfirmModal({ isOpen: false, id: null, ruleName: '' });
         }
+    };
+
+    const handleCancelDelete = () => {
+        setConfirmModal({ isOpen: false, id: null, ruleName: '' });
     };
 
     const handleUpdateMapping = (index: number, updates: Partial<PayloadMapping>) => {
@@ -899,6 +921,18 @@ const handleDelete = async (id: string) => {
                     }} 
                 />
             )}
+
+            {/* Confirm Delete Modal */}
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title="Delete rule"
+                message="You will not be able to recover this rule"
+                confirmText="Delete"
+                cancelText="Cancel"
+                onConfirm={handleConfirmDelete}
+                onCancel={handleCancelDelete}
+                variant="danger"
+            />
         </div>
     );
 };

@@ -43,7 +43,18 @@ export async function apiFetch<T>(
             throw new Error(errorMessage || `HTTP ${response.status}: ${response.statusText}`);
         }
 
-        return await response.json();
+        const contentType = response.headers.get('content-type');
+        const hasContent = response.headers.get('content-length') !== '0';
+
+        if (response.status === 204 || !hasContent) {
+            return {} as T;
+        }
+
+        if (contentType && contentType.includes('application/json')) {
+            return await response.json();
+        }
+
+        return {} as T;
     } catch (error) {
         console.error(`API Error [${endpoint}]:`, error);
         throw error;
