@@ -32,15 +32,17 @@ export class AuthController {
     @Post('signout')
     signout(@Res({passthrough: true}) res: Response)
     {
-        res.clearCookie('AccessToken', {
-            httpOnly: true,
-            secure: false,
-            sameSite: 'lax',
-        });
+        // res.clearCookie('AccessToken', {
+        //     httpOnly: true,
+        //     secure: false,
+        //     sameSite: 'lax',
+        // });
+        const isProd = this.config.get('NODE_ENV') === 'production';
+
         res.clearCookie('RefreshToken', {
             httpOnly: true,
-            secure: false,
-            sameSite: 'lax',
+            secure: isProd,
+            sameSite: isProd ? 'none' : 'lax',
         });
         return { message: 'Đăng xuất thành công' };
     }
