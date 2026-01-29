@@ -34,6 +34,7 @@ export class RecommendationService {
                     subscriber.next({ progress: 0, message: 'Starting training...' });
 
                     for (const domain of allDomains) {
+                        let message = '';
                         try {
                             /*
                             const response = await firstValueFrom(
@@ -53,15 +54,16 @@ export class RecommendationService {
                                 }),
                             );
 
-                            this.logger.log(`Domain ${domain.Id} train success`);
+                            message = `Domain ${domain.Id} train success`;
                         } catch (error) {
-                            this.logger.error(`Domain ${domain.Id} train failed`, error);
+                            message = `Domain ${domain.Id} train failed`;
+                            this.logger.error(message, error);
                         } finally {
                             processed++;
                             const progress = Math.round((processed / total) * 100);
                             subscriber.next({
                                 progress,
-                                message: `Processed domain ${domain.Id} (${processed}/${total})`
+                                message
                             });
                         }
                     }

@@ -36,7 +36,7 @@ export const AdminPage: React.FC = () => {
                     if (data.progress === 100) {
                         eventSource.close();
                         setLoading(false);
-                        setMessage({ type: 'success', text: 'Model training completed successfully!' });
+                        setMessage({ type: 'success', text: 'Model training completed!' });
                     }
                 }
             } catch (err) {
@@ -58,7 +58,7 @@ export const AdminPage: React.FC = () => {
     return (
         <div className={styles.container}>
             <div className={styles.card}>
-                <h2 className={styles.cardTitle}>Model Management</h2>
+                <h2 className={styles.cardTitle}>Model Training</h2>
                 <p className={styles.cardDescription}>
                     Trigger the recommendation model training process manually. This may take some time.
                 </p>

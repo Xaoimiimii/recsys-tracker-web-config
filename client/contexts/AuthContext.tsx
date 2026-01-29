@@ -44,7 +44,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const signin = async (dto: AuthDto) => {
         const res = await authApi.signin(dto);
-        console.log(res);
         setAccessToken(res.accessToken);
         setGlobalAccessToken(res.accessToken);
         setUser({ username: dto.username, name: res.user.name, id: res.user.id });
