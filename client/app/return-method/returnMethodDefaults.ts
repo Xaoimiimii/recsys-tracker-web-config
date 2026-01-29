@@ -1,12 +1,12 @@
 import { LayoutJson, StyleJson } from './types';
 
 export const DARK_MODE_COLORS = {
-    background: "#111827",      
-    surface: "#1F2937",         
+    background: "#292624",      
+    surface: "#292624",         
     textPrimary: "#F9FAFB",     
     textSecondary: "#9CA3AF",   
-    border: "#374151",          
-    muted: "#374151",          
+    border: "#292624",          
+    muted: "#292624",          
     primary: "#dfecaa",         
     success: "#34D399",
     danger: "#F87171",
@@ -60,7 +60,7 @@ export const SHARED_CARD_CONFIG = {
         },
         row: {
             labelWidth: 92,
-            valueAlign: "center" as const,
+            valueAlign: "left" as const,
             gap: "sm"
         }
     },
