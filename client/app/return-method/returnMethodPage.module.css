@@ -246,11 +246,11 @@
     transition: all 0.2s;
 }
 
-.actionButton { color: var(--color-text-secondary, #6b7280); }
+.actionButton { color: var(--color-primary); }
 .actionButton:hover { color: var(--color-primary, #3b82f6); border-color: var(--color-primary, #3b82f6); background-color: var(--color-primary-light, #eff6ff); }
 
-.deleteButton { color: #ef4444; }
-.deleteButton:hover { background-color: #fef2f2; border-color: #ef4444; }
+.deleteButton { color: #dc2626; }
+.deleteButton:hover { background-color: #fef2f2; border-color: #dc2626; }
 
 /* Form Actions (Form Page) */
 .formActions {

@@ -207,6 +207,24 @@ function AppContent() {
             }
           />
           <Route
+            path="recommendation-display/search-input/edit/:id"
+            element={
+              <SearchInputFormPage
+                container={container}
+                mode="edit"
+              />
+            }
+          />
+          <Route
+            path="recommendation-display/search-input/view/:id"
+            element={
+              <SearchInputFormPage
+                container={container}
+                mode="view"
+              />
+            }
+          />
+          <Route
             path="loader-script"
             element={
               <LoaderScriptPage

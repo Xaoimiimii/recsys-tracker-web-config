@@ -37,7 +37,8 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
         setReturnMethodsByDomain,
         getSearchInputsByDomain,
         setSearchInputsByDomain,
-        clearReturnMethodsByDomain
+        clearReturnMethodsByDomain,
+        clearSearchInputsByDomain
     } = useDataCache();
 
     // Fetch return methods from API
@@ -166,21 +167,34 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
     };
 
     const handleDelete = async (id: string) => {
-        // Cảnh báo: ID hiện tại là ID giả, lệnh delete này sẽ thất bại nếu gửi lên server
-        // Trừ khi bạn sửa lại logic lấy ID thực từ response
-        if (confirm('Are you sure you want to delete this configuration?')) {
-            try {
-                console.log(id);
+        if (!confirm('Are you sure you want to delete this configuration?')) {
+            return;
+        }
+
+        try {
+            if (activeTab === 'display-method') {
                 await returnMethodApi.delete(id);
                 setConfigurations(prev => prev.filter(config => config.id !== id));
                 if (container?.uuid) {
-                    // Logic clear cache nếu cần
                     clearReturnMethodsByDomain(container.uuid);
                 }
-            } catch (e) {
-                console.error("Delete failed", e);
-                alert("Failed to delete (ID might be invalid)");
+            } else if (activeTab === 'search-input') {
+                await searchInputApi.delete(Number(id));
+                if (container?.uuid) {
+                    clearSearchInputsByDomain(container.uuid);
+                    // Refetch search input configs after successful deletion
+                    try {
+                        const response = await searchInputApi.getByDomainKey(container.uuid);
+                        setSearchInputsByDomain(container.uuid, response);
+                        setSearchInputConfigs(response);
+                    } catch (err) {
+                        console.error('Failed to refetch search inputs:', err);
+                    }
+                }
             }
+        } catch (e) {
+            console.error("Delete failed", e);
+            alert("Failed to delete configuration");
         }
     };
 
@@ -352,21 +366,21 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
                                                 <td className={styles.actionsCell}>
                                                     <button 
                                                         className={styles.actionButton}
-                                                        onClick={() => handleView(config.id.toString())}
+                                                        onClick={() => handleView(config.Id.toString())}
                                                         title="View details"
                                                     >
                                                         <Eye size={16} />
                                                     </button>
                                                     <button 
                                                         className={styles.actionButton}
-                                                        onClick={() => handleEdit(config.id.toString())}
+                                                        onClick={() => handleEdit(config.Id.toString())}
                                                         title="Edit configuration"
                                                     >
                                                         <Edit2 size={16} />
                                                     </button>
                                                     <button 
                                                         className={styles.deleteButton}
-                                                        onClick={() => handleDelete(config.id.toString())}
+                                                        onClick={() => handleDelete(config.Id.toString())}
                                                         title="Delete configuration"
                                                     >
                                                         <Trash2 size={16} />

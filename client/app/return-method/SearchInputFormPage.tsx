@@ -20,6 +20,7 @@ export const SearchInputFormPage: React.FC<SearchInputFormPageProps> = ({ contai
     const [operatorId, setOperatorId] = useState<number>(1);
     const [selector, setSelector] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     
     const [errors, setErrors] = useState<{
         name?: string;
@@ -27,8 +28,40 @@ export const SearchInputFormPage: React.FC<SearchInputFormPageProps> = ({ contai
         general?: string;
     }>({});
 
-    // Get cached operators from context
-    const { clearSearchInputsByDomain } = useDataCache();
+    // Get cached data from context
+    const { clearSearchInputsByDomain, getSearchInputsByDomain } = useDataCache();
+
+    // Load data for view/edit modes
+    useEffect(() => {
+        const loadData = async () => {
+            if ((mode === 'view' || mode === 'edit') && id && container?.uuid) {
+                setIsLoading(true);
+                try {
+                    let allConfigs = getSearchInputsByDomain(container.uuid);
+                    
+                    if (!allConfigs) {
+                        allConfigs = await searchInputApi.getByDomainKey(container.uuid);
+                    }
+                    
+                    const config = allConfigs.find(c => c.Id === Number(id));
+                    
+                    if (config) {
+                        setName(config.ConfigurationName);
+                        setSelector(config.InputSelector);
+                    } else {
+                        setErrors({ general: 'Configuration not found.' });
+                    }
+                } catch (error) {
+                    // console.error('Error loading search input config:', error);
+                    setErrors({ general: 'Failed to load configuration data.' });
+                } finally {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        loadData();
+    }, [mode, id, container?.uuid, getSearchInputsByDomain]);
 
     const handleSave = async () => {
         // Reset errors
@@ -57,13 +90,25 @@ export const SearchInputFormPage: React.FC<SearchInputFormPageProps> = ({ contai
         setIsSaving(true);
         
         try {
-            const requestData = {
-                DomainKey: container.uuid,
-                ConfigurationName: name,
-                InputSelector: selector
-            };
-
-            await searchInputApi.create(requestData);
+            if (mode === 'edit' && id) {
+                // Update existing configuration
+                const updateData = {
+                    Id: Number(id),
+                    DomainKey: container.uuid,
+                    ConfigurationName: name,
+                    InputSelector: selector
+                };
+                await searchInputApi.update(updateData);
+            } else {
+                // Create new configuration
+                const createData = {
+                    DomainKey: container.uuid,
+                    ConfigurationName: name,
+                    InputSelector: selector
+                };
+                await searchInputApi.create(createData);
+            }
+            
             // Clear cache để trang danh sách sẽ fetch lại data mới
             clearSearchInputsByDomain(container.uuid);
             navigate('/dashboard/recommendation-display');
@@ -77,10 +122,12 @@ export const SearchInputFormPage: React.FC<SearchInputFormPageProps> = ({ contai
 
     return (
         <div className={styles.container}>
-            {/* Section 1: Create Search Input Configuration */}
+            {/* Section 1: Create/Edit/View Search Input Configuration */}
             <div className={styles.sectionCard}>
                 <div className={styles.sectionHeader}>
-                    <h2 className={styles.sectionTitle}>Create Search Input Configuration</h2>
+                    <h2 className={styles.sectionTitle}>
+                        {mode === 'create' ? 'Create' : mode === 'edit' ? 'Edit' : 'View'} Search Input Configuration
+                    </h2>
                     <button 
                         className={styles.closeButton}
                         onClick={() => navigate('/dashboard/recommendation-display')}

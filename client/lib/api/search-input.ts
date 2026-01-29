@@ -7,6 +7,10 @@ export interface CreateSearchInputDto {
     InputSelector: string;
 }
 
+export interface UpdateSearchInputDto extends CreateSearchInputDto {
+    Id: number;
+}
+
 export const searchInputApi = {
     getByDomainKey: (domainKey: string) => 
         apiFetch<SearchInputResponse[]>(`/search-keyword-config?domainKey=${domainKey}`, undefined, false),
@@ -17,10 +21,14 @@ export const searchInputApi = {
             body: JSON.stringify(data),
         }, true),
 
-    update: (id: number, data: CreateSearchInputDto) => 
-        apiFetch<SearchInputResponse>(`/search-input/${id}`, {
-            method: 'PUT',
+    update: (data: UpdateSearchInputDto) => 
+        apiFetch<SearchInputResponse>('/search-keyword-config', {
+            method: 'PATCH',
             body: JSON.stringify(data),
-        }, true),
+        }, false, true),
 
+    delete: (id: number) => 
+        apiFetch<void>(`/search-keyword-config/${id}`, {
+            method: 'DELETE',
+        }, false, true),
 };
