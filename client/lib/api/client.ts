@@ -16,12 +16,12 @@ export async function apiFetch<T>(
     };
 
     // Add Authorization header if needed
-    if (useAuthHeader) {
-        const accessToken = localStorage.getItem('accessToken');
-        if (accessToken) {
-            headers['Authorization'] = `Bearer ${accessToken}`;
-        }
-    }
+    // if (useAuthHeader) {
+    //     const accessToken = localStorage.getItem('accessToken');
+    //     if (accessToken) {
+    //         headers['Authorization'] = `Bearer ${accessToken}`;
+    //     }
+    // }
   
     try {
         const response = await fetch(url, {
