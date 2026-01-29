@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 if (res?.accessToken) {
                     setAccessToken(res.accessToken);
                     setGlobalAccessToken(res.accessToken);
-                    setUser({ username: res.user.username, name: res.user.name, id: res.user.id });
+                    setUser({ username: res.user.username, name: res.user.name, id: res.user.id, role: res.user.role });
                 } else {
                     setAccessToken(null);
                     setGlobalAccessToken(null);
@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const res = await authApi.signin(dto);
         setAccessToken(res.accessToken);
         setGlobalAccessToken(res.accessToken);
-        setUser({ username: dto.username, name: res.user.name, id: res.user.id });
+        setUser({ username: dto.username, name: res.user.name, id: res.user.id, role: res.user.role });
     };
 
     const signup = async (dto: SignUpDto) => {
