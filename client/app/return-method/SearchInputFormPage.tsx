@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Container } from '../../types';
 import { Save, X } from 'lucide-react';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 import styles from './returnMethodPage.module.css';
 import { useDataCache } from '../../contexts/DataCacheContext';
 import { searchInputApi } from '../../lib/api/search-input';
@@ -119,6 +120,10 @@ export const SearchInputFormPage: React.FC<SearchInputFormPageProps> = ({ contai
             setIsSaving(false);
         }
     };
+
+    if (isLoading) {
+        return <LoadingSpinner />;
+    }
 
     return (
         <div className={styles.container}>

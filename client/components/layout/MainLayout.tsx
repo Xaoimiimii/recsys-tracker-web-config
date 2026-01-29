@@ -81,13 +81,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ userEmail, userRole, onL
             <Code className="w-5 h-5" />
             Loader Script
           </Link>
-          <Link
+          {/* <Link
             to="/dashboard/documentation"
             className={`${styles.navButton} ${activeTab === 'documentation' ? styles.navButtonActive : ''}`}
           >
             <FileText className="w-5 h-5" />
             Documentation
-          </Link>
+          </Link> */}
           {userRole === Role.ADMIN && (
             <Link
               to="/dashboard/admin"

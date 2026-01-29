@@ -5,6 +5,7 @@ import { domainApi } from '../../lib/api';
 import type { DomainResponse } from '../../lib/api/types';
 import { OnboardingLayout } from '../../components/layout/OnboardingLayout';
 import { useContainer } from '../../contexts/ContainerContext';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 import styles from './DomainSelectionPage.module.css';
 
 interface DomainSelectionPageProps {
@@ -55,11 +56,7 @@ export const DomainSelectionPage: React.FC<DomainSelectionPageProps> = ({
   };
 
   if (loading) {
-    return (
-      <OnboardingLayout onLogout={onLogout}>
-        <div className={styles.loading}>Loading domains...</div>
-      </OnboardingLayout>
-    );
+    return <LoadingSpinner />;
   }
 
   return (

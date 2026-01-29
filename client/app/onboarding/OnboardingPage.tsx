@@ -4,6 +4,7 @@ import { DomainType } from '../../types';
 import { DOMAIN_OPTIONS, DOMAIN_TYPE_TO_NUMBER } from '../../lib/constants';
 import { OnboardingLayout } from '../../components/layout/OnboardingLayout';
 import { domainApi, userIdentityApi } from '../../lib/api';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 import styles from './OnboardingPage.module.css';
 import { Domain } from 'domain';
 
@@ -130,9 +131,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onLogout, onDoma
               </div>
             )}
             {loading ? (
-              <div style={{ textAlign: 'center', padding: '2rem' }}>
-                <p>Creating your domain...</p>
-              </div>
+              <LoadingSpinner />
             ) : (
               <>
                 <div className={styles.grid}>

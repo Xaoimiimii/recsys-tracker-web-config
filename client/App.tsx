@@ -16,6 +16,7 @@ import { AdminPage } from './app/admin/AdminPage';
 import { MainLayout } from './components/layout/MainLayout';
 import { DataCacheProvider } from './contexts/DataCacheContext';
 import { ContainerProvider } from './contexts/ContainerContext';
+import LoadingSpinner from './components/common/LoadingSpinner';
 import type { DomainResponse } from './lib/api/types';
 import type { Container, DomainType } from './types';
 
@@ -81,7 +82,7 @@ function AppContent() {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <LoadingSpinner />;
   }
 
   return (

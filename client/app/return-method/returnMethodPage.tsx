@@ -2,6 +2,7 @@ import React, { useState, useEffect, JSX } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Container } from '../../types';
 import { Plus, Eye, Edit2, Trash2, Layers, Puzzle } from 'lucide-react';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 import styles from './returnMethodPage.module.css';
 import { DisplayConfiguration, DisplayType } from './types';
 import { returnMethodApi } from '../../lib/api/return-method';
@@ -207,6 +208,10 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
         return `${config.value}`;
     };
 
+    if (isLoading) {
+        return <LoadingSpinner />;
+    }
+
     return (
         <div className={styles.container}>
             <div className={styles.configCard}>
@@ -252,14 +257,7 @@ export const ReturnMethodPage: React.FC<ReturnMethodPageProps> = ({ container })
                             </div>
                         </div>
 
-                        {isLoading ? (
-                            <div className={styles.emptyState}>
-                                <p className={styles.emptyTitle}>Loading...</p>
-                                <p className={styles.emptyDescription}>
-                                    Fetching return method configurations...
-                                </p>
-                            </div>
-                        ) : error ? (
+                        {error ? (
                             <div className={styles.emptyState}>
                                 <p className={styles.emptyTitle}>Error</p>
                                 <p className={styles.emptyDescription}>{error}</p>

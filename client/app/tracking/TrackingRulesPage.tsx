@@ -4,6 +4,7 @@ import { RuleBuilder, DOMAIN_INTERACTION_TYPES } from '../../components/dashboar
 import { Box, Plus, Trash2, Edit2, MousePointer, Eye, Star, ArrowDownCircle, MessageSquareHeart, ChevronDown, ChevronUp, Lightbulb, X, Database, AlertCircle } from 'lucide-react';
 import { ruleApi, RuleListItem, RuleDetailResponse, domainApi, UserIdentityResponse } from '../../lib/api/';
 import { useDataCache } from '../../contexts/DataCacheContext';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
 import styles from './TrackingRulesPage.module.css';
 
 // Mapping Source Types
@@ -820,9 +821,7 @@ const handleDelete = async (id: string) => {
                             </button>
                         </div>
                         {isLoading ? (
-                            <div className={styles.emptyState}>
-                                <p>Loading tracking rules...</p>
-                            </div>
+                            <LoadingSpinner />
                         ) : container?.rules.length === 0 ? (
                             <div className={styles.emptyState}>
                                 <p>No rules configured yet.</p>

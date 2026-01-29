@@ -2,6 +2,7 @@ import React from 'react';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ZAxis } from 'recharts';
 import { TrackedEvent } from '../../lib/api/types';
 import { RefreshCw } from 'lucide-react';
+import LoadingSpinner from '../common/LoadingSpinner';
 import styles from './EventsChart.module.css';
 
 interface EventsChartProps {
@@ -197,10 +198,7 @@ export const EventsChart: React.FC<EventsChartProps> = ({
             </div>
 
             {loading ? (
-                <div className={styles.loadingContainer}>
-                    <RefreshCw className={styles.spinning} size={32} />
-                    <p>Loading events...</p>
-                </div>
+                <LoadingSpinner />
             ) : events.length === 0 ? (
                 <div className={styles.emptyState}>
                     <p>No events found</p>
