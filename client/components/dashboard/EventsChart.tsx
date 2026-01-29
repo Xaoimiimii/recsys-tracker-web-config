@@ -77,6 +77,17 @@ const DOMAIN_INTERACTION_TYPES: Record<string, Record<string, string>> = {
   },
 };
 
+function formatTimestamp(timestamp: string): string {
+    const date = new Date(timestamp);
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const year = date.getUTCFullYear();
+    const hours = String(date.getUTCHours()).padStart(2, '0');
+    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+    return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+}
+
 function getEventTypeName(eventTypeId: number, actionType?: string | null, domainType: string = 'General'): string {
     // Create lookup key: eventTypeId-actionType
     const key = `${eventTypeId}-${actionType || 'null'}`;
@@ -118,11 +129,7 @@ export const EventsChart: React.FC<EventsChartProps> = ({
         .map((event, index) => ({
             x: index, // Index for X-axis positioning
             y: ruleIdToIndex.get(event.TrackingRule.Id) ?? 0, // Sequential index for Y-axis
-            timestamp: new Date(event.Timestamp).toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            }),
+            timestamp: formatTimestamp(event.Timestamp),
             eventId: event.Id,
             ruleId: event.TrackingRule.Id,
             ruleName: event.TrackingRule.Name,
@@ -133,7 +140,7 @@ export const EventsChart: React.FC<EventsChartProps> = ({
             actionType: event.TrackingRule.ActionType,
             ratingValue: event.RatingValue,
             reviewValue: event.ReviewValue,
-            fullTimestamp: new Date(event.Timestamp).toLocaleString(),
+            fullTimestamp: formatTimestamp(event.Timestamp),
             timestampMs: new Date(event.Timestamp).getTime()
         }));
 
