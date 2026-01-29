@@ -31,7 +31,6 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
                 }
             } catch {
                 setAccessToken(null);
-                localStorage.removeItem('accessToken');
                 setUser(null);
             }
             setLoading(false);
