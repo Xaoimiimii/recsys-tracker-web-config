@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import { SearchKeywordConfigService } from './search-keyword-config.service';
-import { ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { ApiOperation, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { CreateSearchKeywordConfigDto } from './dto/create-search-keyword-config.dto';
+import { UpdateSearchKeywordDto } from './dto/update-search-keyword-config.dto';
 
 @Controller('search-keyword-config')
 export class SearchKeywordConfigController {
@@ -27,5 +28,28 @@ export class SearchKeywordConfigController {
     })
     async getConfigs(@Query('domainKey') domainKey: string) {
         return this.searchKeywordConfigService.getSearchKeywordConfigs(domainKey);
+    }
+
+    @Patch()
+    @ApiOperation({ summary: 'Modify' })
+    async modifyConfig(@Body() body: UpdateSearchKeywordDto) {
+        return this.searchKeywordConfigService.updateSearchKeywordConfigs(
+            body.Id,
+            body.ConfigurationName,
+            body.InputSelector
+        )
+    }
+
+    @Delete(':id')
+    @ApiOperation({ summary: 'Delete' })
+    @ApiParam({
+        name: "id",
+        type: Number,
+        required: true
+    })
+    async deleteConfig(@Param('id', ParseIntPipe) id: number) {
+        return this.searchKeywordConfigService.deleteSearchKeywordConfig(
+            id
+        )
     }
 }
