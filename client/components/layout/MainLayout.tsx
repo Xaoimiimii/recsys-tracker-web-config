@@ -2,18 +2,20 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation, Link, Outlet } from 'react-router-dom';
 import { User, ChevronLeft, ChevronRight, LayoutDashboard, Container, ListChecks, Sparkles, FileText, LogOut, Code, Upload } from 'lucide-react';
 import styles from './MainLayout.module.css';
+import { Role } from '../../lib/api/types.ts';
 
 interface MainLayoutProps {
   userEmail?: string;
+  userRole?: Role;
   onLogout: () => void;
 }
 
-export const MainLayout: React.FC<MainLayoutProps> = ({ userEmail, onLogout }) => {
+export const MainLayout: React.FC<MainLayoutProps> = ({ userEmail, userRole, onLogout }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  
+
   // Extract active tab from URL
   const activeTab = location.pathname.split('/')[2] || 'overview';
 
@@ -86,59 +88,68 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ userEmail, onLogout }) =
             <FileText className="w-5 h-5" />
             Documentation
           </Link>
+          {userRole === Role.ADMIN && (
+            <Link
+              to="/dashboard/admin"
+              className={`${styles.navButton} ${activeTab === 'admin' ? styles.navButtonActive : ''}`}
+            >
+              <Sparkles className="w-5 h-5" />
+              Admin
+            </Link>
+          )}
         </nav>
       </aside>
 
       {/* Main Content */}
       <main className={styles.main}>
         <header className={styles.header}>
-            <div className={styles['navigation-arrows']}>
-              <button 
-                className={styles['nav-arrow']} 
-                onClick={goPrev}
-              >
-                <ChevronLeft />
-              </button>
-              <button 
-                className={styles['nav-arrow']} 
-                onClick={goNext}
-              >
-                <ChevronRight />
-              </button>
+          <div className={styles['navigation-arrows']}>
+            <button
+              className={styles['nav-arrow']}
+              onClick={goPrev}
+            >
+              <ChevronLeft />
+            </button>
+            <button
+              className={styles['nav-arrow']}
+              onClick={goNext}
+            >
+              <ChevronRight />
+            </button>
 
-              <h1 className={styles.headerTitle}>
-                {activeTab.replace('-', ' ')}
-              </h1>
-            </div>
+            <h1 className={styles.headerTitle}>
+              {activeTab.replace('-', ' ')}
+            </h1>
+          </div>
 
-            <div className={styles.userSection} ref={dropdownRef}>
-              <button 
-                className={styles.userAvatar}
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              >
-                <User size={20} />
-              </button>
-              
-              {isDropdownOpen && (
-                <div className={styles.dropdownMenu}>
-                  {userEmail && (
-                    <div className={styles.dropdownHeader}>
-                      <div className={styles.userEmail}>{userEmail}</div>
-                    </div>
-                  )}
-                  <button 
-                    className={styles.dropdownItem}
-                    onClick={() => {
-                      setIsDropdownOpen(false);
-                      onLogout();
-                    }}
-                  >
-                    <LogOut size={16} />
-                    Log Out
-                  </button>
-                </div>
-              )}
-            </div>
+          <div className={styles.userSection} ref={dropdownRef}>
+            <button
+              className={styles.userAvatar}
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            >
+              <User size={20} />
+            </button>
+
+            {isDropdownOpen && (
+              <div className={styles.dropdownMenu}>
+                {userEmail && (
+                  <div className={styles.dropdownHeader}>
+                    <div className={styles.userEmail}>{userEmail}</div>
+                  </div>
+                )}
+                <button
+                  className={styles.dropdownItem}
+                  onClick={() => {
+                    setIsDropdownOpen(false);
+                    onLogout();
+                  }}
+                >
+                  <LogOut size={16} />
+                  Log Out
+                </button>
+              </div>
+            )}
+          </div>
         </header>
         <div className={styles.content}>
           <Outlet />

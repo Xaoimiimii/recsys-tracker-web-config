@@ -11,6 +11,7 @@ import { ReturnMethodFormPage } from './app/return-method/ReturnMethodFormPage';
 import { SearchInputFormPage } from './app/return-method/SearchInputFormPage';
 import { DomainSelectionPage } from './app/domain-selection/DomainSelectionPage';
 import { OnboardingPage } from './app/onboarding/OnboardingPage';
+import { AdminPage } from './app/admin/AdminPage';
 import { MainLayout } from './components/layout/MainLayout';
 import { DataCacheProvider } from './contexts/DataCacheContext';
 import type { DomainResponse } from './lib/api/types';
@@ -23,7 +24,7 @@ function AppContent() {
     localStorage.getItem('selectedDomainKey')
   );
   const [domains, setDomains] = useState<DomainResponse[]>([]);
-  
+
   const isAuthenticated = user !== null;
 
   // Map DomainResponse to Container type
@@ -59,6 +60,13 @@ function AppContent() {
     }
   }, [selectedDomainKey, domains]);
 
+  // Log user info for verification
+  useEffect(() => {
+    if (user) {
+      console.log('User Info:', user);
+    }
+  }, [user]);
+
   const handleSelectDomain = (domainKey: string, domainsList: DomainResponse[]) => {
     setSelectedDomainKey(domainKey);
     localStorage.setItem('selectedDomainKey', domainKey);
@@ -75,151 +83,158 @@ function AppContent() {
   if (loading) {
     return <div>Loading...</div>;
   }
-  
+
   return (
     <BrowserRouter>
       <Routes>
-        <Route 
-          path="/login" 
+        <Route
+          path="/login"
           element={
             isAuthenticated ? (
               <Navigate to="/select-domain" replace />
             ) : (
               <AuthPage onLogin={signin} />
             )
-          } 
+          }
         />
 
-        <Route 
-          path="/select-domain" 
+        <Route
+          path="/select-domain"
           element={
             !isAuthenticated ? (
               <Navigate to="/login" replace />
             ) : (
-              <DomainSelectionPage 
+              <DomainSelectionPage
                 onSelectDomain={handleSelectDomain}
                 onLogout={signout}
               />
             )
-          } 
+          }
         />
 
-        <Route 
-          path="/onboarding" 
+        <Route
+          path="/onboarding"
           element={
             !isAuthenticated ? (
               <Navigate to="/login" replace />
             ) : (
               <OnboardingPage onLogout={signout} onDomainCreated={handleDomainCreated} />
             )
-          } 
+          }
         />
 
-        <Route 
-          path="/dashboard/*" 
+        <Route
+          path="/dashboard/*"
           element={
             !isAuthenticated ? (
               <Navigate to="/login" replace />
             ) : !selectedDomainKey ? (
               <Navigate to="/select-domain" replace />
             ) : (
-              <MainLayout 
+              <MainLayout
                 userEmail={user?.username}
+                userRole={user?.role}
                 onLogout={signout}
               />
             )
           }
         >
           <Route index element={<Navigate to="overview" replace />} />
-          <Route 
-            path="overview" 
+          <Route
+            path="overview"
             element={
-              <DashboardPage 
-                user={user} 
-                container={container} 
-                setContainer={setContainer} 
-                onLogout={signout} 
+              <DashboardPage
+                user={user}
+                container={container}
+                setContainer={setContainer}
+                onLogout={signout}
                 domains={domains}
               />
-            } 
+            }
           />
-          <Route 
-            path="tracking-rules" 
+          <Route
+            path="tracking-rules"
             element={
-              <TrackingRulesPage 
-                container={container} 
-                setContainer={setContainer} 
+              <TrackingRulesPage
+                container={container}
+                setContainer={setContainer}
               />
-            } 
+            }
           />
-          <Route 
-            path="recommendation-display" 
+          <Route
+            path="recommendation-display"
             element={
-              <ReturnMethodPage 
-                container={container} 
-                setContainer={setContainer} 
+              <ReturnMethodPage
+                container={container}
+                setContainer={setContainer}
               />
-            } 
+            }
           />
-          <Route 
-            path="recommendation-display/create" 
+          <Route
+            path="recommendation-display/create"
             element={
-              <ReturnMethodFormPage 
-                container={container} 
+              <ReturnMethodFormPage
+                container={container}
                 mode="create"
               />
-            } 
+            }
           />
-          <Route 
-            path="recommendation-display/search-input/create" 
+          <Route
+            path="recommendation-display/search-input/create"
             element={
-              <SearchInputFormPage 
-                container={container} 
+              <SearchInputFormPage
+                container={container}
                 mode="create"
               />
-            } 
+            }
           />
-          <Route 
-            path="recommendation-display/edit/:id" 
+          <Route
+            path="recommendation-display/edit/:id"
             element={
-              <ReturnMethodFormPage 
-                container={container} 
+              <ReturnMethodFormPage
+                container={container}
                 mode="edit"
               />
-            } 
+            }
           />
-          <Route 
-            path="recommendation-display/view/:id" 
+          <Route
+            path="recommendation-display/view/:id"
             element={
-              <ReturnMethodFormPage 
-                container={container} 
+              <ReturnMethodFormPage
+                container={container}
                 mode="view"
               />
-            } 
+            }
           />
-          <Route 
-            path="loader-script" 
+          <Route
+            path="loader-script"
             element={
-              <LoaderScriptPage 
-                container={container} 
+              <LoaderScriptPage
+                container={container}
               />
-            } 
+            }
           />
-          <Route 
-            path="item-upload" 
+          <Route
+            path="item-upload"
             element={
               <ItemUploadPage
                 container={container}
-              />} 
+              />}
           />
-          <Route path="documentation"/>
+          <Route
+            path="admin"
+            element={
+              <AdminPage />
+            }
+          />
+          <Route path="documentation" />
         </Route>
 
-        <Route 
-          path="*" 
+        <Route
+          path="*"
           element={
             <Navigate to={isAuthenticated ? "/select-domain" : "/login"} replace />
-          } 
+          }
         />
       </Routes>
     </BrowserRouter>

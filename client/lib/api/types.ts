@@ -1,4 +1,8 @@
 // ==================== AUTH TYPES ====================
+export enum Role {
+  ADMIN = 'ADMIN',
+  CUSTOMER = 'CUSTOMER'
+}
 
 export interface SignUpDto {
   username: string;
@@ -18,6 +22,7 @@ export interface AuthResponse {
     id: number;
     username: string;
     name: string;
+    role: Role;
   };
 }
 
@@ -27,6 +32,7 @@ export interface RefreshResponse {
     id: number;
     username: string;
     name: string;
+    role: Role;
   }
 }
 
@@ -35,6 +41,7 @@ export interface UserState {
   currentUser: {
     name: string;
     email: string;
+    role: Role;
   } | null;
 }
 
@@ -92,7 +99,7 @@ export interface CreateReturnMethod {
   ConfigurationName: string;
   ReturnType: ReturnType;
   Value: string;
-  LayoutJson: any;          
+  LayoutJson: any;
   StyleJson: any;
   CustomizingFields: any;
   DelayDuration?: number;

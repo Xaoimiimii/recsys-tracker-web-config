@@ -1,9 +1,9 @@
-import { authApi, AuthDto, SignUpDto } from "@/lib/api";
+import { authApi, AuthDto, SignUpDto, Role } from "@/lib/api";
 import { s } from "motion/react-client";
 import React, { createContext, useState, useEffect } from "react";
 
 interface AuthContextType {
-    user: { username: string; name: string; id: number } | null;
+    user: { username: string; name: string; id: number; role: Role } | null;
     accessToken: string | null;
     loading: boolean;
     signin: (dto: AuthDto) => Promise<void>;
@@ -13,10 +13,10 @@ interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({children}: {children: React.ReactNode}) {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [accessToken, setAccessToken] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
-    const [user, setUser] = useState<{ username: string; name: string; id: number } | null>(null);
+    const [user, setUser] = useState<{ username: string; name: string; id: number; role: Role } | null>(null);
 
     useEffect(() => {
         const init = async () => {
@@ -25,7 +25,7 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
                 if (res?.accessToken) {
                     setAccessToken(res.accessToken);
                     localStorage.setItem('accessToken', res.accessToken);
-                    setUser({ username: res.user.username, name: res.user.name, id: res.user.id });
+                    setUser({ username: res.user.username, name: res.user.name, id: res.user.id, role: res.user.role });
                 } else {
                     setAccessToken(null);
                     localStorage.removeItem('accessToken');
@@ -43,9 +43,10 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
 
     const signin = async (dto: AuthDto) => {
         const res = await authApi.signin(dto);
+        console.log(res);
         setAccessToken(res.accessToken);
         localStorage.setItem('accessToken', res.accessToken);
-        setUser({ username: dto.username, name: res.user.name, id: res.user.id });
+        setUser({ username: dto.username, name: res.user.name, id: res.user.id, role: res.user.role });
     };
 
     const signup = async (dto: SignUpDto) => {

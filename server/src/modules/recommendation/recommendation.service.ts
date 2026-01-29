@@ -1,30 +1,77 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, Observable } from 'rxjs';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class RecommendationService {
+    private readonly logger = new Logger(RecommendationService.name);
+
     constructor(
         private readonly httpService: HttpService,
         private readonly prisma: PrismaService,
     ) { }
 
-    async triggerTrainModels() {
+    triggerTrainModels(): Observable<{ progress: number; message: string }> {
         const url =
             process.env.MODEL_URL
                 ? `${process.env.MODEL_URL}/api/train`
                 : 'http://localhost:8000/api/train';
 
-        const allDomains = await this.prisma.domain.findMany();
+        return new Observable((subscriber) => {
+            (async () => {
+                try {
+                    const allDomains = await this.prisma.domain.findMany();
+                    const total = allDomains.length;
+                    let processed = 0;
 
-        for (const domain of allDomains) {
-            const response = await firstValueFrom(
-                this.httpService.post(url, {
-                    domain_id: domain.Id,
-                }),
-            );
-        }
+                    if (total === 0) {
+                        subscriber.next({ progress: 100, message: 'No domains to train.' });
+                        subscriber.complete();
+                        return;
+                    }
+
+                    subscriber.next({ progress: 0, message: 'Starting training...' });
+
+                    for (const domain of allDomains) {
+                        try {
+                            /*
+                            const response = await firstValueFrom(
+                                this.httpService.post(url, {
+                                    domain_id: domain.Id,
+                                }),
+                            );
+                            */
+                            // Mocking the request for now as the user mentioned "Cannot find name 'domain'" earlier implies execution issues, 
+                            // but I should keep the original logic if possible.
+                            // Actually the user fixed the 'domain' issue in previous turn.
+                            // Let's use the actual request but strict error handling.
+
+                            await firstValueFrom(
+                                this.httpService.post(url, {
+                                    domain_id: domain.Id,
+                                }),
+                            );
+
+                            this.logger.log(`Domain ${domain.Id} train success`);
+                        } catch (error) {
+                            this.logger.error(`Domain ${domain.Id} train failed`, error);
+                        } finally {
+                            processed++;
+                            const progress = Math.round((processed / total) * 100);
+                            subscriber.next({
+                                progress,
+                                message: `Processed domain ${domain.Id} (${processed}/${total})`
+                            });
+                        }
+                    }
+
+                    subscriber.complete();
+                } catch (err) {
+                    subscriber.error(err);
+                }
+            })();
+        });
     }
 
     async getRecommendations(userId: number, numberItems: number = 10) {
