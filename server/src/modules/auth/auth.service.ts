@@ -101,10 +101,12 @@ export class AuthService {
     }
 
     setRefreshToken(res: Response, refreshToken: string) {
+        const isProd = this.config.get('NODE_ENV') === 'production';
+
         res.cookie('RefreshToken', refreshToken, {
             httpOnly: true,
-            secure: false,
-            sameSite: 'lax',
+            secure: isProd,
+            sameSite: isProd ? 'none' : 'lax',
             maxAge: this.config.get<number>('COOKIE_EXPIRATION'),
         });
     }
