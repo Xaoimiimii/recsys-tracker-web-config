@@ -5,6 +5,7 @@ import * as argon2 from 'argon2';
 import { JwtService } from "@nestjs/jwt/dist/jwt.service";
 import { ConfigService } from "@nestjs/config";
 import { Response } from "express";
+import { log } from "console";
 
 @Injectable()
 export class AuthService {
@@ -13,7 +14,7 @@ export class AuthService {
         private jwt: JwtService,
         private config: ConfigService
     ) { }
-    
+
     async signup(dto: SignUpDto) {
         const existing = await this.prisma.ternant.findUnique({
             where: {
@@ -50,9 +51,9 @@ export class AuthService {
         });
         if (!ternant) {
             throw new HttpException(
-            { statusCode: HttpStatus.UNAUTHORIZED, message: 'Username does not exist' },
-            HttpStatus.UNAUTHORIZED
-        );
+                { statusCode: HttpStatus.UNAUTHORIZED, message: 'Username does not exist' },
+                HttpStatus.UNAUTHORIZED
+            );
         }
         const isPasswordValid = await argon2.verify(ternant.Password, dto.password);
         if (!isPasswordValid) {
@@ -62,25 +63,28 @@ export class AuthService {
             );
         }
 
-        const tokens = await this.signToken(ternant.Id, ternant.Username, ternant.Name);
+        const tokens = await this.signToken(ternant.Id, ternant.Username, ternant.Name, ternant.Role);
 
         this.setRefreshToken(res, tokens.refreshToken);
-        
-        return { 
+
+        return {
             accessToken: tokens.accessToken,
             refreshToken: tokens.refreshToken,
             user: {
+                id: ternant.Id,
                 username: ternant.Username,
-                name: ternant.Name
+                name: ternant.Name,
+                role: ternant.Role
             }
         };
     }
 
-    async signToken(ternantId: number, username: string, name: string) : Promise<{accessToken: string, refreshToken: string}> {
+    async signToken(ternantId: number, username: string, name: string, role: string): Promise<{ accessToken: string, refreshToken: string }> {
         const payload = {
             sub: ternantId,
             username: username,
-            name: name
+            name: name,
+            role: role
         };
 
         const accessToken = await this.jwt.signAsync(payload, {
@@ -105,8 +109,7 @@ export class AuthService {
         });
     }
 
-    async refresh(res: Response, token: string)
-    {
+    async refresh(res: Response, token: string) {
         try {
             const payload = await this.jwt.verifyAsync(
                 token,
@@ -115,9 +118,17 @@ export class AuthService {
                 }
             );
 
-            const tokens = await this.signToken(payload.sub, payload.username, payload.name);
+            const tokens = await this.signToken(payload.sub, payload.username, payload.name, payload.role);
             this.setRefreshToken(res, tokens.refreshToken);
-            return { accessToken: tokens.accessToken, user: { username: payload.username, name: payload.name } };
+            return {
+                accessToken: tokens.accessToken,
+                user: {
+                    id: payload.sub,
+                    username: payload.username,
+                    name: payload.name,
+                    role: payload.role
+                }
+            };
         } catch (error) {
             throw new Error("Invalid refresh token");
         }

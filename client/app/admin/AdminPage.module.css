@@ -1,0 +1,133 @@
+.container {
+    padding: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode support */
+:global(body.dark-mode) .card {
+    background: #1f2937;
+    color: #f3f4f6;
+}
+
+.cardTitle {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.cardDescription {
+    color: #6b7280;
+    margin-bottom: 1.5rem;
+}
+
+:global(body.dark-mode) .cardDescription {
+    color: #9ca3af;
+}
+
+.button {
+    background-color: #3b82f6;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.button:hover {
+    background-color: #2563eb;
+}
+
+.button:disabled {
+    background-color: #9ca3af;
+    cursor: not-allowed;
+}
+
+.alert {
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1.5rem;
+}
+
+.alertSuccess {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.alertError {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+/* Progress Bar Styles */
+.progressContainer {
+    width: 100%;
+    background-color: #e5e7eb;
+    border-radius: 9999px;
+    overflow: hidden;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+:global(body.dark-mode) .progressContainer {
+    background-color: #374151;
+}
+
+.progressBar {
+    height: 1rem;
+    background-color: var(--color-primary);
+    transition: width 0.3s ease-in-out;
+}
+
+.progressText {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-top: 0.5rem;
+    text-align: right;
+}
+
+:global(body.dark-mode) .progressText {
+    color: #9ca3af;
+}
+
+/* Log Container Styles */
+.logContainer {
+    height: 200px;
+    overflow-y: auto;
+    border: 1px solid #e5e7eb;
+    background-color: #f9fafb;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-top: 1rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.875rem;
+}
+
+:global(body.dark-mode) .logContainer {
+    background-color: #374151;
+    border-color: #4b5563;
+    color: #e5e7eb;
+}
+
+.logItem {
+    margin-bottom: 0.25rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.25rem;
+}
+
+:global(body.dark-mode) .logItem {
+    border-bottom-color: #4b5563;
+}
+
+.logItem:last-child {
+    border-bottom: none;
+}

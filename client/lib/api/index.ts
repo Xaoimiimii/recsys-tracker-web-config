@@ -7,6 +7,7 @@ export { searchInputApi } from './search-input';
 export { ruleApi } from './rule';
 export { userApi } from './user';
 export { eventApi } from './event';
+export { recommendationApi } from './recommendation';
 
 
 // Export client utilities
