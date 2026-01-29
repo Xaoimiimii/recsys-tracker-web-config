@@ -7,6 +7,7 @@ interface ContainerContextType {
   setContainer: (container: Container | null) => void;
   domains: DomainResponse[];
   setDomains: (domains: DomainResponse[]) => void;
+  clearAll: () => void;
 }
 
 const ContainerContext = createContext<ContainerContextType | undefined>(undefined);
@@ -63,8 +64,27 @@ export const ContainerProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   };
 
+  const clearAll = () => {
+    setContainerState(null);
+    setDomainsState([]);
+    localStorage.removeItem(CONTAINER_STORAGE_KEY);
+    localStorage.removeItem(DOMAINS_STORAGE_KEY);
+    localStorage.removeItem('selectedDomainKey');
+  };
+
+  // Lắng nghe event logout để clear state
+  useEffect(() => {
+    const handleLogout = () => {
+      setContainerState(null);
+      setDomainsState([]);
+    };
+
+    window.addEventListener('auth:logout', handleLogout);
+    return () => window.removeEventListener('auth:logout', handleLogout);
+  }, []);
+
   return (
-    <ContainerContext.Provider value={{ container, setContainer, domains, setDomains }}>
+    <ContainerContext.Provider value={{ container, setContainer, domains, setDomains, clearAll }}>
       {children}
     </ContainerContext.Provider>
   );

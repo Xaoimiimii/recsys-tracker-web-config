@@ -58,6 +58,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setAccessToken(null);
         setGlobalAccessToken(null);
         setUser(null);
+        // Xóa container và domains từ localStorage
+        localStorage.removeItem('recsys_container');
+        localStorage.removeItem('recsys_domains');
+        localStorage.removeItem('selectedDomainKey');
+        // Dispatch event để ContainerContext clear state
+        window.dispatchEvent(new Event('auth:logout'));
     };
 
     return (

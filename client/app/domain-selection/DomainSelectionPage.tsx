@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { domainApi } from '../../lib/api';
@@ -18,29 +18,32 @@ export const DomainSelectionPage: React.FC<DomainSelectionPageProps> = ({
 }) => {
   const navigate = useNavigate();
   const { domains, setDomains } = useContainer();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasFetched = useRef(false);
 
   useEffect(() => {
     const fetchDomains = async () => {
+      if (hasFetched.current) return;
+      
       try {
         setLoading(true);
+        hasFetched.current = true;
         const data = await domainApi.getByTernantId();
         setDomains(data);
       } catch (err) {
         console.error('Failed to fetch domains:', err);
         setError('Failed to load domains. Please try again.');
+        hasFetched.current = false;
       } finally {
         setLoading(false);
       }
     };
 
-    if (domains.length === 0) {
+    if (domains.length === 0 && !hasFetched.current) {
       fetchDomains();
-    } else {
-      setLoading(false);
     }
-  }, [domains, setDomains]);
+  }, []);
 
   const handleDomainClick = (domain: DomainResponse) => {
     onSelectDomain(domain.Key);
