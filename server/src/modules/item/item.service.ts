@@ -107,8 +107,8 @@ export class ItemService {
                     return await Promise.all(itemPromises);
                 },
                 {
-                    maxWait: 15000, // Increased from 10s
-                    timeout: 45000, // Increased from 30s
+                    maxWait: 15000,
+                    timeout: 100000,
                 },
             );
 
@@ -245,8 +245,8 @@ export class ItemService {
                     return await Promise.all(itemPromises);
                 },
                 {
-                    maxWait: 15000, // Increased from 10s
-                    timeout: 45000, // Increased from 30s
+                    maxWait: 15000,
+                    timeout: 100000,
                 },
             );
 

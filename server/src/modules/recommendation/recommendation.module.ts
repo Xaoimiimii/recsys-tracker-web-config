@@ -5,7 +5,7 @@ import { RecommendationController } from './recommendation.controller';
 
 @Module({
   imports: [HttpModule.register({
-    timeout: 10000,
+    timeout: 100000,
     maxRedirects: 5,
   })],
   providers: [RecommendationService],

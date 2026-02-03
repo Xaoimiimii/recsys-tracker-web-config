@@ -49,6 +49,32 @@ export class SearchService {
         };
     }
 
+    // Debug: Get document by ID to check its content
+    async getDocumentById(domainId: number, itemId: number) {
+        try {
+            const docId = `${domainId}_${itemId}`;
+            const result = await this.elasticsearchService.get({
+                index: this.INDEX_NAME,
+                id: docId,
+            });
+            return result;
+        } catch (error) {
+            this.logger.error(`Document ${domainId}_${itemId} not found: ${error.message}`);
+            return null;
+        }
+    }
+
+    // Debug: Count documents by domainId
+    async countByDomainId(domainId: number) {
+        const result = await this.elasticsearchService.count({
+            index: this.INDEX_NAME,
+            query: {
+                term: { domainId: domainId }
+            }
+        });
+        return result.count;
+    }
+
     async createItemInBulk(items: ItemWithCategories[], domainId: number) {
         try {
             const operations = items.flatMap((item: any) => {
@@ -62,7 +88,7 @@ export class SearchService {
 
             return [
                 {
-                    index: { _index: this.INDEX_NAME, _id: item.Id.toString() },
+                    index: { _index: this.INDEX_NAME, _id: `${domainId}_${item.Id}` },
                 },
                 {
                     id: item.Id,
@@ -105,6 +131,21 @@ export class SearchService {
 
     async updateItemInBulk(items: ItemWithCategories[], domainId: number) {
         try {
+            this.logger.log(`updateItemInBulk called with ${items.length} items for domainId: ${domainId}`);
+            
+            if (items.length === 0) {
+                this.logger.warn('No items to update in Elasticsearch');
+                return;
+            }
+
+            // const firstItemId = items[0].Id;
+            // const existingDoc = await this.getDocumentById(domainId, firstItemId);
+            // if (existingDoc) {
+            //     this.logger.log(`Existing document for item ${domainId}_${firstItemId}: ${JSON.stringify(existingDoc._source)}`);
+            // } else {
+            //     this.logger.log(`Document for item ${domainId}_${firstItemId} does NOT exist in ES`);
+            // }
+
             const operations = items.flatMap((item: any) => {
                 const categoryNames = item.ItemCategories?.map(
                     (ic: any) => ic.Category?.Name
@@ -116,7 +157,7 @@ export class SearchService {
 
                 return [
                     {
-                        update: { _index: this.INDEX_NAME, _id: item.Id.toString() },
+                        update: { _index: this.INDEX_NAME, _id: `${domainId}_${item.Id}` },
                     },
                     {
                         doc: {
@@ -132,29 +173,64 @@ export class SearchService {
                 ];
             });
 
+            this.logger.log(`Generated ${operations.length / 2} bulk operations`);
+
             const bulkResponse = await this.elasticsearchService.bulk({
                 operations: operations,
             });
 
+            // // Debug: Log first item response to understand structure
+            // if (bulkResponse.items && bulkResponse.items.length > 0) {
+            //     this.logger.log(`First bulk item response: ${JSON.stringify(bulkResponse.items[0])}`);
+            // }
+            // this.logger.log(`Bulk response - took: ${bulkResponse.took}ms, errors: ${bulkResponse.errors}, items count: ${bulkResponse.items?.length || 0}`);
+
             if (bulkResponse.errors) {
                 const erroredItems: any[] = [];
+                let createdCount = 0;
+                let updatedCount = 0;
 
                 bulkResponse.items.forEach((action: any, i) => {
                     const operation = Object.keys(action)[0];
+                    const result = action[operation];
 
-                    if (action[operation].error) {
+                    if (result.error) {
                         erroredItems.push({
-                            status: action[operation].status,
-                            error: action[operation].error,
+                            status: result.status,
+                            error: result.error,
                             itemId: items[i].Id,
                         });
+                    } else {
+                        // Track created vs updated
+                        if (result.result === 'created') {
+                            createdCount++;
+                        } else if (result.result === 'updated') {
+                            updatedCount++;
+                        }
                     }
                 });
 
-                this.logger.error(`Bulk update errors: ${JSON.stringify(erroredItems)}`,);
+                this.logger.error(`Bulk update errors: ${JSON.stringify(erroredItems)}`);
+                this.logger.log(`Partial success - Created: ${createdCount}, Updated: ${updatedCount}, Failed: ${erroredItems.length}`);
                 throw new Error(`Failed to update ${erroredItems.length} items in Elasticsearch`);
             } else {
-                this.logger.log(`Updated ${items.length} items in Elastic successfully.`,);
+                let createdCount = 0;
+                let updatedCount = 0;
+                let noopCount = 0;
+                
+                bulkResponse.items.forEach((action: any) => {
+                    const operation = Object.keys(action)[0];
+                    const result = action[operation];
+                    if (result.result === 'created') {
+                        createdCount++;
+                    } else if (result.result === 'updated') {
+                        updatedCount++;
+                    } else if (result.result === 'noop') {
+                        noopCount++;
+                    }
+                });
+                
+                this.logger.log(`Bulk operation completed - Created: ${createdCount}, Updated: ${updatedCount}, Unchanged (noop): ${noopCount}`);
             }
         } catch (error) {
             this.logger.error(`Failed to bulk update: ${error.message}`);
