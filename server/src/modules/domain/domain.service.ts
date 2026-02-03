@@ -126,7 +126,7 @@ export class DomainService {
         });
 
         if (!domain) throw new NotFoundException(`Domain with key ${domainKey} does not exist`);
-        
+
         return await this.prisma.userIdentity.create({
             data: {
                 DomainId: domain.Id,

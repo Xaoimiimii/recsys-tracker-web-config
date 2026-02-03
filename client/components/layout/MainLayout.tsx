@@ -88,7 +88,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ userEmail, userRole, onL
             <FileText className="w-5 h-5" />
             Documentation
           </Link> */}
-          {userRole === Role.ADMIN && (
+          {
             <Link
               to="/dashboard/admin"
               className={`${styles.navButton} ${activeTab === 'admin' ? styles.navButtonActive : ''}`}
@@ -96,7 +96,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ userEmail, userRole, onL
               <Sparkles className="w-5 h-5" />
               Admin
             </Link>
-          )}
+          }
         </nav>
       </aside>
 

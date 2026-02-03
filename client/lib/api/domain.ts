@@ -8,12 +8,12 @@ export const domainApi = {
             method: 'GET',
         }, true),
 
-    create: (data: CreateDomainDto) => 
+    create: (data: CreateDomainDto) =>
         apiFetch<DomainResponse>('/domain/create', {
             method: 'POST',
             body: JSON.stringify(data),
         }, false, true),
-    
+
 
     getByTernantId: () =>
         apiFetch<DomainResponse[]>('/domain/ternant', {

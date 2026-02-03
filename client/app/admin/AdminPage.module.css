@@ -36,7 +36,7 @@
 }
 
 .button {
-    background-color: #3b82f6;
+    background-color: var(--color-primary);
     color: white;
     padding: 0.75rem 1.5rem;
     border-radius: 6px;
@@ -49,11 +49,11 @@
 }
 
 .button:hover {
-    background-color: #2563eb;
+    background-color: var(--color-primary-hover);
 }
 
 .button:disabled {
-    background-color: #9ca3af;
+    background-color: var(--color-primary-disabled);
     cursor: not-allowed;
 }
 
@@ -135,4 +135,184 @@
 
 .logItem:last-child {
     border-bottom: none;
+}
+
+/* Configuration Form Styles */
+.configForm {
+    background-color: #f9fafb;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    border: 1px solid #e5e7eb;
+}
+
+:global(body.dark-mode) .configForm {
+    background-color: #374151;
+    border-color: #4b5563;
+}
+
+.formRow {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.formRow:last-child {
+    margin-bottom: 0;
+}
+
+.formGroup {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.formGroup label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: #374151;
+}
+
+:global(body.dark-mode) .formGroup label {
+    color: #e5e7eb;
+}
+
+.formGroup input[type="number"] {
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+    background-color: #fff;
+    color: #111827;
+}
+
+.formGroup input[type="number"]:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+:global(body.dark-mode) .formGroup input[type="number"] {
+    background-color: #1f2937;
+    border-color: #4b5563;
+    color: #f3f4f6;
+}
+
+:global(body.dark-mode) .formGroup input[type="number"]:focus {
+    border-color: #60a5fa;
+}
+
+/* Switch Toggle Styles */
+.switchContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-top: 1.5rem;
+}
+
+.switchItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.625rem 0.75rem;
+    border: 1px solid var(--color-border, #d1d5db);
+    border-radius: 0.375rem;
+}
+
+.switchLabel {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+}
+
+:global(body.dark-mode) .switchLabel {
+    color: #e5e7eb;
+}
+
+/* The switch - the box around the slider */
+.toggleSwitch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+/* Hide default HTML checkbox */
+.toggleSwitch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* The slider */
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #cbd5e1;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.toggleSwitch input:checked+.slider {
+    background-color: var(--color-primary);
+}
+
+.toggleSwitch input:focus+.slider {
+    box-shadow: 0 0 1px var(--color-primary);
+}
+
+.toggleSwitch input:checked+.slider:before {
+    transform: translateX(20px);
+}
+
+:global(body.dark-mode) .slider {
+    background-color: #4b5563;
+}
+
+:global(body.dark-mode) .toggleSwitch input:checked+.slider {
+    background-color: var(--color-primary);
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+
+    .card {
+        padding: 1.5rem;
+    }
+
+    .configForm {
+        padding: 1rem;
+    }
+
+    .formRow {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .switchContainer {
+        padding-top: 1rem;
+    }
 }

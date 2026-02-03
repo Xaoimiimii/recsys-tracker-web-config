@@ -12,17 +12,37 @@ export class RecommendationService {
         private readonly prisma: PrismaService,
     ) { }
 
-    triggerTrainModels(): Observable<{ progress: number; message: string }> {
+    triggerTrainModels(
+        domainId?: number | string,
+        epochs: number | string = 500,
+        plaEpochs: number | string = 500,
+        batchSize: number | string = 256,
+        tolerance: number | string = 0.000001,
+        saveAfterTrain: boolean = true,
+        trainSubmodels: boolean = true,
+    ): Observable<{ progress: number; message: string }> {
         const url =
             process.env.MODEL_URL
                 ? `${process.env.MODEL_URL}/api/train`
-                : 'http://localhost:8000/api/train';
+                : 'http://127.0.0.1:8000/api/train';
 
         return new Observable((subscriber) => {
             (async () => {
                 try {
-                    const allDomains = await this.prisma.domain.findMany();
-                    const total = allDomains.length;
+                    let domainsToTrain: any[] = [];
+
+                    if (domainId) {
+                        const domain = await this.prisma.domain.findUnique({
+                            where: { Id: Number(domainId) },
+                        });
+                        if (domain) {
+                            domainsToTrain = [domain];
+                        }
+                    } else {
+                        domainsToTrain = await this.prisma.domain.findMany();
+                    }
+
+                    const total = domainsToTrain.length;
                     let processed = 0;
 
                     if (total === 0) {
@@ -33,25 +53,21 @@ export class RecommendationService {
 
                     subscriber.next({ progress: 0, message: 'Starting training...' });
 
-                    for (const domain of allDomains) {
+                    for (const domain of domainsToTrain) {
                         let message = '';
                         try {
-                            /*
-                            const response = await firstValueFrom(
-                                this.httpService.post(url, {
-                                    domain_id: domain.Id,
-                                }),
-                            );
-                            */
-                            // Mocking the request for now as the user mentioned "Cannot find name 'domain'" earlier implies execution issues, 
-                            // but I should keep the original logic if possible.
-                            // Actually the user fixed the 'domain' issue in previous turn.
-                            // Let's use the actual request but strict error handling.
+                            const payload = {
+                                domain_id: domain.Id,
+                                epochs: Number(epochs),
+                                pla_epochs: Number(plaEpochs),
+                                batch_size: Number(batchSize),
+                                tolerance: Number(tolerance),
+                                save_after_train: saveAfterTrain,
+                                train_submodels: trainSubmodels,
+                            };
 
                             await firstValueFrom(
-                                this.httpService.post(url, {
-                                    domain_id: domain.Id,
-                                }),
+                                this.httpService.post(url, payload),
                             );
 
                             message = `Domain ${domain.Id} train success`;
