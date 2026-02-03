@@ -79,6 +79,24 @@ export const DataCacheProvider: React.FC<{ children: ReactNode }> = ({ children 
         });
     };
 
+    // Clear tất cả cache
+    const clearAllCache = () => {
+        setTriggerEvents([]);
+        setRulesByDomainState({});
+        setReturnMethodsByDomainState({});
+        setSearchInputsByDomainState({});
+    };
+
+    // Lắng nghe event logout để clear cache
+    React.useEffect(() => {
+        const handleLogout = () => {
+            clearAllCache();
+        };
+
+        window.addEventListener('auth:logout', handleLogout);
+        return () => window.removeEventListener('auth:logout', handleLogout);
+    }, []);
+
     return (
         <DataCacheContext.Provider value={{
             triggerEvents,

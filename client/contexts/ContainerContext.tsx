@@ -17,23 +17,23 @@ const DOMAINS_STORAGE_KEY = 'recsys_domains';
 
 export const ContainerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [container, setContainerState] = useState<Container | null>(() => {
-    // Khôi phục container từ localStorage khi khởi tạo
+    // Khôi phục container từ sessionStorage khi khởi tạo
     try {
-      const stored = localStorage.getItem(CONTAINER_STORAGE_KEY);
+      const stored = sessionStorage.getItem(CONTAINER_STORAGE_KEY);
       return stored ? JSON.parse(stored) : null;
     } catch (error) {
-      //console.error('Error loading container from localStorage:', error);
+      //console.error('Error loading container from sessionStorage:', error);
       return null;
     }
   });
 
   const [domains, setDomainsState] = useState<DomainResponse[]>(() => {
-    // Khôi phục domains từ localStorage khi khởi tạo
+    // Khôi phục domains từ sessionStorage khi khởi tạo
     try {
-      const stored = localStorage.getItem(DOMAINS_STORAGE_KEY);
+      const stored = sessionStorage.getItem(DOMAINS_STORAGE_KEY);
       return stored ? JSON.parse(stored) : [];
     } catch (error) {
-      //console.error('Error loading domains from localStorage:', error);
+      //console.error('Error loading domains from sessionStorage:', error);
       return [];
     }
   });
@@ -41,35 +41,35 @@ export const ContainerProvider: React.FC<{ children: ReactNode }> = ({ children 
   const setContainer = (newContainer: Container | null) => {
     setContainerState(newContainer);
     
-    // Lưu vào localStorage mỗi khi container thay đổi
+    // Lưu vào sessionStorage mỗi khi container thay đổi
     try {
       if (newContainer) {
-        localStorage.setItem(CONTAINER_STORAGE_KEY, JSON.stringify(newContainer));
+        sessionStorage.setItem(CONTAINER_STORAGE_KEY, JSON.stringify(newContainer));
       } else {
-        localStorage.removeItem(CONTAINER_STORAGE_KEY);
+        sessionStorage.removeItem(CONTAINER_STORAGE_KEY);
       }
     } catch (error) {
-      //console.error('Error saving container to localStorage:', error);
+      //console.error('Error saving container to sessionStorage:', error);
     }
   };
 
   const setDomains = (newDomains: DomainResponse[]) => {
     setDomainsState(newDomains);
     
-    // Lưu vào localStorage mỗi khi domains thay đổi
+    // Lưu vào sessionStorage mỗi khi domains thay đổi
     try {
-      localStorage.setItem(DOMAINS_STORAGE_KEY, JSON.stringify(newDomains));
+      sessionStorage.setItem(DOMAINS_STORAGE_KEY, JSON.stringify(newDomains));
     } catch (error) {
-      //console.error('Error saving domains to localStorage:', error);
+      //console.error('Error saving domains to sessionStorage:', error);
     }
   };
 
   const clearAll = () => {
     setContainerState(null);
     setDomainsState([]);
-    localStorage.removeItem(CONTAINER_STORAGE_KEY);
-    localStorage.removeItem(DOMAINS_STORAGE_KEY);
-    localStorage.removeItem('selectedDomainKey');
+    sessionStorage.removeItem(CONTAINER_STORAGE_KEY);
+    sessionStorage.removeItem(DOMAINS_STORAGE_KEY);
+    sessionStorage.removeItem('selectedDomainKey');
   };
 
   // Lắng nghe event logout để clear state

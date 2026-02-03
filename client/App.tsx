@@ -24,7 +24,7 @@ function AppContent() {
   const { user, loading, signin, signout } = useAuth();
   const { container, setContainer, domains, setDomains } = useContainer();
   const [selectedDomainKey, setSelectedDomainKey] = useState<string | null>(
-    localStorage.getItem('selectedDomainKey')
+    sessionStorage.getItem('selectedDomainKey')
   );
 
   const isAuthenticated = user !== null;
@@ -71,12 +71,12 @@ function AppContent() {
 
   const handleSelectDomain = (domainKey: string) => {
     setSelectedDomainKey(domainKey);
-    localStorage.setItem('selectedDomainKey', domainKey);
+    sessionStorage.setItem('selectedDomainKey', domainKey);
   };
 
   const handleDomainCreated = (newDomain: DomainResponse) => {
     setSelectedDomainKey(newDomain.Key);
-    localStorage.setItem('selectedDomainKey', newDomain.Key);
+    sessionStorage.setItem('selectedDomainKey', newDomain.Key);
     setDomains([...domains, newDomain]);
     setContainer(mapDomainToContainer(newDomain));
   };
