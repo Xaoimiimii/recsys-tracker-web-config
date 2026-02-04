@@ -1,7 +1,10 @@
 .container {
-    padding: 2rem;
-    max-width: 800px;
+    /* padding: 2rem; */
+    /* max-width: 800px; */
     margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
 }
 
 .card {
@@ -45,7 +48,7 @@
     cursor: pointer;
     transition: background-color 0.2s;
     position: relative;
-    top: 20px;
+    bottom: 10px;
 }
 
 .button:hover {
@@ -60,7 +63,7 @@
 .alert {
     padding: 1rem;
     border-radius: 6px;
-    margin-bottom: 1.5rem;
+    margin-top: 1.5rem;
 }
 
 .alertSuccess {
@@ -315,4 +318,73 @@
     .switchContainer {
         padding-top: 1rem;
     }
+}
+
+/* Section Header Styles (Copied/Adapted from RuleBuilder) */
+.sectionHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+:global(body.dark-mode) .sectionHeader {
+    border-bottom-color: #4b5563;
+}
+
+.headerIcon {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 9999px;
+    background-color: #E5F7F6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #2AA79B;
+    font-size: 0.875rem;
+}
+
+:global(body.dark-mode) .headerIcon {
+    background-color: rgba(42, 167, 155, 0.2);
+    color: #2AA79B;
+}
+
+.sectionTitle {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #1A1D23;
+}
+
+:global(body.dark-mode) .sectionTitle {
+    color: #f3f4f6;
+}
+
+.chevronButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6b7280;
+    padding: 0.25rem;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    border-radius: 0.25rem;
+}
+
+:global(body.dark-mode) .chevronButton {
+    color: #9ca3af;
+}
+
+.chevronButton:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #111827;
+}
+
+:global(body.dark-mode) .chevronButton:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #f3f4f6;
 }
