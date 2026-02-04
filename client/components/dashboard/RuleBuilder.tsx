@@ -1115,7 +1115,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
         </div>
 
         {/* Important Notes */}
-        <div className={styles.warningCard}>
+        {/* <div className={styles.warningCard}>
           <h4 className={styles.warningCardTitle}>
             <AlertCircle size={18} /> Important Notes:
           </h4>
@@ -1124,7 +1124,7 @@ export const RuleBuilder: React.FC<RuleBuilderProps> = ({
             <strong>2. Testing:</strong> Verify configurations in testing environment before production.<br /><br />
             <strong>3. Security:</strong> Whitelist tracking script domain in your CSP.
           </p>
-        </div>
+        </div> */}
 
         {/* Action Buttons */}
         <div className={styles.buttonActions}>

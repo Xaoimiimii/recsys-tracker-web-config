@@ -508,7 +508,7 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({
               display: "flex",
               justifyContent: "center",
               gap: "12px",
-              padding: "16px 0",
+              padding: "0 0 32px 0",
               borderBottom: "1px solid #e0e0e0",
             }}
           >
@@ -520,19 +520,6 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({
                 setImportMode("create");
                 handleReset();
               }}
-              style={{
-                padding: "8px 24px",
-                borderRadius: "6px",
-                border:
-                  importMode === "create"
-                    ? "2px solid #0078d4"
-                    : "1px solid #d0d0d0",
-                background: importMode === "create" ? "#e6f2ff" : "white",
-                color: importMode === "create" ? "#0078d4" : "#666",
-                cursor: "pointer",
-                fontWeight: importMode === "create" ? "600" : "normal",
-                transition: "all 0.2s",
-              }}
             >
               Create New Items
             </button>
@@ -543,19 +530,6 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({
               onClick={() => {
                 setImportMode("update");
                 handleReset();
-              }}
-              style={{
-                padding: "8px 24px",
-                borderRadius: "6px",
-                border:
-                  importMode === "update"
-                    ? "2px solid #0078d4"
-                    : "1px solid #d0d0d0",
-                background: importMode === "update" ? "#e6f2ff" : "white",
-                color: importMode === "update" ? "#0078d4" : "#666",
-                cursor: "pointer",
-                fontWeight: importMode === "update" ? "600" : "normal",
-                transition: "all 0.2s",
               }}
             >
               Update Existing Items
