@@ -1,5 +1,7 @@
-const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://recsys-tracker-web-config.onrender.com';
-const SERVER_API_BASE_URL = import.meta.env.SERVER_API_BASE_URL || 'https://recsys-tracker-module.onrender.com';
+// const WEB_CONFIG_API_BASE_URL = import.meta.env.WEB_CONFIG_API_BASE_URL || 'https://recsys-tracker-web-config.onrender.com';
+// const MODULE_API_BASE_URL = import.meta.env.MODULE_API_BASE_URL || 'https://recsys-tracker-module.onrender.com';
+const WEB_CONFIG_API_BASE_URL = import.meta.env.WEB_CONFIG_API_BASE_URL;
+const MODULE_API_BASE_URL = import.meta.env.MODULE_API_BASE_URL;
 
 // Global token storage
 let globalAccessToken: string | null = null;
@@ -14,7 +16,7 @@ export async function apiFetch<T>(
     useServerUrl: boolean = false,
     useAuthHeader: boolean = false
 ): Promise<T> {
-    const baseUrl = useServerUrl ? SERVER_API_BASE_URL : VITE_API_BASE_URL;
+    const baseUrl = useServerUrl ? MODULE_API_BASE_URL : WEB_CONFIG_API_BASE_URL;
     const url = `${baseUrl}${endpoint}`;
   
     const headers: Record<string, string> = {
@@ -61,4 +63,4 @@ export async function apiFetch<T>(
     }
 }
 
-export { VITE_API_BASE_URL, SERVER_API_BASE_URL };
+export { WEB_CONFIG_API_BASE_URL, MODULE_API_BASE_URL };

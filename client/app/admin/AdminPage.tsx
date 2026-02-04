@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, Settings } from 'lucide-react';
 import { useContainer } from '../../contexts/ContainerContext';
-import { VITE_API_BASE_URL } from '../../lib/api/client';
+import { WEB_CONFIG_API_BASE_URL } from '../../lib/api/client';
 import styles from './AdminPage.module.css';
 
 export const AdminPage: React.FC = () => {
@@ -60,7 +60,7 @@ export const AdminPage: React.FC = () => {
             train_submodels: String(config.train_submodels)
         });
 
-        const eventSource = new EventSource(`${VITE_API_BASE_URL}/recommendation/train?${params.toString()}`);
+        const eventSource = new EventSource(`${WEB_CONFIG_API_BASE_URL}/recommendation/train?${params.toString()}`);
 
         eventSource.onmessage = (event) => {
             try {

@@ -11,7 +11,7 @@ export { recommendationApi } from './recommendation';
 
 
 // Export client utilities
-export { apiFetch, VITE_API_BASE_URL, SERVER_API_BASE_URL } from './client';
+export { apiFetch, WEB_CONFIG_API_BASE_URL, MODULE_API_BASE_URL } from './client';
 
 // Export all types
 export type * from './types';
