@@ -1,0 +1,31 @@
+name: recsys-web-config
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: recsys-server
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    env_file:
+      - ./server/.env
+    networks:
+      - recsys-network
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: recsys-client
+    restart: unless-stopped
+    ports:
+      - "5174:80"
+    depends_on:
+      - server
+    networks:
+      - recsys-network
+
+networks:
+  recsys-network:
+    driver: bridge
