@@ -74,7 +74,7 @@ export const AdminPage: React.FC = () => {
                     if (data.progress === 100) {
                         eventSource.close();
                         setLoading(false);
-                        setMessage({ type: 'success', text: 'Model training completed!' });
+                        setMessage({ type: 'success', text: 'Model training request sent!' });
                     }
                 }
             } catch (err) {

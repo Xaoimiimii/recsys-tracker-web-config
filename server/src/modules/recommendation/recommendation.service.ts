@@ -51,7 +51,7 @@ export class RecommendationService {
                         return;
                     }
 
-                    subscriber.next({ progress: 0, message: 'Starting training...' });
+                    subscriber.next({ progress: 0, message: 'Sending train request...' });
 
                     for (const domain of domainsToTrain) {
                         let message = '';
@@ -70,9 +70,9 @@ export class RecommendationService {
                                 this.httpService.post(url, payload),
                             );
 
-                            message = `Domain ${domain.Id} train success`;
+                            message = `Domain ${domain.Id} train request sent successfully`;
                         } catch (error) {
-                            message = `Domain ${domain.Id} train failed`;
+                            message = `Domain ${domain.Id} train request sent failed`;
                             this.logger.error(message, error);
                         } finally {
                             processed++;
