@@ -17,6 +17,9 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile
+      args:
+        - WEB_CONFIG_API_BASE_URL=http://localhost:3001
+        - MODULE_API_BASE_URL=http://localhost:3002
     container_name: recsys-client
     restart: unless-stopped
     ports:

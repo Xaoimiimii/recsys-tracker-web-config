@@ -13,7 +13,6 @@ COPY package.json ./
 RUN npm install
 
 # Copy prisma schema and generate client
-# Bước này sẽ tạo client tại src/generated (theo cấu hình schema của bạn)
 COPY prisma ./prisma/
 RUN npx prisma generate
 
@@ -29,22 +28,22 @@ WORKDIR /app
 # Install OpenSSL for Prisma
 RUN apk add --no-cache openssl
 
-# Copy files từ builder
+# Copy from builder
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/tsconfig.json ./tsconfig.json
 
-# --- FIX QUAN TRỌNG 1: Đưa Prisma Client (bao gồm cả file nhị phân) vào đúng chỗ trong dist ---
-# Vì tsc không copy file engine của Prisma vào dist, ta phải copy thủ công folder đã generate
-# vào đúng đường dẫn mà code đã biên dịch mong đợi (/app/dist/src/generated)
-COPY --from=builder /app/src/generated ./dist/src/generated
+# Regenerate Prisma client for linux
+RUN npx prisma generate
 
-# --- FIX QUAN TRỌNG 2: Giúp Node.js hiểu các import tuyệt đối 'src/...' ---
-# Khi code gọi require('src/...'), Node sẽ tìm trong ./dist/src/...
-ENV NODE_PATH=./dist
+# Recompile only the generated prisma files
+RUN rm -rf /app/dist/src/generated && npx tsc src/generated/prisma/*.ts src/generated/prisma/**/*.ts --outDir dist/src/generated/prisma --skipLibCheck --declaration --esModuleInterop --module commonjs --target ES2020 --moduleResolution node 2>/dev/null || npm run build
 
 # Expose port
-EXPOSE 3000
+EXPOSE 3001
 
 # Start application
 CMD ["node", "dist/src/main.js"]
