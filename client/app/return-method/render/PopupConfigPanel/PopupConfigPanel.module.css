@@ -48,6 +48,7 @@
    display: flex;
    align-items: center;
    gap: 8px;
+   margin-top: 1rem;
    margin-bottom: 0;
 }
 

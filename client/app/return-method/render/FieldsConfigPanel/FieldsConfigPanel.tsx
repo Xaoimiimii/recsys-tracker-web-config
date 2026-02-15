@@ -2,14 +2,12 @@ import React from 'react';
 import { Settings, Check, ArrowUp, ArrowDown, Trash2, Plus } from 'lucide-react';
 import styles from './FieldsConfigPanel.module.css';
 import { FieldConfig, StyleJson } from '../../types';
-import { FieldInstructions } from '../FieldInstructions/FieldInstructions';
 
 interface FieldsConfigPanelProps {
     sortedFields: FieldConfig[];
     isReadOnly: boolean;
     expandedFieldKey: string | null;
     setExpandedFieldKey: (key: string | null) => void;
-    isFieldCustomizationEnabled: boolean;
     toggleField: (key: string) => void;
     moveField: (key: string, direction: 'up' | 'down') => void;
     removeField: (key: string) => void;
@@ -26,7 +24,6 @@ export const FieldsConfigPanel: React.FC<FieldsConfigPanelProps> = ({
     isReadOnly,
     expandedFieldKey,
     setExpandedFieldKey,
-    isFieldCustomizationEnabled,
     toggleField,
     moveField,
     removeField,
@@ -39,12 +36,9 @@ export const FieldsConfigPanel: React.FC<FieldsConfigPanelProps> = ({
 }) => {
     return (
         <div className={styles.formContent}>
-            {isFieldCustomizationEnabled && (
-                <FieldInstructions />
-            )}
             <div className={styles.formRow} style={{ marginTop: '0.5rem' }}>
                 <div className={styles.helperBox}>
-                    When Advanced is enabled, you are allowed to customize style of each field. Click the <Settings className={styles.settingIcon} size={14} /> button to open up customization panel.
+                    Configure the fields to be displayed in the return method. You can enable/disable fields, reorder them, and customize their styles.
                 </div>
             </div>
 
@@ -71,7 +65,7 @@ export const FieldsConfigPanel: React.FC<FieldsConfigPanelProps> = ({
 
                                 <div className={styles.actionButtons}>
                                     {/* Nút Settings */}
-                                    {isFieldCustomizationEnabled && !fieldConfig.key.includes('image') && (
+                                    {!fieldConfig.key.includes('image') && (
                                         <button
                                             onClick={() => setExpandedFieldKey(isExpanded ? null : fieldConfig.key)}
                                             className={`${styles.settingsButton} ${isExpanded ? styles.settingsButtonActive : ''}`}
@@ -95,18 +89,18 @@ export const FieldsConfigPanel: React.FC<FieldsConfigPanelProps> = ({
                                                 className={styles.actionButtonSmall}>
                                                 <ArrowDown size={14} />
                                             </button>
-                                            <button
+                                            {/* <button
                                                 onClick={() => removeField(fieldConfig.key)}
                                                 className={styles.deleteButtonSmall}>
                                                 <Trash2 size={14} />
-                                            </button>
+                                            </button> */}
                                         </>
                                     )}
                                 </div>
                             </div>
 
                             {/* Phần Style Panel: CHỈ HIỆN KHI EXPAND */}
-                            {isExpanded && isFieldCustomizationEnabled && !fieldConfig.key.includes('image') && (
+                            {isExpanded && !fieldConfig.key.includes('image') && (
                                 <div className={styles.fieldStylePanel}>
                                     <div className={styles.styleInputGroup}>
                                         <label className={styles.styleInputLabel}>Font Size (px)</label>

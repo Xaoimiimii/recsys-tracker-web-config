@@ -6,8 +6,7 @@ import styles from './returnMethodPage.module.css';
 import { DisplayType, LayoutJson, StyleJson, CustomizingFields, FieldConfig } from './types';
 import { useDataCache } from '../../contexts/DataCacheContext';
 import { returnMethodApi } from '../../lib/api/return-method';
-import { searchInputApi } from '../../lib/api/search-input';
-import { ReturnType, SearchInputResponse } from '../../lib/api/types';
+import { ReturnType } from '../../lib/api/types';
 import { DEFAULT_POPUP_LAYOUT, DEFAULT_INLINE_LAYOUT, DEFAULT_STYLE_CONFIG, LAYOUT_MODE_OPTIONS, DARK_MODE_COLORS } from './returnMethodDefaults';
 
 // Import refactored render components
@@ -41,7 +40,6 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
     const [value, setValue] = useState('');
     
     // Advanced Mode Switch
-    const [isFieldCustomizationEnabled, setIsFieldCustomizationEnabled] = useState(false);
     const [isCustomizationEnabled, setIsCustomizationEnabled] = useState(false);
 
     // Floating Preview State
@@ -173,12 +171,6 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                     }
                 }
 
-                const hasFieldOverrides = mappedStyle?.components?.fieldRow?.overrides 
-                    && Object.keys(mappedStyle.components.fieldRow.overrides).length > 0;
-                
-                if (hasFieldOverrides) {
-                    setIsFieldCustomizationEnabled(true);
-                }
                 const isThemeChanged = mappedStyle?.theme && mappedStyle.theme !== 'light'; 
                 const isLayoutChanged = mappedLayout?.contentMode && mappedLayout.contentMode !== 'grid';
                 const defaultPrimary = DEFAULT_STYLE_CONFIG.tokens.colors.primary;
@@ -489,28 +481,11 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
             </div>
 
             <div className={styles.sectionCard}>
-                    <div className={styles.switchAndTitleSection}>
-                        <div className={styles.sectionHeader}>
-                            <h2 className={styles.sectionTitle}>
-                                Data Field Configuration
-                            </h2>
-                        </div>
-
-                        <div className={styles.switchContainer}>
-                            <label className={styles.switchLabel} style={{ marginRight: '8px' }}>
-                                Advanced
-                            </label>
-                            <label className={styles.switch}>
-                                <input 
-                                    type="checkbox" 
-                                    checked={isFieldCustomizationEnabled}
-                                    onChange={(e) => setIsFieldCustomizationEnabled(e.target.checked)}
-                                    disabled={isReadOnly}
-                                />
-                                <span className={styles.slider}></span>
-                            </label>
-                        </div>
-                </div>
+                    <div className={styles.sectionHeader}>
+                        <h2 className={styles.sectionTitle}>
+                            Data Field Configuration
+                        </h2>
+                    </div>
                 
                 {/* RENDER COMPONENT: Fields Config */}
                 <FieldsConfigPanel
@@ -518,7 +493,6 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                     isReadOnly={isReadOnly}
                     expandedFieldKey={expandedFieldKey}
                     setExpandedFieldKey={setExpandedFieldKey}
-                    isFieldCustomizationEnabled={isFieldCustomizationEnabled}
                     toggleField={toggleField}
                     moveField={moveField}
                     removeField={removeField}
