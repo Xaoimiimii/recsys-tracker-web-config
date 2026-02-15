@@ -606,19 +606,19 @@ export const ReturnMethodFormPage: React.FC<ReturnMethodFormPageProps> = ({ cont
                                 setStyleJson={setStyleJson}
                                 isReadOnly={isReadOnly}
                             />
+
+                            <div>
+                                {/* RENDER COMPONENT: Live Preview */}
+                                <LivePreview 
+                                    displayType={displayType}
+                                    styleJson={styleJson}
+                                    layoutJson={layoutJson}
+                                    sortedFields={sortedFields}
+                                    showImage={showImage}
+                                />
+                            </div>
                             </>
                         )}
-                    </div>
-
-                    <div>
-                        {/* RENDER COMPONENT: Live Preview */}
-                        <LivePreview 
-                            displayType={displayType}
-                            styleJson={styleJson}
-                            layoutJson={layoutJson}
-                            sortedFields={sortedFields}
-                            showImage={showImage}
-                        />
                     </div>
                 </div>
             </div>
