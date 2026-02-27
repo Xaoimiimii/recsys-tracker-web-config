@@ -7,7 +7,7 @@ export class EventService {
 
     }
 
-    async getKEventsByDomainKey(key: string, k: number) {
+    async getKEventsByDomainKey(key: string, k: number, page: number, ruleId?: number) {
         if (k <= 0) throw new BadRequestException('K must be greater than 0');
 
         const domain = await this.prismaService.domain.findUnique({
@@ -20,12 +20,14 @@ export class EventService {
         return this.prismaService.event.findMany({
             where: {
                 TrackingRule: {
-                    DomainID: domain.Id
+                    DomainID: domain.Id,
+                    ...(ruleId && { Id: ruleId })
                 }
             },
             orderBy: {
                 Timestamp: 'desc'
             },
+            skip: (page - 1) * k,
             take: k,
             select: {
                 Id: true,
@@ -47,7 +49,7 @@ export class EventService {
         });
     }
 
-    async getKEventsByTrackingRuleId(trackingRuleId: number, k: number) {
+    async getKEventsByTrackingRuleId(trackingRuleId: number, k: number, page: number) {
         if (k <= 0) throw new BadRequestException('K must be greater than 0');
 
         return this.prismaService.event.findMany({
@@ -57,6 +59,7 @@ export class EventService {
             orderBy: {
                 Timestamp: 'desc'
             },
+            skip: (page - 1) * k,
             take: k,
             select: {
                 Id: true,
