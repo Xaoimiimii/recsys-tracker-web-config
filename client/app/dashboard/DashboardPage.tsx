@@ -22,12 +22,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
 
     // Event state
     const [latestEvents, setLatestEvents] = useState<TrackedEvent[]>([]);
-    const [latestRuleEvents, setLatestRuleEvents] = useState<TrackedEvent[]>([]);
     const [loadingEvents, setLoadingEvents] = useState(false);
-    const [loadingRuleEvents, setLoadingRuleEvents] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [eventsPerPage] = useState(10);
 
     const [selectedRuleId, setSelectedRuleId] = useState<number | undefined>(undefined);
     const [selectedEvent, setSelectedEvent] = useState<TrackedEvent | null>(null);
+
+    // Get cache context
+    const { getRulesByDomain, setRulesByDomain } = useDataCache();
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
@@ -74,11 +77,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
         setShowDomainSwitcher(true);
     };
 
-    const fetchLatestEvents = async () => {
+    const fetchLatestEvents = async (page: number = currentPage, ruleId?: number) => {
         if (!container?.uuid) return;
         setLoadingEvents(true);
         try {
-            const events = await eventApi.getLatestByDomain(container.uuid, 10);
+            const events = await eventApi.getLatestByDomain(container.uuid, eventsPerPage, page, ruleId);
             setLatestEvents(events);
         } catch (error) {
             console.error('Failed to fetch domain events:', error);
@@ -87,46 +90,60 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
         }
     };
 
-    const fetchLatestRuleEvents = async (ruleId: number) => {
-        setLoadingRuleEvents(true);
-        try {
-            const events = await eventApi.getLatestByRule(ruleId, 10);
-            setLatestRuleEvents(events);
-        } catch (error) {
-            console.error('Failed to fetch rule events:', error);
-        } finally {
-            setLoadingRuleEvents(false);
-        }
+    const handlePageChange = (newPage: number) => {
+        setCurrentPage(newPage);
+        fetchLatestEvents(newPage, selectedRuleId);
     };
 
-    // Effect to fetch rule events when selection changes
-    useEffect(() => {
-        if (selectedRuleId) {
-            fetchLatestRuleEvents(selectedRuleId);
-        } else {
-            setLatestRuleEvents([]);
-        }
-    }, [selectedRuleId]);
-
-    // Effect to fetch domain events when container changes
-    useEffect(() => {
-        if (container?.uuid) {
-            fetchLatestEvents();
-            // Reset rule events when domain changes
-            setSelectedRuleId(undefined);
-            setLatestRuleEvents([]);
-        }
-    }, [container?.uuid]);
-
     const handleRuleSelect = (ruleId: number) => {
-        // Toggle selection
-        if (selectedRuleId === ruleId) {
+        // If ruleId is 0, clear the filter
+        if (ruleId === 0) {
             setSelectedRuleId(undefined);
+            setCurrentPage(1);
+            fetchLatestEvents(1, undefined);
         } else {
-            setSelectedRuleId(ruleId);
+            // Toggle selection
+            if (selectedRuleId === ruleId) {
+                setSelectedRuleId(undefined);
+                setCurrentPage(1);
+                fetchLatestEvents(1, undefined);
+            } else {
+                setSelectedRuleId(ruleId);
+                setCurrentPage(1);
+                fetchLatestEvents(1, ruleId);
+            }
         }
         setSelectedEvent(null); // Clear event selection when changing rules
     };
+
+    // Fetch and cache rules for the domain
+    const fetchAndCacheRules = async (domainKey: string) => {
+        // Check cache first
+        const cachedRules = getRulesByDomain(domainKey);
+        if (cachedRules) {
+            return;
+        }
+
+        try {
+            const rulesData = await ruleApi.getRulesByDomain(domainKey);
+            setRulesByDomain(domainKey, rulesData);
+        } catch (error) {
+            console.error('Failed to fetch and cache rules:', error);
+        }
+    };
+
+    // Effect to fetch domain events and rules when container changes
+    useEffect(() => {
+        if (container?.uuid) {
+            // Reset all filters and pagination when domain changes
+            setSelectedRuleId(undefined);
+            setCurrentPage(1);
+            fetchLatestEvents(1, undefined);
+            
+            // Fetch and cache rules for filter dropdown
+            fetchAndCacheRules(container.uuid);
+        }
+    }, [container?.uuid]);
 
     return (
         <div className={styles.container}>
@@ -255,27 +272,20 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
 
             {/* Event Visualizations */}
             <div className={styles.visualizationSection}>                
-                {/* Domain Events Chart */}
+                {/* Domain Events Chart with Pagination and Filtering */}
                 <EventsChart
                     events={latestEvents}
                     loading={loadingEvents}
-                    onRefresh={fetchLatestEvents}
-                    title="Latest Domain Events (Last 10)"
+                    onRefresh={() => fetchLatestEvents(currentPage, selectedRuleId)}
+                    title={selectedRuleId ? `Events for Rule #${selectedRuleId}` : "Latest Domain Events"}
                     selectedRuleId={selectedRuleId}
                     onRuleSelect={handleRuleSelect}
                     domainType={container?.domainType}
+                    currentPage={currentPage}
+                    onPageChange={handlePageChange}
+                    eventsPerPage={eventsPerPage}
+                    allRules={container?.uuid ? getRulesByDomain(container.uuid) || undefined : undefined}
                 />
-
-                {/* Rule-Specific Events Chart */}
-                {selectedRuleId && (
-                    <EventsChart
-                        events={latestRuleEvents}
-                        loading={loadingRuleEvents}
-                        onRefresh={() => fetchLatestRuleEvents(selectedRuleId)}
-                        title={`Events for Rule #${selectedRuleId} (Last 10)`}
-                        domainType={container?.domainType}
-                    />
-                )}
             </div>
 
         </div>

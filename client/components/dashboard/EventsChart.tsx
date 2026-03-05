@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ZAxis } from 'recharts';
-import { TrackedEvent } from '../../lib/api/types';
-import { RefreshCw } from 'lucide-react';
+import { TrackedEvent, RuleListItem } from '../../lib/api/types';
+import { RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import LoadingSpinner from '../common/LoadingSpinner';
 import styles from './EventsChart.module.css';
 
@@ -13,6 +13,10 @@ interface EventsChartProps {
     selectedRuleId?: number;
     onRuleSelect?: (ruleId: number) => void;
     domainType?: string;
+    currentPage?: number;
+    onPageChange?: (page: number) => void;
+    eventsPerPage?: number;
+    allRules?: RuleListItem[];
 }
 
 // Generate distinct colors for different tracking rules
@@ -105,8 +109,44 @@ export const EventsChart: React.FC<EventsChartProps> = ({
     title,
     selectedRuleId,
     onRuleSelect,
-    domainType = 'General'
+    domainType = 'General',
+    currentPage = 1,
+    onPageChange,
+    eventsPerPage = 10,
+    allRules
 }) => {
+    // State for page input
+    const [pageInput, setPageInput] = useState<string>(currentPage.toString());
+
+    // Update pageInput when currentPage changes
+    React.useEffect(() => {
+        setPageInput(currentPage.toString());
+    }, [currentPage]);
+
+    // Handle page input change
+    const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setPageInput(e.target.value);
+    };
+
+    // Handle page input submit
+    const handlePageInputSubmit = () => {
+        const pageNum = parseInt(pageInput, 10);
+        if (!isNaN(pageNum) && pageNum >= 1 && onPageChange) {
+            onPageChange(pageNum);
+        } else {
+            // Reset to current page if invalid
+            setPageInput(currentPage.toString());
+        }
+    };
+
+    // Handle Enter key press
+    const handlePageInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            handlePageInputSubmit();
+            (e.target as HTMLInputElement).blur();
+        }
+    };
+
     // Group events by rule ID
     const ruleIds = [...new Set(events.map(e => e.TrackingRule.Id))].sort((a, b) => (a as number) - (b as number));
     const ruleColorMap = new Map<number, string>();
@@ -123,6 +163,32 @@ export const EventsChart: React.FC<EventsChartProps> = ({
             indexToRuleName.set(index, event.TrackingRule.Name);
         }
     });
+
+    // Get all available rules for filter
+    const allAvailableRules = allRules || [];
+    const allRuleIds = allAvailableRules.length > 0 
+        ? allAvailableRules.map(r => r.Id).sort((a, b) => a - b)
+        : ruleIds;
+    
+    // Build color and name map for all rules
+    const allRuleColorMap = new Map<number, string>();
+    const allRuleNameMap = new Map<number, string>();
+    
+    if (allAvailableRules.length > 0) {
+        allAvailableRules.forEach((rule, index) => {
+            allRuleColorMap.set(rule.Id, RULE_COLORS[index % RULE_COLORS.length]);
+            allRuleNameMap.set(rule.Id, rule.Name);
+        });
+    } else {
+        // Fallback to rules from events
+        ruleIds.forEach((id, index) => {
+            allRuleColorMap.set(id as number, RULE_COLORS[index % RULE_COLORS.length]);
+            const event = events.find(e => e.TrackingRule.Id === id);
+            if (event) {
+                allRuleNameMap.set(id as number, event.TrackingRule.Name);
+            }
+        });
+    }
 
     // Transform events into chart data for scatter plot
     const chartData = [...events]
@@ -187,14 +253,48 @@ export const EventsChart: React.FC<EventsChartProps> = ({
         <div className={styles.chartContainer}>
             <div className={styles.chartHeader}>
                 <h3 className={styles.chartTitle}>{title}</h3>
-                <button 
-                    className={styles.refreshButton} 
-                    onClick={onRefresh}
-                    disabled={loading}
-                    title="Refresh data"
-                >
-                    <RefreshCw className={loading ? styles.spinning : ''} size={18} />
-                </button>
+                <div className={styles.headerControls}>
+                    {onPageChange && (
+                        <div className={styles.headerPagination}>
+                            <button
+                                className={styles.paginationButton}
+                                onClick={() => onPageChange(currentPage - 1)}
+                                disabled={currentPage === 1 || loading}
+                                title="Previous page"
+                            >
+                                <ChevronLeft size={20} />
+                            </button>
+                            <div className={styles.pageInputContainer}>
+                                <input
+                                    type="text"
+                                    className={styles.pageInput}
+                                    value={pageInput}
+                                    onChange={handlePageInputChange}
+                                    onKeyDown={handlePageInputKeyDown}
+                                    onBlur={handlePageInputSubmit}
+                                    disabled={loading}
+                                    title="Enter page number"
+                                />
+                            </div>
+                            <button
+                                className={styles.paginationButton}
+                                onClick={() => onPageChange(currentPage + 1)}
+                                disabled={events.length < eventsPerPage || loading}
+                                title="Next page"
+                            >
+                                <ChevronRight size={20} />
+                            </button>
+                        </div>
+                    )}
+                    <button 
+                        className={styles.refreshButton} 
+                        onClick={onRefresh}
+                        disabled={loading}
+                        title="Refresh data"
+                    >
+                        <RefreshCw className={loading ? styles.spinning : ''} size={18} />
+                    </button>
+                </div>
             </div>
 
             {loading ? (
@@ -269,19 +369,32 @@ export const EventsChart: React.FC<EventsChartProps> = ({
                         <div className={styles.ruleSelector}>
                             <p className={styles.ruleSelectorLabel}>Click to filter by rule:</p>
                             <div className={styles.ruleBadges}>
-                                {ruleIds.map(ruleId => (
+                                {allRuleIds.map((ruleId) => {
+                                    const ruleIdNum = typeof ruleId === 'number' ? ruleId : (ruleId as number);
+                                    const hasEvents = ruleIds.includes(ruleId);
+                                    return (
+                                        <button
+                                            key={ruleIdNum}
+                                            className={`${styles.ruleBadge} ${selectedRuleId === ruleIdNum ? styles.selected : ''} ${!hasEvents ? styles.noEvents : ''}`}
+                                            style={{ 
+                                                backgroundColor: allRuleColorMap.get(ruleIdNum),
+                                                opacity: selectedRuleId === ruleIdNum ? 1 : (hasEvents ? 0.7 : 0.4)
+                                            }}
+                                            onClick={() => onRuleSelect(ruleIdNum)}
+                                            title={!hasEvents ? 'No events in current page' : ''}
+                                        >
+                                            {allRuleNameMap.get(ruleIdNum) || `Rule #${ruleIdNum}`}
+                                        </button>
+                                    );
+                                })}
+                                {selectedRuleId && (
                                     <button
-                                        key={ruleId as number}
-                                        className={`${styles.ruleBadge} ${selectedRuleId === ruleId ? styles.selected : ''}`}
-                                        style={{ 
-                                            backgroundColor: ruleColorMap.get(ruleId as number),
-                                            opacity: selectedRuleId === ruleId ? 1 : 0.7
-                                        }}
-                                        onClick={() => onRuleSelect(ruleId as number)}
+                                        className={styles.clearFilterButton}
+                                        onClick={() => onRuleSelect(0)}
                                     >
-                                        {ruleNameMap.get(ruleId as number) || `Rule #${ruleId}`}
+                                        Clear Filter
                                     </button>
-                                ))}
+                                )}
                             </div>
                         </div>
                     )}

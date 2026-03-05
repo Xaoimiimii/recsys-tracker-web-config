@@ -20,6 +20,58 @@
     margin: 0;
 }
 
+.headerControls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.headerPagination {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.pageInputContainer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pageLabel {
+    font-size: 0.875rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.pageInput {
+    width: 50px;
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-align: center;
+    color: #333;
+    transition: all 0.2s;
+}
+
+.pageInput:hover:not(:disabled) {
+    border-color: #bbb;
+}
+
+.pageInput:focus {
+    outline: none;
+    border-color: #8884d8;
+    box-shadow: 0 0 0 2px rgba(136, 132, 216, 0.1);
+}
+
+.pageInput:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #f5f5f5;
+}
+
 .refreshButton {
     padding: 12px 12px;
     cursor: pointer;
@@ -145,4 +197,53 @@
 .ruleBadge.selected {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     transform: scale(1.05);
+}
+
+.ruleBadge.noEvents {
+    cursor: pointer;
+    font-style: italic;
+}
+
+.ruleBadge.noEvents:hover {
+    opacity: 0.6 !important;
+}
+
+.clearFilterButton {
+    background: #f5f5f5;
+    color: #666;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.clearFilterButton:hover {
+    background: #e8e8e8;
+    border-color: #ccc;
+}
+
+.paginationButton {
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.paginationButton:hover:not(:disabled) {
+    background: #f5f5f5;
+    border-color: #ccc;
+}
+
+.paginationButton:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
 }
