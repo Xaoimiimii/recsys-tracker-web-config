@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, TrackingRule } from '../../types';
 import { RuleBuilder, DOMAIN_INTERACTION_TYPES } from '../../components/dashboard/RuleBuilder';
 import { Box, Plus, Trash2, Edit2, MousePointer, Eye, Star, ArrowDownCircle, MessageSquareHeart, ChevronDown, ChevronUp, Lightbulb, X, Database, AlertCircle } from 'lucide-react';
-import { ruleApi, RuleListItem, RuleDetailResponse, domainApi, UserIdentityResponse } from '../../lib/api/';
+import { ruleApi, RuleListItem, RuleDetailResponse, domainApi } from '../../lib/api/';
 import { useDataCache } from '../../contexts/DataCacheContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { ConfirmModal } from '../../components/common/ConfirmModal';
@@ -103,7 +103,7 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
         ruleName: string;
     }>({ isOpen: false, id: null, ruleName: '' });
     
-    const { getRulesByDomain, setRulesByDomain } = useDataCache();
+    const { getRulesByDomain, setRulesByDomain, getUserIdentityByDomain, setUserIdentityByDomain, clearUserIdentityByDomain } = useDataCache();
 
     // Fetch rules from API when component mounts or container changes
     useEffect(() => {
@@ -172,7 +172,16 @@ export const TrackingRulesPage: React.FC<TrackingRulesPageProps> = ({ container,
             if (!container?.uuid) return;
             
             try {
-                const UserIdentity = await domainApi.getUserIdentity(container.uuid);
+                const cachedUserIdentity = getUserIdentityByDomain(container.uuid);
+                let UserIdentity: any;
+                
+                if (cachedUserIdentity) {
+                    UserIdentity = cachedUserIdentity;
+                } else {
+                    UserIdentity = await domainApi.getUserIdentity(container.uuid);
+                    setUserIdentityByDomain(container.uuid, UserIdentity);
+                }
+                
                 setUserIdentityId(UserIdentity.Id);
                 
                 // Transform API response to PayloadMapping format
@@ -500,6 +509,11 @@ const handleDelete = async (id: string) => {
                 Value: value,
                 Field: mapping.field === 'AnonymousId' ? 'AnonymousId' : 'UserId',
             });
+            
+            // Clear cache to force refresh on next load
+            if (container?.uuid) {
+                clearUserIdentityByDomain(container.uuid);
+            }
         } catch (error) {
             console.error('Failed to save user identity:', error);
         } finally {
