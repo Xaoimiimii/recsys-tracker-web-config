@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ZAxis } from 'recharts';
 import { TrackedEvent, RuleListItem } from '../../lib/api/types';
 import { RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
-import LoadingSpinner from '../common/LoadingSpinner';
+// import LoadingSpinner from '../common/LoadingSpinner';
 import styles from './EventsChart.module.css';
 
 interface EventsChartProps {
@@ -142,9 +142,26 @@ export const EventsChart: React.FC<EventsChartProps> = ({
     // Handle Enter key press
     const handlePageInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
+            e.preventDefault();
             handlePageInputSubmit();
             (e.target as HTMLInputElement).blur();
         }
+    };
+
+    // Handle pagination button clicks
+    const handlePrevious = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+        if (onPageChange) onPageChange(currentPage - 1);
+    };
+
+    const handleNext = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+        if (onPageChange) onPageChange(currentPage + 1);
+    };
+
+    const handleRefreshClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+        onRefresh();
     };
 
     // Group events by rule ID
@@ -257,8 +274,9 @@ export const EventsChart: React.FC<EventsChartProps> = ({
                     {onPageChange && (
                         <div className={styles.headerPagination}>
                             <button
+                                type="button"
                                 className={styles.paginationButton}
-                                onClick={() => onPageChange(currentPage - 1)}
+                                onClick={handlePrevious}
                                 disabled={currentPage === 1 || loading}
                                 title="Previous page"
                             >
@@ -277,8 +295,9 @@ export const EventsChart: React.FC<EventsChartProps> = ({
                                 />
                             </div>
                             <button
+                                type="button"
                                 className={styles.paginationButton}
-                                onClick={() => onPageChange(currentPage + 1)}
+                                onClick={handleNext}
                                 disabled={events.length < eventsPerPage || loading}
                                 title="Next page"
                             >
@@ -286,9 +305,10 @@ export const EventsChart: React.FC<EventsChartProps> = ({
                             </button>
                         </div>
                     )}
-                    <button 
+                    <button
+                        type="button"
                         className={styles.refreshButton} 
-                        onClick={onRefresh}
+                        onClick={handleRefreshClick}
                         disabled={loading}
                         title="Refresh data"
                     >
@@ -297,9 +317,10 @@ export const EventsChart: React.FC<EventsChartProps> = ({
                 </div>
             </div>
 
-            {loading ? (
+            {/* {loading ? (
                 <LoadingSpinner />
-            ) : events.length === 0 ? (
+            ) :  */}
+            {events.length === 0 ? (
                 <div className={styles.emptyState}>
                     <p>No events found</p>
                 </div>
