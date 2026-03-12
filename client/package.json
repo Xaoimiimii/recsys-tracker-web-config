@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@google/genai": "^1.30.0",
+    "@lottiefiles/dotlottie-react": "^0.18.5",
+    "@lottiefiles/react-lottie-player": "^3.6.0",
     "lucide-react": "^0.555.0",
     "motion": "^12.23.24",
     "react": "^19.2.0",
