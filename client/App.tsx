@@ -16,6 +16,7 @@ import { AdminPage } from './app/admin/AdminPage';
 import { MainLayout } from './components/layout/MainLayout';
 import { DataCacheProvider } from './contexts/DataCacheContext';
 import { ContainerProvider } from './contexts/ContainerContext';
+import { LandingPage } from './app/landing/LandingPage';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import type { DomainResponse } from './lib/api/types';
 import type { Container, DomainType } from './types';
@@ -88,6 +89,16 @@ function AppContent() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route
+          path="/"
+          element={
+            isAuthenticated ? (
+              <Navigate to="/select-domain" replace />
+            ) : (
+              <LandingPage />
+            )
+          }
+        />
         <Route
           path="/login"
           element={
@@ -252,7 +263,7 @@ function AppContent() {
         <Route
           path="*"
           element={
-            <Navigate to={isAuthenticated ? "/select-domain" : "/login"} replace />
+            <Navigate to={isAuthenticated ? "/select-domain" : "/"} replace />
           }
         />
       </Routes>
