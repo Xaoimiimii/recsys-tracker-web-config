@@ -4,7 +4,7 @@ import {
   Database, 
   Settings, 
   Zap, 
-  ChevronRight, 
+  User,
   ShieldCheck,
   Code
 } from 'lucide-react';
@@ -16,38 +16,35 @@ export const LandingPage: React.FC = () => {
       {/* Navigation */}
       <nav className={styles.nav}>
         <div className={styles.logo}>
-          <Activity size={28} strokeWidth={3} />
+          <Activity size={24} color="#34d399" />
           <span>RecoTrack</span>
         </div>
         <div className={styles.navLinks}>
-          <a href="#features">Tính năng</a>
-          <a href="#docs">Tài liệu</a>
-          <a href="#pricing">Bảng giá</a>
-          <button className={`${styles.btnPrimary} ${styles.navCta}`}>Bắt đầu ngay</button>
+          <a href="#">Home</a>
+          <a href="#features">Features</a>
+          <a href="#">Pricing</a>
+          <a href="#">About us</a>
+          <a href="#">Contact</a>
         </div>
+        <button className={styles.navCta}>
+          <User size={16} />
+          Sign up
+        </button>
       </nav>
 
       {/* Hero Section */}
       <header className={styles.hero}>
         <h1>
-          Cấu hình hệ thống gợi ý <br />
-          <span className={styles.highlight}>chỉ trong vài giây</span>
+          Discover your <br />
+          Ultimate RecSys
         </h1>
         <p>
-          RecoTrack cung cấp bộ công cụ mạnh mẽ để theo dõi hành vi người dùng, 
-          quản lý domain và tối ưu hóa thuật toán RecSys mà không cần viết lại mã nguồn.
+          Streamline your recommendation analytics with our intuitive, 
+          scalable SaaS platform designed for modern businesses.
         </p>
-        <div className={styles.ctaGroup}>
-          <button className={styles.btnPrimary}>
-            Thử nghiệm miễn phí
-          </button>
-          <button className={styles.btnSecondary}>
-            Xem tài liệu 
-            <span className={styles.chevronIcon}>
-              <ChevronRight size={18} />
-            </span>
-          </button>
-        </div>
+        <button className={styles.btnPrimary}>
+          Explore now
+        </button>
       </header>
 
       {/* Features Section */}
@@ -57,43 +54,40 @@ export const LandingPage: React.FC = () => {
             <div className={styles.iconBox}>
               <Database size={24} />
             </div>
-            <h3>Quản lý Đa Domain</h3>
-            <p>Dễ dàng chuyển đổi và cấu hình các quy tắc theo dõi cho nhiều website khác nhau trên một giao diện duy nhất.</p>
+            <h3>Multi-domain Management</h3>
+            <p>Effortlessly switch and configure tracking rules for multiple websites within a single dashboard.</p>
           </div>
 
           <div className={styles.featureCard}>
             <div className={styles.iconBox}>
               <Zap size={24} />
             </div>
-            <h3>Phân tích Real-time</h3>
-            <p>Theo dõi các sự kiện (click, view, purchase) ngay lập tức thông qua biểu đồ trực quan hóa dữ liệu cực nhanh.</p>
+            <h3>Real-time Analytics</h3>
+            <p>Monitor events like clicks and views instantly through lightning-fast data visualization charts.</p>
           </div>
 
           <div className={styles.featureCard}>
             <div className={styles.iconBox}>
               <Settings size={24} />
             </div>
-            <h3>Quy tắc Linh hoạt</h3>
-            <p>Thiết lập các Tracking Rules tùy chỉnh mà không cần can thiệp sâu vào code frontend của ứng dụng.</p>
+            <h3>Flexible Tracking Rules</h3>
+            <p>Setup custom tracking rules without deep dives into your application's frontend code.</p>
           </div>
           
           <div className={styles.featureCard}>
             <div className={styles.iconBox}>
               <ShieldCheck size={24} />
             </div>
-            <h3>An toàn & Bảo mật</h3>
-            <p>Quản lý quyền truy cập thông qua Domain Key và bộ lọc Origin để đảm bảo dữ liệu của bạn luôn an toàn.</p>
+            <h3>Secure & Scalable</h3>
+            <p>Manage access via Domain Keys and origin filters to ensure your data is always safe.</p>
           </div>
         </div>
       </section>
 
       {/* Integration Section */}
       <section className={styles.integrationSection}>
-        <div className={`${styles.iconBox} ${styles.iconBoxCenter}`}>
-          <Code size={24} />
-        </div>
-        <h2 className={styles.integrationTitle}>Tích hợp chỉ với một dòng mã</h2>
-        <p className={styles.integrationText}>Dán mã script này vào thẻ head của bạn để bắt đầu thu thập dữ liệu.</p>
+        <h2 style={{ fontSize: '2.5rem', fontWeight: 800 }}>Seamless Integration</h2>
+        <p style={{ color: '#94a3b8', marginTop: '1rem' }}>One line of code to unlock the full potential of your data.</p>
         
         <div className={styles.codeBlock}>
           <code>
@@ -107,7 +101,7 @@ export const LandingPage: React.FC = () => {
 
       {/* Footer */}
       <footer className={styles.footer}>
-        <p>&copy; 2026 RecoTrack. Hệ thống quản lý RecSys chuyên nghiệp.</p>
+        <p>&copy; 2026 RecoTrack. The future of Recommendation Systems.</p>
       </footer>
     </div>
   );
