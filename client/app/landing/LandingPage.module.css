@@ -93,11 +93,10 @@
 
 .logo {
   font-size: 1.5rem;
-  font-weight: 700;
+  font-weight: bold;
   color: #0f172a;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
 }
 
 
@@ -125,18 +124,17 @@
 /* Hiệu ứng khi Hover vào toàn bộ thanh Nav (nhẹ nhàng nẩy lên) */
 .nav:hover {
   background: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
-  transform: translateX(-50%) translateY(-2px);
 }
 
 .navLinks {
   display: flex;
   align-items: center;
-  gap: 12rem;
+  gap: 8rem;
 }
 
 /* Phần Hover Link giữ nguyên yêu cầu của bạn */
-.navLinks a {
+.navLinks a,
+.navLinkItem {
   text-decoration: none;
   color: #64748b;
   font-weight: 500;
@@ -144,15 +142,18 @@
   position: relative;
   padding: 0.4rem 0;
   transition: all 0.3s ease;
+  cursor: pointer;
 }
 
-.navLinks a:hover {
+.navLinks a:hover,
+.navLinkItem:hover {
   color: #0d9488;
   text-shadow: 0 0 12px rgba(13, 148, 136, 0.5);
 }
 
 /* Gạch chân tỏa ra từ giữa */
-.navLinks a::after {
+.navLinks a::after,
+.navLinkItem::after {
   content: "";
   position: absolute;
   bottom: 0;
@@ -165,7 +166,8 @@
   transform: translateX(-50%);
 }
 
-.navLinks a:hover::after {
+.navLinks a:hover::after,
+.navLinkItem:hover::after {
   width: 100%;
 }
 

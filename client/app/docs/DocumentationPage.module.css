@@ -1,0 +1,267 @@
+.docsContainer {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8fafc; /* Nền xám nhạt đồng bộ với Dashboard */
+}
+
+/* SIDEBAR MỚI: Chuyển sang tông sáng */
+.sidebar {
+  width: 280px;
+  background-color: #ffffff; 
+  color: #1e293b;
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  height: 100vh;
+  /* Viền mảnh màu xám nhạt như trong Dashboard */
+  border-right: 1px solid #f1f5f9; 
+  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.02);
+}
+
+.sidebarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: bold;
+  cursor: pointer;
+  color: #0f172a;
+  margin-bottom: 2rem;
+}
+
+.navGroup h4 {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: #94a3b8; /* Màu tiêu đề nhóm trung tính */
+  letter-spacing: 0.1em;
+  margin-bottom: 1rem;
+  margin-top: 2rem;
+  padding-left: 1rem;
+}
+
+.sideNav ul {
+  list-style: none;
+  padding: 0;
+}
+
+.sideNav li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.sideNav li:not(.sideNav li.active) {
+    color: var(--color-text-secondary);
+}
+
+.sideNav li:not(.sideNav li.active):hover {
+    background-color: var(--color-sidebar-bg);
+}
+
+
+.sideNav li.active {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.backBtn {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: #f8fafc;
+  border: 1px solid #f0f0f0;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  transition: all 0.3s;
+}
+
+.backBtn:hover {
+  background: #14B8A6;
+  color: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+/* PHẦN NỘI DUNG CHÍNH (BÊN PHẢI) */
+
+.mainContent {
+  margin-left: 280px; /* Đẩy sang phải để không bị Sidebar che */
+  flex: 1;
+  padding: 4rem 6%;
+  background-color: #f8fafc; /* Nền xám cực nhạt giống Dashboard */
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+}
+
+.article {
+  width: 100%;
+  max-width: 1800px; /* Giới hạn độ rộng để người dùng không bị mỏi mắt khi đọc */
+  animation: fadeIn 0.4s ease-out; /* Hiệu ứng hiện ra nhẹ nhàng khi đổi tab */
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Typography (Kiểu chữ) */
+
+.article h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.02em;
+}
+
+.article h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 0.5rem;
+}
+
+.article h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #334155;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.article p {
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: #475569;
+  margin-bottom: 1.5rem;
+}
+
+/* Code Block (Nếu bạn có dùng thẻ pre/code) */
+
+.codeBlock {
+  background-color: #0f172a; /* Nền tối chuyên nghiệp */
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  margin: 2rem 0;
+  overflow-x: auto;
+  border: 1px solid rgba(20, 184, 166, 0.2);
+}
+
+.codeBlock code {
+  font-family: 'Fira Code', 'Courier New', monospace;
+  font-size: 0.95rem;
+  color: #14B8A6; /* Màu chủ đạo của bạn */
+}
+
+/* Highlight text */
+.article b {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+/* Khung bao nội dung (Card style) */
+.contentCard {
+    background-color: #ffffff;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb; /* Màu biên mặc định */
+    padding: 2.5rem; /* Tăng padding để nội dung Docs thoáng hơn */
+    width: 100%;
+    max-width: 1800px;
+    animation: fadeInSlideUp 0.4s ease-out;
+}
+
+/* Định nghĩa hiệu ứng trượt lên khi đổi tab */
+@keyframes fadeInSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Chỉnh lại mainContent để căn giữa cái Card này */
+.mainContent {
+    margin-left: 280px;
+    flex: 1;
+    padding: 3rem 5%;
+    background-color: #f8fafc;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Để card bắt đầu từ trên cùng */
+}
+
+/* DocumentationPage.module.css */
+
+.breadcrumbContainer {
+    width: 100%;
+    max-width: 900px; /* Khớp với chiều rộng của contentCard */
+    margin-bottom: 1.25rem;
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+    color: #94a3b8; /* Màu xám nhẹ */
+}
+
+.breadcrumbRoot {
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.breadcrumbRoot:hover {
+    color: #14B8A6; /* Hiện màu Teal khi hover vào "Docs" */
+}
+
+.separator {
+    color: #cbd5e1;
+    font-size: 0.75rem;
+}
+
+.breadcrumbActive {
+    color: #64748b;
+    font-weight: 500; /* Nhấn mạnh tab hiện tại */
+}
+
+.plainBulletList {
+  list-style-type: disc; /* Dấu chấm tròn đặc truyền thống */
+  padding-left: 1.5rem;  /* Lùi đầu dòng vừa phải */
+  margin: 1.5rem 0;
+  color: #334155;        /* Màu chữ xám đậm chuyên nghiệp */
+}
+
+.plainBulletList li {
+  margin-bottom: 1rem;   /* Khoảng cách giữa các dòng bullet */
+  line-height: 1.6;      /* Độ giãn dòng để văn bản không bị dính vào nhau */
+  font-size: 1rem;
+}
+
+.plainBulletList li strong {
+  color: #0f172a;        /* Làm đậm tiêu đề thành phần để dễ phân biệt */
+  font-weight: 600;
+}

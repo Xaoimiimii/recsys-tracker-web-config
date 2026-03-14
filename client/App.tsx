@@ -17,6 +17,7 @@ import { MainLayout } from './components/layout/MainLayout';
 import { DataCacheProvider } from './contexts/DataCacheContext';
 import { ContainerProvider } from './contexts/ContainerContext';
 import { LandingPage } from './app/landing/LandingPage';
+import { DocumentationPage } from './app/docs/DocumentationPage';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import type { DomainResponse } from './lib/api/types';
 import type { Container, DomainType } from './types';
@@ -131,6 +132,17 @@ function AppContent() {
               <Navigate to="/login" replace />
             ) : (
               <OnboardingPage onLogout={signout} onDomainCreated={handleDomainCreated} />
+            )
+          }
+        />
+
+        <Route
+          path="/documentation"
+          element={
+            !isAuthenticated ? (
+              <DocumentationPage/>
+            ) : (
+              <DocumentationPage/>
             )
           }
         />

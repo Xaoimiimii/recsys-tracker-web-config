@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React, { useEffect } from 'react';
 import { Activity, Database, Settings, Zap, User, Brain, ArrowRight, LayoutTemplate, Mail, MapPin } from 'lucide-react';
 import styles from './LandingPage.module.css';
 import dashboardIcon from '../../assets/dashboard.png';
@@ -8,9 +8,14 @@ import dataIcon from '../../assets/data.png';
 import starIcon from '../../assets/star.png';
 import teamSvg from '../../assets/team.svg';
 import { useNavigate } from 'react-router-dom';
+import { color } from 'motion';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const goToDocs = (e: React.MouseEvent) => {
+      e.preventDefault(); 
+      navigate('/documentation'); 
+    };
   const handleLoginClick = () => {
     navigate('/login'); 
   };
@@ -41,12 +46,14 @@ export const LandingPage: React.FC = () => {
       {/* Navigation */}
       <nav className={styles.nav}>
         <div className={styles.logo}>
-          <Activity size={24} color="#34d399" />
-          <span>RecoTrack</span>
+          <span style={{ color:'#14B8A6'}}>Reco</span>Track
         </div>
         <div className={styles.navLinks}>
           <a href="#">Home</a>
           <a href="#features">Features</a>
+          <span className={styles.navLinkItem} onClick={goToDocs}>
+            Docs
+          </span>
           <a href="#about">About us</a>
         </div>
         <button className={styles.navCta} onClick={handleLoginClick}>
@@ -69,12 +76,12 @@ export const LandingPage: React.FC = () => {
         <img src={setupIcon} className={`${styles.floatingIcon} ${styles.iconSettings}`} alt="" />
         <img src={dataIcon} className={`${styles.floatingIcon} ${styles.iconData}`} alt="" />
         <h1>
-          Discover your <br />
-          Ultimate RecSys
+          Power Real-Time <br />
+          Personalization
         </h1>
         <p>
-          Streamline your recommendation analytics with our intuitive, 
-          scalable SaaS platform designed for modern businesses.
+          Track user behavior, analyze interaction patterns, and drive intelligent models 
+          to deliver tailored experiences for every user
         </p>
         <button className={styles.btnPrimary} onClick={handleLoginClick}>
           EXPLORE NOW
