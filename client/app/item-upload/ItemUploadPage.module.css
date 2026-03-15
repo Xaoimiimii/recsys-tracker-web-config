@@ -26,7 +26,7 @@
   display: flex;
   gap: 0.5rem;
   border-bottom: 2px solid var(--color-border);
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 }
 
 .modeButton {
@@ -706,7 +706,6 @@
   cursor: not-allowed;
 }
 
-/* Uploading Section */
 .uploadingSection {
   display: flex;
   flex-direction: column;
@@ -822,7 +821,6 @@
   border-color: var(--color-primary);
 }
 
-/* Steps List */
 .stepsList {
   display: flex;
   flex-direction: column;
@@ -877,3 +875,256 @@
     width: 100%;
   }
 }
+
+.managementSection {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.managementToolbar {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.deleteButtonHeader {
+  background-color: #ef4444;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.deleteButtonHeader:disabled {
+  background-color: #fca5a5;
+  cursor: not-allowed;
+}
+
+.deleteButtonHeader:hover:not(:disabled) {
+  background-color: #dc2626;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+}
+
+.itemsTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  table-layout: fixed;
+}
+
+.itemsTable th:nth-child(2),
+.itemsTable td:nth-child(2) {
+  width: 80px;
+}
+
+.itemsTable th:nth-child(3),
+.itemsTable td:nth-child(3) {
+  width: 280px;
+}
+
+.itemsTable th:nth-child(4),
+.itemsTable td:nth-child(4) {
+  width: 190px;
+}
+
+.itemsTable th:nth-child(5),
+.itemsTable td:nth-child(5) {
+  width: 140px;
+}
+
+.itemsTable th {
+  padding: 12px 16px;
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.875rem;
+}
+
+.itemsTable td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  color: #4b5563;
+  font-size: 0.875rem;
+}
+
+.itemsTable input[type="checkbox"] {
+  accent-color: var(--color-primary);
+}
+
+.itemRow:hover {
+  background-color: #f9fafb;
+}
+
+.emptyRow {
+  text-align: center;
+  padding: 24px !important;
+  color: #6b7280;
+}
+
+.checkboxCol {
+  width: 40px;
+}
+
+.actionsCol {
+  width: 160px;
+}
+
+.iconButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconButton:hover {
+  color: #111827;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.viewButton {
+  background-color: white;
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
+  padding: 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.viewButton:hover {
+  background-color: #f3f4f6;
+}
+
+.deleteButtonRow {
+  background-color: white;
+  border: 1px solid #fca5a5;
+  color: #ef4444;
+  padding: 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.deleteButtonRow:hover {
+  background-color: #fef2f2;
+}
+
+.expandedRow td {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0 12px;
+}
+
+.expandedContent {
+  padding: 16px;
+}
+
+.expandedGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.attributesJson {
+  background-color: #1f2937;
+  color: #e5e7eb;
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-family: monospace;
+  font-size: 0.825rem;
+  margin-top: 8px;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.pageButton {
+  background-color: white;
+  border: 1px solid #d1d5db;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pageButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pageButton:hover:not(:disabled) {
+  background-color: #f3f4f6;
+}
+
+.pageInfo {
+  font-weight: 500;
+  color: #374151;
+}
+
+.pageJump {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pageJumpLabel {
+  font-size: 0.875rem;
+  color: #cecece;
+}
+
+.pageInput {
+  width: 72px;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+
+.pageInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.pageGoButton {
+  background-color: #f3f4f6;
+  border: 1px solid #d1d5db;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pageGoButton:hover {
+  background-color: #e5e7eb;
+}
+
