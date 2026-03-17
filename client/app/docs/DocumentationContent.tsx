@@ -1,5 +1,6 @@
 import React from 'react';
 import styles from './DocumentationPage.module.css';
+import { symlink } from 'fs';
 
 interface DocsContentProps {
   activeTab: string;
@@ -99,7 +100,7 @@ const IntroContent = () => (
         <strong>Recommendation Display</strong>: Design and preview how suggestions appear on your site, choosing between Popup Overlays or Inline Injections.
       </li>
       <li>
-        <strong>Admin Panel</strong>: Fine-tune AI training parameters and manually trigger model updates to ensure accuracy.
+        <strong>Admin Panel</strong>: Fine-tune the training parameters and manually trigger model updates to ensure accuracy.
       </li>
     </ul>
   </div>
@@ -133,31 +134,214 @@ const ItemUploadContent = () => (
 );
 
 const TrackingRulesContent = () => (
-  <div>
-    <h1>Quick Start Guide</h1>
-    <p>Nhúng đoạn mã loader vào thẻ <code>&lt;head&gt;</code> của trang web bạn muốn theo dõi tương tác.</p>
+  <div className={styles.article}>
+    <h1>Tracking Rules Guide</h1>
+    <h2>Identify current user</h2>
+    <p>
+      This configuration determines how the system recognizes users when recording behavioral events. 
+      Linking actions (clicks, plays, ratings, favorites, etc.) to a specific user is essential for 
+      accurate behavioral analysis and personalized recommendations.
+    </p>
+
+    <ol className={styles.plainBulletList}>
+      <li><strong>Define Identification Goal</strong>: Configure how the system maps interaction data to a specific identity. If no user is identified, the system automatically defaults to an <strong>anonymous user</strong>.</li>
+      <li><strong>Select Identification Type</strong>: Choose between <code>UserId</code> (for known/logged-in users) or <code>AnonymousId</code> (for guest tracking).</li>
+      <li><strong>Choose Data Source</strong>: Specify where the SDK should retrieve the user ID:
+        <ul className={styles.plainBulletList} style={{ marginTop: '0.5rem', listStyleType: 'circle', paddingLeft: '1.5rem' }}>
+          <li><strong>Request Body</strong>: Declare the endpoint, method, and JSON path.</li>
+          <li><strong>UI Element</strong>: Provide a CSS Selector to extract text from the page.</li>
+          <li><strong>Storage</strong>: Point to a specific key in Cookies, <code>local_storage</code>, or <code>session_storage</code>.</li>
+        </ul>
+      </li>
+      <li><strong>Save Configuration</strong>: Click the <strong>Save Configuration</strong> button to apply the logic. The system prioritizes <code>UserId</code>; if it fails to find a value, it will automatically assign an <code>AnonymousId</code>.</li>
+    </ol>
+
+
+    <h2>Tracking Rules Configuration</h2>
+    <p>
+      The Tracking Rules section serves as the central hub for managing all behavioral data collection logic. 
+      It allows you to oversee how user interactions are recorded across your domains.
+    </p>
+    <ol className={styles.plainBulletList}>
+      <li><strong>Centralized Overview</strong>: View a comprehensive list of all configured tracking rules for your selected domain in one place.</li>
+      <li><strong>Key Rule Attributes</strong>: Each rule in the list displays essential information, including:
+        <ul className = {styles.plainBulletList} style={{ marginTop: '0.5rem', listStyleType: 'circle', paddingLeft: '1.5rem' }}>
+          <li><strong>Event Type</strong>: The category of action being tracked (e.g., Click, Play, View).</li>
+          <li><strong>Rule Name</strong>: The unique label assigned to identify the rule.</li>
+          <li><strong>Tracking Target</strong>: The specific CSS Selector being monitored on your website.</li>
+        </ul>
+      </li>
+      <li><strong>Administrative Actions</strong>: Efficiently manage your rules by viewing full details, editing existing configurations, or deleting rules that are no longer needed.</li>
+      <li><strong>Expand Data Collection</strong>: Use the <strong>Add Rule</strong> button to initiate the creation of new tracking logic and integrate more behavioral triggers into your system.</li>
+    </ol>
+    <h2>Tracking rule management</h2>
+    <h3>Define a rule</h3>
+    <ol className={styles.plainNumberList}>
+      <li>
+        Identify the rule with name and interaction type. There will be a variety of interactions designed specifically for each type of domain.
+        For example, music domain will track these following behaviors:
+        <ol className={styles.plainBulletList}>
+          <li>Play song</li>
+          <li>Add song to favorite</li>
+          <li>Add song to playlist</li>
+          <li>Download song</li>
+          <li>Buy/Unlock song</li>
+          <li>Rating song</li>
+          <li>Review song</li>
+        </ol>
+      </li>
+      <li>
+        Define <strong>Target element: </strong>Declare the target for data collection by using CSS Selectors to identify the specific 
+        UI element that triggers the event.
+      </li>
+      <li>
+        <strong>Payload mapping</strong> allows you to capture specific data from your website and link it to the interaction 
+        events, ensuring the module receives full context for each action. You <strong>do not have to</strong> configure this section. 
+        However, if your website's structure is not the same as default mode, you can expand the section and adjust the parameters below :
+        <ol className={styles.plainBulletList}>
+          <li>
+            <strong>Source:</strong> The specific address of the data. 
+            <ol className={styles.plainBulletList} style={{ marginTop: '0.5rem', listStyleType: 'circle', paddingLeft: '1.5rem' }}>
+              <li>
+                <strong>request_url</strong> (default): Used specifically when the Value Source is set to <strong>Request Body</strong>. 
+                It defines the exact API endpoint the SDK should monitor. By providing a Request URL, you tell the system to only 
+                intercept and "scrape" data from the body of network calls made to that specific address.
+              </li>
+              <li>
+                <strong>request/response body</strong>: Capture data from the JSON body of outgoing requests or incoming responses.
+              </li>
+              <li>
+                <strong>page_url</strong>: Captures the full web address of the page where the interaction occurs. This is used 
+                to provide geographical context to an event, allowing the Tracking SDK to differentiate between a "View" on your homepage 
+                versus a "View" on a specific product category page.
+              </li>
+              <li>
+                <strong>element</strong>: Scrapes text directly from within an HTML tag. 
+                For example, if you target a <code>&lt;span&gt;</code>, the SDK will capture the text displayed inside that span.
+              </li>
+            </ol>
+          </li>
+        </ol>
+      </li>
+      <li>
+        Once saved, rules are pushed to the Tracking SDK in real-time, allowing for instant behavioral data collection.
+      </li>
+    </ol>
   </div>
 );
 
 
 const RecommendationContent = () => (
   <div>
-    <h1>Quick Start Guide</h1>
-    <p>Nhúng đoạn mã loader vào thẻ <code>&lt;head&gt;</code> của trang web bạn muốn theo dõi tương tác.</p>
+    <h1>Recommendation Method Display Guide</h1>
+    <p>
+      This feature allows for flexible and centralized management of how recommendations are presented on your website. 
+      Administrators can define display styles, set trigger conditions, and manage configurations to ensure a seamless user experience.
+    </p>
+    <ol className={styles.plainBulletList}>
+      <li><strong>Centralized Configuration Management</strong>: Create, track, and control all recommendation display settings in one place, allowing the system to adapt to various display scenarios and scale easily.</li>
+      <li><strong>Display Types</strong>: Choose between two primary methods to return recommendations:
+        <ul className={styles.plainBulletList} style={{ marginTop: '0.5rem', listStyleType: 'circle', paddingLeft: '1.5rem' }}>
+          <li><strong>Popup Overlay</strong>: Floating windows that appear over the current content.</li>
+          <li><strong>Inline Injection</strong>: Recommendations embedded directly into the website's existing layout.</li>
+        </ul>
+      </li>
+      <li><strong>Trigger Conditions (Target Condition)</strong>: Define exactly when and where a recommendation should appear using <strong>URL patterns</strong> or <strong>CSS selectors</strong>.</li>
+      <li><strong>Administrative Controls</strong>: Manage your configurations efficiently through the dashboard list, which displays the configuration name, type, and target conditions. You can also:
+        <ul className={styles.plainBulletList} style={{ marginTop: '0.5rem', listStyleType: 'circle', paddingLeft: '1.5rem' }}>
+          <li>Use the <strong>Type Filter</strong> to sort configurations by display format.</li>
+          <li>Perform actions such as <strong>View</strong>, <strong>Edit</strong>, or <strong>Delete</strong>.</li>
+        </ul>
+      </li>
+      <li><strong>Create New Configuration</strong>: Use the <strong>Create New Configuration</strong> button to select a display type and set up detailed parameters for new recommendation modules.</li>
+    </ol>
+    <h2>Detailed Display Configuration</h2>
+    <p>
+      This section allows you to fine-tune how recommendation content appears on the user interface. 
+      Advanced configuration ensures that recommendations are not only functional but also aesthetically consistent with your website's design.
+    </p>
+    
+    <ol className={styles.plainBulletList}>
+      <li><strong>Basic Configuration</strong>: Start by selecting your display type (Popup Overlay or Inline Injection) and providing a unique Configuration Name for easy identification.</li>
+      <li><strong>Set Activation Triggers</strong>: Define where the recommendation appears by entering a <strong>Trigger URL</strong> (for Popups) or a <strong>Target Selector</strong> (for Inline Injections).</li>
+      <li><strong>Data Field Management</strong>: Customize the specific information displayed for each item:
+        <ul className = {styles.plainBulletList} style={{ marginTop: '0.5rem', listStyleType: 'circle', paddingLeft: '1.5rem' }}>
+          <li>Toggle individual data fields on or off.</li>
+          <li>Reorder fields to prioritize important information.</li>
+          <li>Apply unique styles to each field to match your brand (if necessary).</li>
+        </ul>
+      </li>
+      <li><strong>Advanced UI Settings</strong>: Access professional tools to polish the display:
+        <ul className = {styles.plainBulletList} style={{ marginTop: '0.5rem', listStyleType: 'circle', paddingLeft: '1.5rem' }}>
+          <li><strong>Layout Selection</strong>: Choose layouts such as Grid Layout for a modern look.</li>
+          <li><strong>Item Limits</strong>: Set the maximum number of recommendations shown at once.</li>
+          <li><strong>Navigation</strong>: Configure the target URL when a user clicks on a recommended item.</li>
+          <li><strong>Visual Styling</strong>: Customize typography, colors, spacing, and more.</li>
+        </ul>
+      </li>
+      <li><strong>Preview and Finalize</strong>: Use the <strong>Live Preview</strong> feature to visualize changes in real-time. Once satisfied, click <strong>Save Configuration</strong> to apply the settings or <strong>Cancel</strong> to discard changes.</li>
+    </ol>
+    
   </div>
 );
 
 const LoaderScriptContent = () => (
   <div>
-    <h1>Quick Start Guide</h1>
-    <p>Nhúng đoạn mã loader vào thẻ <code>&lt;head&gt;</code> của trang web bạn muốn theo dõi tương tác.</p>
+    <h1>Loader Script Guide</h1>
+    <p>
+      The Loader Script allows you to embed the system's code into your website to enable behavior tracking 
+      ànd display personalized recommendations based on your established configurations.
+    </p>
+    
+    <h3>Key Functions</h3>
+    <ol className={styles.plainBulletList}>
+      <li><strong>Load Tracking SDK</strong>: Automatically initializes the core tracking module on your website.</li>
+      <li><strong>Data Transmission</strong>: Sends behavioral events (such as play, rating, review, favorite, download, etc.) back to the system based on your defined tracking rules.</li>
+      <li><strong>Display Recommendations</strong>: Receives and renders recommendation content through your chosen method (Popup Overlay or Inline Injection).</li>
+      <li><strong>Automatic Updates</strong>: Ensures that any changes made in the dashboard are applied instantly without requiring manual code modifications to your website.</li>
+    </ol>
+
+    <h3>Manual Integration</h3>
+    <ol className={styles.plainBulletList}>
+      <li><strong>Copy Script</strong>: Copy the unique Loader Script snippet provided in your domain settings.</li>
+      <li><strong>Insert into HTML</strong>: Paste the code snippet inside the <code>&lt;head&gt;</code> tag of your website's HTML file.</li>
+      <li><strong>Deploy</strong>: Save your changes and deploy the updated code to your production environment.</li>
+    </ol>
+
+    <h3>Integration via Google Tag Manager (GTM)</h3>
+    <ol className={styles.plainBulletList}>
+      <li><strong>Download Configuration</strong>: Download the provided JSON configuration file from the dashboard.</li>
+      <li><strong>Import Container</strong>: Navigate to <strong>Google Tag Manager</strong> &gt; <strong>Admin</strong> &gt; <strong>Import Container</strong>.</li>
+      <li><strong>Upload File</strong>: Select the downloaded JSON file for upload.</li>
+      <li><strong>Merge Configuration</strong>: Choose the <strong>Merge</strong> option to integrate the new settings into your existing container.</li>
+      <li><strong>Preview & Publish</strong>: Use the <strong>Preview</strong> mode to verify the setup, then click <strong>Publish</strong> to apply the changes.</li>
+    </ol>
   </div>
 );
 
 const AdminContent = () => (
   <div>
-    <h1>Quick Start Guide</h1>
-    <p>Nhúng đoạn mã loader vào thẻ <code>&lt;head&gt;</code> của trang web bạn muốn theo dõi tương tác.</p>
+    <h1>Modal Training for Admin Guide</h1>
+    <p>
+      This feature allows administrators to configure training parameters and actively trigger the 
+      recommendation engine's training process using Latent Factor Models. This ensures your models 
+      are consistently updated and optimized based on the latest user behavioral data.
+    </p>
+    
+    <h3>Purpose & Capabilities</h3>
+    <ol className={styles.plainBulletList}>
+      <li><strong>Hyperparameter Configuration</strong>: Fine-tune the learning process by setting essential parameters such as <strong>Epochs</strong> (training iterations), <strong>Batch Size</strong>, and <strong>Convergence Tolerance</strong>.</li>
+      <li><strong>Submodel Control</strong>: Manage the training of specialized submodels to handle complex recommendation scenarios across different data segments.</li>
+      <li><strong>Automated Model Saving</strong>: Enable the system to automatically store the model state upon successful completion of the training cycle.</li>
+      <li><strong>Manual Retraining Trigger</strong>: Actively restart the training process whenever new behavioral data is collected or configuration changes are made to ensure peak performance.</li>
+    </ol>
+
+    <h3>How to Use</h3>
+    <ol className={styles.plainBulletList}>
+      <li><strong>Adjust Parameters</strong>: Enter your desired values for the training hyperparameters in the provided input fields.</li>
+      <li><strong>Toggle Options</strong>: Use the switches to enable or disable <strong>Save After Train</strong> and <strong>Train Submodels</strong> based on your current requirements.</li>
+      <li><strong>Trigger Training</strong>: Click the <strong>Trigger Model Training</strong> button to send a request to the backend AI engine and start the optimization process.</li>
+    </ol>
   </div>
 );
 

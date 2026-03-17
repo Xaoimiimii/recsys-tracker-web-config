@@ -248,20 +248,27 @@
     font-weight: 500; /* Nhấn mạnh tab hiện tại */
 }
 
-.plainBulletList {
+.plainBulletList,
+.plainNumberList {
   list-style-type: disc; /* Dấu chấm tròn đặc truyền thống */
   padding-left: 1.5rem;  /* Lùi đầu dòng vừa phải */
   margin: 1.5rem 0;
   color: #334155;        /* Màu chữ xám đậm chuyên nghiệp */
 }
 
-.plainBulletList li {
+.plainBulletList li, 
+.plainNumberList li {
   margin-bottom: 1rem;   /* Khoảng cách giữa các dòng bullet */
   line-height: 1.6;      /* Độ giãn dòng để văn bản không bị dính vào nhau */
   font-size: 1rem;
 }
 
-.plainBulletList li strong {
+.plainBulletList li strong, 
+.plainNumberList li strong {
   color: #0f172a;        /* Làm đậm tiêu đề thành phần để dễ phân biệt */
   font-weight: 600;
+}
+
+.plainNumberList {
+  list-style-type: decimal;
 }

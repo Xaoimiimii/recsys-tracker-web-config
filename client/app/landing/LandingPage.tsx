@@ -76,8 +76,8 @@ export const LandingPage: React.FC = () => {
         <img src={setupIcon} className={`${styles.floatingIcon} ${styles.iconSettings}`} alt="" />
         <img src={dataIcon} className={`${styles.floatingIcon} ${styles.iconData}`} alt="" />
         <h1>
-          Power Real-Time <br />
-          Personalization
+          Real-time Data<br />
+          Bespoke Suggestions
         </h1>
         <p>
           Track user behavior, analyze interaction patterns, and drive intelligent models 
