@@ -267,4 +267,48 @@ export class SearchService {
             throw error;
         }
     }
+
+    async deleteItemsInBulk(itemIds: number[], domainId: number) {
+        try {
+            if (!itemIds.length) {
+                return;
+            }
+
+            const operations = itemIds.flatMap((itemId) => [
+                {
+                    delete: {
+                        _index: this.INDEX_NAME,
+                        _id: `${domainId}_${itemId}`,
+                    },
+                },
+            ]);
+
+            const bulkResponse = await this.elasticsearchService.bulk({
+                operations,
+            });
+
+            if (bulkResponse.errors) {
+                const erroredItems: any[] = [];
+                bulkResponse.items.forEach((action: any, i) => {
+                    const operation = Object.keys(action)[0];
+                    const result = action[operation];
+
+                    if (result?.error && result.status !== 404) {
+                        erroredItems.push({
+                            itemId: itemIds[i],
+                            status: result.status,
+                            error: result.error,
+                        });
+                    }
+                });
+
+                if (erroredItems.length > 0) {
+                    this.logger.error(`Bulk delete errors: ${JSON.stringify(erroredItems)}`);
+                }
+            }
+        } catch (error) {
+            this.logger.error(`Failed to bulk delete: ${error.message}`);
+            throw error;
+        }
+    }
 }

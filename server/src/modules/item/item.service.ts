@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateItemDto } from './dto/create-items.dto';
 import { Item } from 'src/generated/prisma/client';
@@ -493,5 +493,113 @@ export class ItemService {
         }
 
         return results;
+    }
+
+    async getItemsByDomainKey(
+        domainKey: string,
+        page = 1,
+        pageSize = 200,
+    ) {
+        if (!domainKey) throw new BadRequestException('Domain key can not be empty!');
+
+        const safePage = Math.max(page, 1);
+        const safePageSize = Math.min(Math.max(pageSize, 1), 1000);
+
+        return await this.prisma.item.findMany({
+            where: {
+                Domain: {
+                    Key: domainKey
+                }
+            },
+            skip: (safePage - 1) * safePageSize,
+            take: safePageSize,
+            orderBy: {
+                ModifiedAt: 'asc',
+            },
+            select: {
+                Id: true,
+                DomainItemId: true,
+                Title: true,
+                DomainId: true,
+                Description: true,
+                ModifiedAt: true,
+                ImageUrl: true,
+                Attributes: true,
+            },
+        });
+    }
+
+    async deleteItemsByDomainKey(domainKey: string, domainItemIds: string[]) {
+        if (!domainKey) {
+            throw new BadRequestException('Domain key can not be empty!');
+        }
+
+        const uniqueDomainItemIds = [...new Set((domainItemIds || []).map((id) => id?.trim()).filter(Boolean))];
+        if (uniqueDomainItemIds.length === 0) {
+            throw new BadRequestException('Domain item ids can not be empty!');
+        }
+
+        const domain = await this.prisma.domain.findUnique({
+            where: { Key: domainKey },
+            select: { Id: true },
+        });
+
+        if (!domain) {
+            throw new BadRequestException('Domain not found');
+        }
+
+        const existingItems = await this.prisma.item.findMany({
+            where: {
+                DomainId: domain.Id,
+                DomainItemId: { in: uniqueDomainItemIds },
+            },
+            select: {
+                Id: true,
+                DomainItemId: true,
+            },
+        });
+
+        if (existingItems.length === 0) {
+            return {
+                requestedCount: uniqueDomainItemIds.length,
+                deletedCount: 0,
+                deletedDomainItemIds: [],
+                notFoundDomainItemIds: uniqueDomainItemIds,
+            };
+        }
+
+        const itemIds = existingItems.map((item) => item.Id);
+        const deletedDomainItemIds = existingItems
+            .map((item) => item.DomainItemId)
+            .filter((id): id is string => !!id);
+        const deletedDomainItemIdSet = new Set(deletedDomainItemIds);
+        const notFoundDomainItemIds = uniqueDomainItemIds.filter((id) => !deletedDomainItemIdSet.has(id));
+
+        await Promise.all([
+            this.prisma.itemCategory.deleteMany({ where: { ItemId: { in: itemIds } } }),
+            this.prisma.itemFactor.deleteMany({ where: { ItemId: { in: itemIds } } }),
+            this.prisma.predict.deleteMany({ where: { ItemId: { in: itemIds } } }),
+            this.prisma.rating.deleteMany({ where: { ItemId: { in: itemIds } } }),
+            this.prisma.interaction.deleteMany({ where: { ItemId: { in: itemIds } } }),
+        ]);
+
+        const deletedItems = await this.prisma.item.deleteMany({
+            where: {
+                Id: { in: itemIds },
+                DomainId: domain.Id,
+            },
+        });
+
+        if (deletedItems.count > 0) {
+            this.searchService.deleteItemsInBulk(itemIds, domain.Id)
+                .catch((err) => this.logger.error('Elasticsearch delete sync failed', err));
+        }
+
+        return {
+            requestedCount: uniqueDomainItemIds.length,
+            deletedCount: deletedItems.count,
+            deletedDomainItemIds,
+            notFoundDomainItemIds,
+        };
     }
 }
