@@ -41,6 +41,20 @@ export const itemApi = {
             body: JSON.stringify(items),
         });
     },
+    getItems: async (domainKey: string, page: number = 1, size: number = 10) => {
+        return apiFetch(`/item/${domainKey}?page=${page}&size=${size}`, {
+            method: 'GET',
+        });
+    },
+    deleteItems: async (domainKey: string, domainItemIds: string[]) => {
+        return apiFetch('/item', {
+            method: 'DELETE',
+            body: JSON.stringify({
+                DomainKey: domainKey,
+                DomainItemIds: domainItemIds,
+            }),
+        });
+    }
 };
 
 export const reviewApi = {

@@ -12,6 +12,7 @@ import {
     Query,
     UseGuards,
 } from '@nestjs/common';
+import { ApiBody } from '@nestjs/swagger';
 import { ItemService } from './item.service';
 import { JwtAuthGuard } from '../auth/guard';
 import { CreateItemDto } from './dto/create-items.dto';
@@ -31,6 +32,7 @@ export class ItemController {
     }
 
     @Patch()
+    @ApiBody({ type: UpdateItemDto, isArray: true })
     async updateItems(
         @Body(new ParseArrayPipe({ items: UpdateItemDto, whitelist: true})) dtos: UpdateItemDto[]
     ) {

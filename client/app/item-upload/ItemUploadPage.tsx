@@ -1,6 +1,16 @@
-import React, { useState } from "react";
-import LoadingSpinner from "../../components/common/LoadingSpinner";
+import React, { useState, useEffect, useCallback } from "react";
+import { Trash2, Eye  } from "lucide-react";
+import { ConfirmModal } from "../../components/common/ConfirmModal";
 import styles from "./ItemUploadPage.module.css";
+
+export interface ListedItem {
+  Id: number;
+  DomainItemId: string;
+  Title: string;
+  Description?: string;
+  ImageUrl?: string;
+  Attributes?: Record<string, any>;
+}
 import {
   extractFileHeaders,
   parseFileWithMapping,
@@ -22,7 +32,7 @@ interface ItemUploadPageProps {
   container: Container | null;
 }
 
-type TabType = "metadata" | "review";
+type TabType = "management" | "metadata" | "review";
 type UploadStep = "file-selection" | "column-mapping" | "uploading";
 
 const FIELD_OPTIONS = [
@@ -46,7 +56,7 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({
   onUploadComplete,
   container,
 }) => {
-  const [activeTab, setActiveTab] = useState<TabType>("metadata");
+  const [activeTab, setActiveTab] = useState<TabType>("management");
   const [importMode, setImportMode] = useState<"create" | "update">("create");
   const [step, setStep] = useState<UploadStep>("file-selection");
   
@@ -75,6 +85,94 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [listedItems, setListedItems] = useState<ListedItem[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageInput, setPageInput] = useState("1");
+  const [pageSize] = useState(10);
+  const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
+  const [expandedItemIds, setExpandedItemIds] = useState<Set<string>>(new Set());
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [itemsToDelete, setItemsToDelete] = useState<string[]>([]);
+
+  const fetchItems = useCallback(async (page: number, isInitial: boolean = false) => {
+    if (!container?.uuid) return;
+    setIsLoading(true);
+    try {
+      const response: any = await itemApi.getItems(container.uuid, page, pageSize);
+      const data = Array.isArray(response) ? response : (response?.data || response?.items || []);
+      setListedItems(data);
+      if (isInitial) {
+        if (data && data.length > 0) {
+          setActiveTab("management");
+        } else {
+          setActiveTab("metadata");
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      if (isInitial) setActiveTab("metadata");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [container?.uuid, pageSize]);
+
+  useEffect(() => {
+    if (container?.uuid) {
+      fetchItems(1, true);
+    }
+  }, [container?.uuid, fetchItems]);
+
+  useEffect(() => {
+    setPageInput(String(currentPage));
+  }, [currentPage]);
+
+  const handlePageJump = () => {
+    const nextPage = Number(pageInput);
+    if (!Number.isFinite(nextPage) || nextPage < 1) {
+      setPageInput(String(currentPage));
+      return;
+    }
+    if (nextPage === currentPage) return;
+    setCurrentPage(nextPage);
+    fetchItems(nextPage, false);
+  };
+
+  const handleDelete = async () => {
+    if (!container?.uuid || itemsToDelete.length === 0) return;
+    try {
+      await itemApi.deleteItems(container.uuid, itemsToDelete);
+      setIsConfirmModalOpen(false);
+      setItemsToDelete([]);
+      setSelectedItemIds(new Set());
+      fetchItems(currentPage, false);
+    } catch (err) {
+      console.error("Failed to delete:", err);
+    }
+  };
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      const newSelected = new Set(listedItems.map(item => item.DomainItemId));
+      setSelectedItemIds(newSelected);
+    } else {
+      setSelectedItemIds(new Set());
+    }
+  };
+
+  const handleSelectItem = (id: string, checked: boolean) => {
+    const newSet = new Set(selectedItemIds);
+    if (checked) newSet.add(id);
+    else newSet.delete(id);
+    setSelectedItemIds(newSet);
+  };
+
+  const toggleExpandItem = (id: string) => {
+    const newSet = new Set(expandedItemIds);
+    if (newSet.has(id)) newSet.delete(id);
+    else newSet.add(id);
+    setExpandedItemIds(newSet);
+  };
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -468,15 +566,36 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({
     handleUpload();
   };
 
+  // if (isLoading) {
+  //   return (
+  //     <div className={styles.container}>
+  //       <div className={styles.card} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+  //         <LoadingSpinner />
+  //       </div>
+  //     </div>
+  //   );
+  // }
+
   return (
     <div className={styles.container}>
       <div className={styles.card}>
         <div className={styles.header}>
-          <h1 className={styles.title}>Import Data</h1>
+          <h1 className={styles.title}>Item Upload</h1>
         </div>
 
         {/* Tab Navigation */}
         <div className={styles.tabContainer}>
+          <button
+            className={`${styles.tab} ${
+              activeTab === "management" ? styles.tabActive : ""
+            }`}
+            onClick={() => {
+              setActiveTab("management");
+              fetchItems(currentPage, false);
+            }}
+          >
+            Manage Items
+          </button>
           <button
             className={`${styles.tab} ${
               activeTab === "metadata" ? styles.tabActive : ""
@@ -501,6 +620,151 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({
           </button>
         </div>
 
+        {activeTab === "management" ? (
+          <div className={styles.managementSection}>
+            <div className={styles.managementToolbar} style={{ justifyContent: 'flex-end' }}>
+              <button 
+                className={styles.deleteButtonHeader}
+                disabled={selectedItemIds.size === 0}
+                onClick={() => {
+                  setItemsToDelete(Array.from(selectedItemIds));
+                  setIsConfirmModalOpen(true);
+                }}
+              >
+                Delete Selected ({selectedItemIds.size})
+              </button>
+            </div>
+            <div className={styles.tableWrapper}>
+              <table className={styles.itemsTable}>
+                <thead>
+                  <tr>
+                    <th className={styles.checkboxCol}>
+                      <input 
+                        type="checkbox" 
+                        className={styles.fieldCheckbox}
+                        onChange={handleSelectAll}
+                        checked={listedItems.length > 0 && selectedItemIds.size === listedItems.length}
+                      />
+                    </th>
+                    {/* <th className={styles.expandCol}></th> */}
+                    <th>SKU</th>
+                    <th>Item Name</th>
+                    <th>Modified At</th>
+                    <th className={styles.actionsCol}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {listedItems.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className={styles.emptyRow}>No items found.</td>
+                    </tr>
+                  ) : (
+                    listedItems.map(item => {
+                      const isExpanded = expandedItemIds.has(item.DomainItemId);
+                      return (
+                        <React.Fragment key={item.DomainItemId}>
+                          <tr className={styles.itemRow}>
+                            <td className={styles.checkboxCol}>
+                              <input 
+                                type="checkbox" 
+                                className={styles.fieldCheckbox}
+                                checked={selectedItemIds.has(item.DomainItemId)}
+                                onChange={(e) => handleSelectItem(item.DomainItemId, e.target.checked)}
+                              />
+                            </td>
+                            {/* <td className={styles.expandCol}>
+                              <button className={styles.iconButton} onClick={() => toggleExpandItem(item.DomainItemId)}>
+                                {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                              </button>
+                            </td> */}
+                            <td>{item.DomainItemId}</td>
+                            <td>{item.Title}</td>
+                            <td>{new Date(item.ModifiedAt).toLocaleString()}</td>
+                            <td className={styles.actionsCol}>
+                              <div className={styles.actionButtons}>
+                                <button className={styles.viewButton} onClick={() => toggleExpandItem(item.DomainItemId)}>
+                                  <Eye size={16} />
+                                </button>
+                                <button className={styles.deleteButtonRow} onClick={() => {
+                                  setItemsToDelete([item.DomainItemId]);
+                                  setIsConfirmModalOpen(true);
+                                }}>
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                          {isExpanded && (
+                            <tr className={styles.expandedRow}>
+                              <td colSpan={5}>
+                                <div className={styles.expandedContent}>
+                                  <div className={styles.expandedGrid}>
+                                    <div style={{ gridColumn: '1 / -1' }}><strong>Description:</strong> {item.Description || '-'}</div>
+                                    <div style={{ gridColumn: '1 / -1' }}><strong>Image URL:</strong> {item.ImageUrl ? <a href={item.ImageUrl} target="_blank" rel="noreferrer">{item.ImageUrl}</a> : '-'}</div>
+                                    <div style={{ gridColumn: '1 / -1' }}><strong>Attributes:</strong> 
+                                      <pre className={styles.attributesJson}>{JSON.stringify(item.Attributes || {}, null, 2)}</pre>
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+            
+            <div className={styles.pagination}>
+              <button 
+                className={styles.pageButton} 
+                disabled={currentPage === 1}
+                onClick={() => {
+                  const newPage = currentPage - 1;
+                  setCurrentPage(newPage);
+                  fetchItems(newPage, false);
+                }}
+              >
+                Previous
+              </button>
+              <span className={styles.pageInfo}>Page {currentPage}</span>
+              <div className={styles.pageJump}>
+                <span className={styles.pageJumpLabel}>Go to</span>
+                <input
+                  className={styles.pageInput}
+                  type="number"
+                  min={1}
+                  value={pageInput}
+                  onChange={(e) => setPageInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handlePageJump();
+                  }}
+                  onBlur={handlePageJump}
+                />
+                <button
+                  className={styles.pageGoButton}
+                  onClick={handlePageJump}
+                >
+                  Go
+                </button>
+              </div>
+              <button 
+                className={styles.pageButton} 
+                disabled={listedItems.length < pageSize}
+                onClick={() => {
+                  const newPage = currentPage + 1;
+                  setCurrentPage(newPage);
+                  fetchItems(newPage, false);
+                }}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
         {/* Import Mode Toggle - Only show for Item Metadata tab */}
         {activeTab === "metadata" && (
           <div
@@ -521,7 +785,7 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({
                 handleReset();
               }}
             >
-              Create New Items
+              Upload New Items
             </button>
             <button
               className={`${styles.modeButton} ${
@@ -875,7 +1139,20 @@ export const ItemUploadPage: React.FC<ItemUploadPageProps> = ({
             </div>
           )}
         </div>
+        </>
+        )}
       </div>
+
+      <ConfirmModal
+        isOpen={isConfirmModalOpen}
+        title="Delete Items"
+        message={`Are you sure you want to delete ${itemsToDelete.length} item(s)? This action cannot be undone.`}
+        onConfirm={handleDelete}
+        onCancel={() => {
+          setIsConfirmModalOpen(false);
+          setItemsToDelete([]);
+        }}
+      />
     </div>
   );
 };
