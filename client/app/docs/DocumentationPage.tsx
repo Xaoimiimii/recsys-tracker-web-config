@@ -1,6 +1,6 @@
 import React, { useState } from 'react'; // Thêm useState
 import { useNavigate } from 'react-router-dom';
-import { Book, Upload, ListChecks, Sparkles, ArrowLeft, Code, Divide } from 'lucide-react';
+import { Book, Upload, ListChecks, Sparkles, ArrowLeft, Code, MonitorPlay} from 'lucide-react';
 import styles from './DocumentationPage.module.css';
 import { DocumentationContent } from './DocumentationContent'; 
 
@@ -14,7 +14,8 @@ export const DocumentationPage: React.FC = () => {
     trackingrule: 'Tracking Rules',
     recommendation: 'Recommendation',
     loaderscript: 'Loader Script',
-    admin: 'Admin'
+    admin: 'Admin',
+    demo: 'Demostration'
   };
 
   return (
@@ -67,6 +68,13 @@ export const DocumentationPage: React.FC = () => {
               >
                 <Sparkles className="w-5 h-5" />
                 Admin
+              </li>
+              <li 
+                className={activeTab === 'demo' ? styles.active : ''} 
+                onClick={() => setActiveTab('demo')}
+              >
+                <MonitorPlay className="w-5 h-5" />
+                Demostration
               </li>
             </ul>
           </div>

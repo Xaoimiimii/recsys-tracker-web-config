@@ -13,7 +13,7 @@ interface Props {
 
 
 const IntroContent = () => (
-  <div>
+  <div className={styles.article}>
     <h1>Introduction to RecoTrack</h1>
     <p>
       <b style={{ color:'#14B8A6' }}>Reco</b><b>Track</b> is a powerful, pluggable recommendation module designed to seamlessly integrate behavior tracking 
@@ -107,7 +107,7 @@ const IntroContent = () => (
 );
 
 const ItemUploadContent = () => (
-  <div>
+  <div className={styles.article}>
     <h1>Item Upload Guide</h1>
     <p>
       The Item Upload feature allows you to provide the necessary metadata about your products or content to feed the Recommendation Model.
@@ -232,7 +232,7 @@ const TrackingRulesContent = () => (
 
 
 const RecommendationContent = () => (
-  <div>
+  <div className={styles.article}>
     <h1>Recommendation Method Display Guide</h1>
     <p>
       This feature allows for flexible and centralized management of how recommendations are presented on your website. 
@@ -286,7 +286,7 @@ const RecommendationContent = () => (
 );
 
 const LoaderScriptContent = () => (
-  <div>
+  <div className={styles.article}>
     <h1>Loader Script Guide</h1>
     <p>
       The Loader Script allows you to embed the system's code into your website to enable behavior tracking 
@@ -320,7 +320,7 @@ const LoaderScriptContent = () => (
 );
 
 const AdminContent = () => (
-  <div>
+  <div className={styles.article}>
     <h1>Modal Training for Admin Guide</h1>
     <p>
       This feature allows administrators to configure training parameters and actively trigger the 
@@ -345,7 +345,90 @@ const AdminContent = () => (
   </div>
 );
 
-// --- COMPONENT CHÍNH ĐIỀU HƯỚNG NỘI DUNG ---
+const DemoContent = () => (
+  <div className={styles.article}>
+    <h1>RecoTrack Field Demonstrations</h1>
+    <p>
+      To validate the flexibility and robustness of the <b style={{ color:'#14B8A6' }}>Reco</b><b>Track</b> system, 
+      we have conducted extensive experiments across four 
+      distinct digital environments. Each demo showcases how the 
+      system adapts its tracking logic and recommendation algorithms to different industry needs.
+    </p>
+
+    <div className={styles.videoGrid}>
+      <section className={styles.demoSection}>
+        <h2>1. Music Streaming (PSMusic)</h2>
+        <p>
+          Focuses on capturing <i>Play</i>, <i>Like</i>, and <i>Skip</i> behaviors to curate personalized 
+          playlists for audiophiles.
+        </p>
+        <div className={styles.videoWrapper}>
+          <iframe width="560" height="315" 
+            src="https://www.youtube.com/embed/Nwm0CiO1CSI?si=BHRetEHlBBiyhVLP" 
+            title="YouTube video player" 
+            frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+            referrerpolicy="strict-origin-when-cross-origin" 
+            allowfullscreen>
+          </iframe>
+        </div>
+      </section>
+
+      <section className={styles.demoSection}>
+        <h2>2. Movies & Video (Phimgaygo)</h2>
+        <p>
+          Demonstrates real-time tracking of viewing history and genre preferences to suggest 
+          relevant cinematic content.
+        </p>
+        <div className={styles.videoWrapper}>
+          <iframe width="560" height="315" 
+            src="https://www.youtube.com/embed/s16Q2iHZT_c?si=-VCEAZ7qo_Amgpcy" 
+            title="YouTube video player" 
+            frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+            referrerpolicy="strict-origin-when-cross-origin" 
+            allowfullscreen>
+          </iframe>
+        </div>
+      </section>
+
+      <section className={styles.demoSection}>
+        <h2>3. E-Commerce (Whey Shop)</h2>
+        <p>
+          Optimizes the shopping journey by analyzing product interactions, cart additions, 
+          and purchase intent.
+        </p>
+        <div className={styles.videoWrapper}>
+          <iframe width="560" height="315" 
+            src="https://www.youtube.com/embed/vgwLLLl-xRQ?si=X1Za9DahCVqdBWGW" 
+            title="YouTube video player" 
+            frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+            referrerpolicy="strict-origin-when-cross-origin" 
+            allowfullscreen>
+          </iframe>
+        </div>
+      </section>
+
+      <section className={styles.demoSection}>
+        <h2>4. News & Media (Newsland)</h2>
+        <p>
+          Delivers personalized news feeds to informed readers by monitoring article engagement 
+          and reading habits.
+        </p>
+        <div className={styles.videoWrapper}>
+          <iframe width="560" height="315" 
+            src="https://www.youtube.com/embed/0XTctsRJ5pc?si=P8kd3WnL6ju_f2Pm" 
+            title="YouTube video player" 
+            frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+            referrerpolicy="strict-origin-when-cross-origin" 
+            allowfullscreen>
+          </iframe>
+        </div>
+      </section>
+    </div>
+  </div>
+);
 
 
 export const DocumentationContent: React.FC<DocsContentProps> = ({ activeTab }) => {
@@ -356,6 +439,7 @@ export const DocumentationContent: React.FC<DocsContentProps> = ({ activeTab }) 
     'recommendation': <RecommendationContent />,
     'loaderscript': <LoaderScriptContent />,
     'admin': <AdminContent />,
+    'demo': <DemoContent />,
   };
 
   return <>{contentMap[activeTab] || <h1>Select a topic</h1>}</>;
