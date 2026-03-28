@@ -5,7 +5,7 @@ import styles from './DashboardPage.module.css';
 import { MOCK_SCRIPT_TEMPLATE } from '../../lib/constants';
 import { useDataCache } from '../../contexts/DataCacheContext';
 import { ruleApi, eventApi } from '../../lib/api';
-import type { DomainResponse, TrackedEvent } from '../../lib/api/types';
+import type { ActiveUserCountResponse, DomainResponse, TrackedEvent } from '../../lib/api/types';
 import { EventsChart } from '../../components/dashboard/EventsChart';
 
 interface DashboardPageProps {
@@ -17,6 +17,8 @@ interface DashboardPageProps {
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, setContainer, onLogout, domains }) => {
+    const ACTIVE_USER_WINDOW_OPTIONS = [5, 15, 30, 60, 180];
+
     const [showModal, setShowModal] = useState(false);
     const [showDomainSwitcher, setShowDomainSwitcher] = useState(false);
 
@@ -28,6 +30,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
 
     const [selectedRuleId, setSelectedRuleId] = useState<number | undefined>(undefined);
     const [selectedEvent, setSelectedEvent] = useState<TrackedEvent | null>(null);
+
+    const [activeUsersSummary, setActiveUsersSummary] = useState<ActiveUserCountResponse | null>(null);
+    const [loadingActiveUsers, setLoadingActiveUsers] = useState(false);
+    const [activeUsersError, setActiveUsersError] = useState<string | null>(null);
+    const [activeWindowMode, setActiveWindowMode] = useState<string>('30');
+    const [customActiveMinutes, setCustomActiveMinutes] = useState<string>('30');
 
     // Get cache context
     const { getRulesByDomain, setRulesByDomain } = useDataCache();
@@ -90,6 +98,46 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
         }
     };
 
+    const getSelectedMinutes = (): number | null => {
+        const minutes = activeWindowMode === 'custom'
+            ? Number(customActiveMinutes)
+            : Number(activeWindowMode);
+
+        if (!Number.isInteger(minutes) || minutes <= 0) {
+            return null;
+        }
+
+        return minutes;
+    };
+
+    const fetchActiveUsersSummary = async (minutes: number) => {
+        if (!container?.uuid) return;
+
+        setLoadingActiveUsers(true);
+        setActiveUsersError(null);
+
+        try {
+            const summary = await eventApi.getActiveUsersCount(container.uuid, minutes);
+            setActiveUsersSummary(summary);
+        } catch (error) {
+            console.error('Failed to fetch active users summary:', error);
+            setActiveUsersError('Could not load active users. Please try again.');
+        } finally {
+            setLoadingActiveUsers(false);
+        }
+    };
+
+    const handleRefreshActiveUsers = async () => {
+        const minutes = getSelectedMinutes();
+
+        if (minutes === null) {
+            setActiveUsersError('Minutes must be a positive integer.');
+            return;
+        }
+
+        await fetchActiveUsersSummary(minutes);
+    };
+
     const handlePageChange = (newPage: number) => {
         setCurrentPage(newPage);
         fetchLatestEvents(newPage, selectedRuleId);
@@ -142,6 +190,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
             
             // Fetch and cache rules for filter dropdown
             fetchAndCacheRules(container.uuid);
+
+            const minutes = getSelectedMinutes();
+            if (minutes !== null) {
+                fetchActiveUsersSummary(minutes);
+            }
         }
     }, [container?.uuid]);
 
@@ -242,7 +295,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
                                         <button
                                             className={styles.copyButton}
                                             onClick={() => copyToClipboard(container?.url || '')}
-                                            title="Copy to clipboard"
+                                            title="seCopy to clipboard"
                                         >
                                             <Copy size={16} />
                                         </button>
@@ -272,6 +325,68 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
 
             {/* Event Visualizations */}
             <div className={styles.visualizationSection}>                
+                <div className={styles.activeUsersWidget}>
+                    <div className={styles.activeUsersHeader}>
+                        <div>
+                            <h3 className={styles.activeUsersTitle}>Active Users</h3>
+                            <p className={styles.activeUsersSubtitle}>Count in the last selected minutes.</p>
+                        </div>
+                        <button
+                            type="button"
+                            className={styles.activeUsersRefreshButton}
+                            onClick={handleRefreshActiveUsers}
+                            disabled={loadingActiveUsers || !container?.uuid}
+                        >
+                            <RefreshCw className={loadingActiveUsers ? styles.activeUsersSpinning : ''} size={16} />
+                            {/* <span>Refresh</span> */}
+                        </button>
+                    </div>
+
+                    <div className={styles.activeUsersControls}>
+                        <label className={styles.activeUsersLabel}>Window</label>
+                        <select
+                            className={styles.activeUsersSelect}
+                            value={activeWindowMode}
+                            onChange={(e) => setActiveWindowMode(e.target.value)}
+                            disabled={loadingActiveUsers}
+                        >
+                            {ACTIVE_USER_WINDOW_OPTIONS.map((minutes) => (
+                                <option key={minutes} value={minutes.toString()}>{minutes} minutes</option>
+                            ))}
+                            <option value="custom">Custom</option>
+                        </select>
+
+                        {activeWindowMode === 'custom' && (
+                            <input
+                                type="number"
+                                min={1}
+                                className={styles.activeUsersInput}
+                                value={customActiveMinutes}
+                                onChange={(e) => setCustomActiveMinutes(e.target.value)}
+                                placeholder="Enter minutes"
+                                disabled={loadingActiveUsers}
+                            />
+                        )}
+                    </div>
+
+                    {activeUsersError && <p className={styles.activeUsersError}>{activeUsersError}</p>}
+
+                    <div className={styles.activeUsersStats}>
+                        <div className={styles.activeUsersStatCard}>
+                            <span className={styles.activeUsersStatLabel}>Total Active</span>
+                            <strong className={styles.activeUsersStatValue}>{activeUsersSummary?.activeUsers ?? '-'}</strong>
+                        </div>
+                        <div className={styles.activeUsersStatCard}>
+                            <span className={styles.activeUsersStatLabel}>Authenticated</span>
+                            <strong className={styles.activeUsersStatValue}>{activeUsersSummary?.authenticatedUsers ?? '-'}</strong>
+                        </div>
+                        <div className={styles.activeUsersStatCard}>
+                            <span className={styles.activeUsersStatLabel}>Anonymous</span>
+                            <strong className={styles.activeUsersStatValue}>{activeUsersSummary?.anonymousUsers ?? '-'}</strong>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Domain Events Chart with Pagination and Filtering */}
                 <EventsChart
                     events={latestEvents}

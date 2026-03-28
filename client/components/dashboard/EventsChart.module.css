@@ -247,3 +247,15 @@
     opacity: 0.4;
     cursor: not-allowed;
 }
+
+.bottomRightContent {
+    margin-top: 12px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+@media (max-width: 768px) {
+    .bottomRightContent {
+        justify-content: stretch;
+    }
+}
