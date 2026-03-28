@@ -24,6 +24,15 @@ export class EventController {
         return this.eventService.countActiveUsersByDomainKeyAndMinutes(key, minutes);
     }
 
+    @ApiOperation({ summary: 'Count current events by interaction type classification of a domain' })
+    @ApiQuery({ name: 'key', required: true, type: String })
+    @Get('/domain/interaction-types/count')
+    async countEventsByInteractionType(
+        @Query('key') key: string,
+    ) {
+        return this.eventService.countEventsByInteractionTypeByDomainKey(key);
+    }
+
     @ApiOperation({ summary: 'Get last K events of a domain' })
     @ApiQuery({ name: 'ruleId', required: false, type: Number })
     @Get('/domain/last')

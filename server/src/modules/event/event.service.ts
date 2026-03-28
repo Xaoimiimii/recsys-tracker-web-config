@@ -1,10 +1,18 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { ActionType } from '../../generated/prisma/enums';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class EventService {
     constructor(private prismaService: PrismaService) {
 
+    }
+
+    private resolveInteractionTypeLabel(eventTypeId: number, actionType: ActionType | null) {
+        if (eventTypeId === 2) return 'Rating';
+        if (eventTypeId === 3) return 'Review';
+        if (eventTypeId === 1) return actionType ?? 'UnknownActionType';
+        return `EventType:${eventTypeId}`;
     }
 
     async countActiveUsersByDomainKeyAndMinutes(key: string, minutes: number) {
@@ -51,6 +59,51 @@ export class EventService {
             activeUsers: Number(counts?.active_user_count ?? 0n),
             authenticatedUsers: Number(counts?.authenticated_user_count ?? 0n),
             anonymousUsers: Number(counts?.anonymous_user_count ?? 0n),
+        };
+    }
+
+    async countEventsByInteractionTypeByDomainKey(key: string) {
+        const domain = await this.prismaService.domain.findUnique({
+            where: {
+                Key: key,
+            },
+        });
+
+        if (!domain) throw new NotFoundException('Domain not found');
+
+        const grouped = await this.prismaService.$queryRaw<{
+            event_type_id: number;
+            action_type: ActionType | null;
+            event_count: bigint;
+        }[]>`
+            SELECT
+                e."EventTypeId" AS event_type_id,
+                tr."ActionType" AS action_type,
+                COUNT(*)::bigint AS event_count
+            FROM "Event" e
+                INNER JOIN "TrackingRule" tr ON tr."Id" = e."TrackingRuleId"
+            WHERE tr."DomainID" = ${domain.Id}
+            GROUP BY e."EventTypeId", tr."ActionType"
+        `;
+
+        const countByType = new Map<string, number>();
+
+        for (const row of grouped) {
+            const label = this.resolveInteractionTypeLabel(row.event_type_id, row.action_type);
+            const currentCount = countByType.get(label) ?? 0;
+            countByType.set(label, currentCount + Number(row.event_count));
+        }
+
+        const breakdown = Array.from(countByType.entries())
+            .map(([interactionType, count]) => ({ interactionType, count }))
+            .sort((a, b) => b.count - a.count);
+
+        const totalEvents = breakdown.reduce((sum, item) => sum + item.count, 0);
+
+        return {
+            domainKey: key,
+            totalEvents,
+            breakdown,
         };
     }
 
