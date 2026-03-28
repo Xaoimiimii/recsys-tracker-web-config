@@ -973,7 +973,7 @@
   background-color: var(--color-white);
   border: 1px solid var(--color-border);
   border-radius: 0.75rem;
-  padding: 1rem;
+  padding: 1.25rem;
   margin-bottom: 1rem;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08);
 }
@@ -986,10 +986,10 @@
 }
 
 .activeUsersTitle {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--color-text-main);
+font-size: 1.25rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0;
 }
 
 .activeUsersSubtitle {

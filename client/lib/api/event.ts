@@ -1,5 +1,5 @@
 import { apiFetch } from './client';
-import type { ActiveUserCountResponse, TrackedEvent } from './types';
+import type { ActiveUserCountResponse, InteractionTypeCountResponse, TrackedEvent } from './types';
 
 export const eventApi = {
     getLatestByDomain: (domainKey: string, k: number = 10, page: number = 1, ruleId?: number) => {
@@ -15,4 +15,7 @@ export const eventApi = {
 
     getActiveUsersCount: (domainKey: string, minutes: number) =>
         apiFetch<ActiveUserCountResponse>(`/event/domain/active-users/count?key=${domainKey}&minutes=${minutes}`, undefined, false),
+
+    getInteractionTypeCounts: (domainKey: string) =>
+        apiFetch<InteractionTypeCountResponse>(`/event/domain/interaction-types/count?key=${domainKey}`, undefined, false),
 };

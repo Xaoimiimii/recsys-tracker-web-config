@@ -5,8 +5,9 @@ import styles from './DashboardPage.module.css';
 import { MOCK_SCRIPT_TEMPLATE } from '../../lib/constants';
 import { useDataCache } from '../../contexts/DataCacheContext';
 import { ruleApi, eventApi } from '../../lib/api';
-import type { ActiveUserCountResponse, DomainResponse, TrackedEvent } from '../../lib/api/types';
+import type { ActiveUserCountResponse, DomainResponse, InteractionTypeCountResponse, TrackedEvent } from '../../lib/api/types';
 import { EventsChart } from '../../components/dashboard/EventsChart';
+import { InteractionTypeChart } from '../../components/dashboard/InteractionTypeChart';
 
 interface DashboardPageProps {
     user: UserState;
@@ -36,6 +37,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
     const [activeUsersError, setActiveUsersError] = useState<string | null>(null);
     const [activeWindowMode, setActiveWindowMode] = useState<string>('30');
     const [customActiveMinutes, setCustomActiveMinutes] = useState<string>('30');
+
+    const [interactionSummary, setInteractionSummary] = useState<InteractionTypeCountResponse | null>(null);
+    const [loadingInteractionSummary, setLoadingInteractionSummary] = useState(false);
+    const [interactionSummaryError, setInteractionSummaryError] = useState<string | null>(null);
 
     // Get cache context
     const { getRulesByDomain, setRulesByDomain } = useDataCache();
@@ -127,6 +132,23 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
         }
     };
 
+    const fetchInteractionSummary = async () => {
+        if (!container?.uuid) return;
+
+        setLoadingInteractionSummary(true);
+        setInteractionSummaryError(null);
+
+        try {
+            const summary = await eventApi.getInteractionTypeCounts(container.uuid);
+            setInteractionSummary(summary);
+        } catch (error) {
+            console.error('Failed to fetch interaction summary:', error);
+            setInteractionSummaryError('Could not load interaction summary. Please try again.');
+        } finally {
+            setLoadingInteractionSummary(false);
+        }
+    };
+
     const handleRefreshActiveUsers = async () => {
         const minutes = getSelectedMinutes();
 
@@ -195,6 +217,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
             if (minutes !== null) {
                 fetchActiveUsersSummary(minutes);
             }
+
+            fetchInteractionSummary();
         }
     }, [container?.uuid]);
 
@@ -386,6 +410,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
                         </div>
                     </div>
                 </div>
+
+                <InteractionTypeChart
+                    data={interactionSummary?.breakdown ?? []}
+                    totalEvents={interactionSummary?.totalEvents}
+                    loading={loadingInteractionSummary}
+                    onRefresh={fetchInteractionSummary}
+                    title="Interaction Types"
+                    domainType={container?.domainType}
+                />
+
+                {interactionSummaryError && (
+                    <p className={styles.activeUsersError}>{interactionSummaryError}</p>
+                )}
 
                 {/* Domain Events Chart with Pagination and Filtering */}
                 <EventsChart

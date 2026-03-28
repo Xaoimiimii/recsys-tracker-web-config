@@ -246,6 +246,17 @@ export interface ActiveUserCountResponse {
   anonymousUsers: number;
 }
 
+export interface InteractionTypeCountItem {
+  interactionType: string;
+  count: number;
+}
+
+export interface InteractionTypeCountResponse {
+  domainKey: string;
+  totalEvents: number;
+  breakdown: InteractionTypeCountItem[];
+}
+
 // ==================== SEARCH INPUT TYPES ====================
 
 export interface SearchInputResponse {
