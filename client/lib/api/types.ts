@@ -236,6 +236,16 @@ export interface TrackedEvent {
   };
 }
 
+export interface ActiveUserCountResponse {
+  domainKey: string;
+  minutes: number;
+  from: string;
+  to: string;
+  activeUsers: number;
+  authenticatedUsers: number;
+  anonymousUsers: number;
+}
+
 // ==================== SEARCH INPUT TYPES ====================
 
 export interface SearchInputResponse {

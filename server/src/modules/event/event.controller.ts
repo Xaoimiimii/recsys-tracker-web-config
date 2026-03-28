@@ -13,6 +13,17 @@ import { ApiOperation, ApiQuery } from '@nestjs/swagger';
 export class EventController {
     constructor(private eventService: EventService) {}
 
+    @ApiOperation({ summary: 'Count active users in the last X minutes of a domain' })
+    @ApiQuery({ name: 'key', required: true, type: String })
+    @ApiQuery({ name: 'minutes', required: true, type: Number })
+    @Get('/domain/active-users/count')
+    async countActiveUsersByMinutes(
+        @Query('key') key: string,
+        @Query('minutes', ParseIntPipe) minutes: number,
+    ) {
+        return this.eventService.countActiveUsersByDomainKeyAndMinutes(key, minutes);
+    }
+
     @ApiOperation({ summary: 'Get last K events of a domain' })
     @ApiQuery({ name: 'ruleId', required: false, type: Number })
     @Get('/domain/last')

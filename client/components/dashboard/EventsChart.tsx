@@ -17,6 +17,7 @@ interface EventsChartProps {
     onPageChange?: (page: number) => void;
     eventsPerPage?: number;
     allRules?: RuleListItem[];
+    bottomRightContent?: React.ReactNode;
 }
 
 // Generate distinct colors for different tracking rules
@@ -113,7 +114,8 @@ export const EventsChart: React.FC<EventsChartProps> = ({
     currentPage = 1,
     onPageChange,
     eventsPerPage = 10,
-    allRules
+    allRules,
+    bottomRightContent,
 }) => {
     // State for page input
     const [pageInput, setPageInput] = useState<string>(currentPage.toString());
@@ -420,6 +422,12 @@ export const EventsChart: React.FC<EventsChartProps> = ({
                         </div>
                     )}
                 </>
+            )}
+
+            {bottomRightContent && (
+                <div className={styles.bottomRightContent}>
+                    {bottomRightContent}
+                </div>
             )}
         </div>
     );
