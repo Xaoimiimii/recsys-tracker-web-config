@@ -26,6 +26,11 @@
     gap: 16px;
 }
 
+.headerAction {
+    display: flex;
+    align-items: center;
+}
+
 .headerPagination {
     display: flex;
     align-items: center;
@@ -246,16 +251,4 @@
 .paginationButton:disabled {
     opacity: 0.4;
     cursor: not-allowed;
-}
-
-.bottomRightContent {
-    margin-top: 12px;
-    display: flex;
-    justify-content: flex-end;
-}
-
-@media (max-width: 768px) {
-    .bottomRightContent {
-        justify-content: stretch;
-    }
 }

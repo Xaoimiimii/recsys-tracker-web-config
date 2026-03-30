@@ -307,6 +307,11 @@ export const EventsChart: React.FC<EventsChartProps> = ({
                             </button>
                         </div>
                     )}
+                    {bottomRightContent && (
+                        <div className={styles.headerAction}>
+                            {bottomRightContent}
+                        </div>
+                    )}
                     <button
                         type="button"
                         className={styles.refreshButton} 
@@ -424,11 +429,6 @@ export const EventsChart: React.FC<EventsChartProps> = ({
                 </>
             )}
 
-            {bottomRightContent && (
-                <div className={styles.bottomRightContent}>
-                    {bottomRightContent}
-                </div>
-            )}
         </div>
     );
 };

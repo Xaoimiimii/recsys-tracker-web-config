@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, UserState } from '../../types';
-import { X, Copy, RefreshCw } from 'lucide-react';
+import { X, Copy, RefreshCw, Download } from 'lucide-react';
 import styles from './DashboardPage.module.css';
 import { MOCK_SCRIPT_TEMPLATE } from '../../lib/constants';
 import { useDataCache } from '../../contexts/DataCacheContext';
@@ -41,6 +41,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
     const [interactionSummary, setInteractionSummary] = useState<InteractionTypeCountResponse | null>(null);
     const [loadingInteractionSummary, setLoadingInteractionSummary] = useState(false);
     const [interactionSummaryError, setInteractionSummaryError] = useState<string | null>(null);
+
+    const [exportingEvents, setExportingEvents] = useState(false);
+    const [exportError, setExportError] = useState<string | null>(null);
 
     // Get cache context
     const { getRulesByDomain, setRulesByDomain } = useDataCache();
@@ -165,6 +168,35 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
         fetchLatestEvents(newPage, selectedRuleId);
     };
 
+    const handleExportEvents = async () => {
+        if (!container?.uuid) return;
+
+        setExportError(null);
+        setExportingEvents(true);
+
+        try {
+            const result = await eventApi.exportDomainEvents(container.uuid, selectedRuleId);
+            const safeDomainKey = container.uuid.slice(0, 8);
+            const ruleSuffix = selectedRuleId ? `-rule-${selectedRuleId}` : '';
+            const fallbackName = `events-${safeDomainKey}${ruleSuffix}.xlsx`;
+            const filename = result.filename || fallbackName;
+
+            const downloadUrl = URL.createObjectURL(result.blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(downloadUrl);
+        } catch (error) {
+            console.error('Failed to export events:', error);
+            setExportError('Could not export events. Please try again.');
+        } finally {
+            setExportingEvents(false);
+        }
+    };
+
     const handleRuleSelect = (ruleId: number) => {
         // If ruleId is 0, clear the filter
         if (ruleId === 0) {
@@ -209,6 +241,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
             setSelectedRuleId(undefined);
             setCurrentPage(1);
             fetchLatestEvents(1, undefined);
+            setExportError(null);
+            setExportingEvents(false);
             
             // Fetch and cache rules for filter dropdown
             fetchAndCacheRules(container.uuid);
@@ -437,6 +471,22 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ user, container, s
                     onPageChange={handlePageChange}
                     eventsPerPage={eventsPerPage}
                     allRules={container?.uuid ? getRulesByDomain(container.uuid) || undefined : undefined}
+                    bottomRightContent={(
+                        <div className={styles.exportControls}>
+                            <button
+                                type="button"
+                                className={styles.exportButton}
+                                onClick={handleExportEvents}
+                                disabled={!container?.uuid || exportingEvents}
+                            >
+                                <Download size={16} />
+                                {exportingEvents ? 'Exporting...' : 'Export Events'}
+                            </button>
+                            {exportError && (
+                                <span className={styles.exportError}>{exportError}</span>
+                            )}
+                        </div>
+                    )}
                 />
             </div>
 

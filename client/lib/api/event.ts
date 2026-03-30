@@ -1,4 +1,4 @@
-import { apiFetch } from './client';
+import { apiFetch, apiFetchBlob } from './client';
 import type { ActiveUserCountResponse, InteractionTypeCountResponse, TrackedEvent } from './types';
 
 export const eventApi = {
@@ -18,4 +18,12 @@ export const eventApi = {
 
     getInteractionTypeCounts: (domainKey: string) =>
         apiFetch<InteractionTypeCountResponse>(`/event/domain/interaction-types/count?key=${domainKey}`, undefined, false),
+
+    exportDomainEvents: (domainKey: string, ruleId?: number) => {
+        let url = `/event/domain/export?key=${domainKey}`;
+        if (ruleId !== undefined) {
+            url += `&ruleId=${ruleId}`;
+        }
+        return apiFetchBlob(url, { method: 'GET' }, false, true);
+    },
 };

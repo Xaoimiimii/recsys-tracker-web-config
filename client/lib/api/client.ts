@@ -63,4 +63,62 @@ export async function apiFetch<T>(
     }
 }
 
+export async function apiFetchBlob(
+    endpoint: string,
+    options?: RequestInit,
+    useServerUrl: boolean = false,
+    useAuthHeader: boolean = false
+): Promise<{ blob: Blob; filename: string | null; contentType: string | null }> {
+    const baseUrl = useServerUrl ? MODULE_API_BASE_URL : WEB_CONFIG_API_BASE_URL;
+    const url = `${baseUrl}${endpoint}`;
+
+    const headers: Record<string, string> = {
+        ...options?.headers as Record<string, string>,
+    };
+
+    if (!headers['Content-Type'] && !(options?.body instanceof FormData)) {
+        headers['Content-Type'] = 'application/json';
+    }
+
+    if (useAuthHeader && globalAccessToken) {
+        headers['Authorization'] = `Bearer ${globalAccessToken}`;
+    }
+
+    const response = await fetch(url, {
+        ...options,
+        headers,
+        credentials: 'include',
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error');
+        let errorMessage = errorText;
+
+        try {
+            const parsed = JSON.parse(errorText);
+            errorMessage = Array.isArray(parsed.message)
+                ? parsed.message.join(', ')
+                : parsed.message || errorText;
+        } catch {
+            // Keep raw text if not JSON.
+        }
+
+        throw new Error(errorMessage || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const contentType = response.headers.get('content-type');
+    const contentDisposition = response.headers.get('content-disposition');
+    let filename: string | null = null;
+
+    if (contentDisposition) {
+        const filenameMatch = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(contentDisposition);
+        if (filenameMatch?.[1]) {
+            filename = decodeURIComponent(filenameMatch[1]);
+        }
+    }
+
+    const blob = await response.blob();
+    return { blob, filename, contentType };
+}
+
 export { WEB_CONFIG_API_BASE_URL, MODULE_API_BASE_URL };

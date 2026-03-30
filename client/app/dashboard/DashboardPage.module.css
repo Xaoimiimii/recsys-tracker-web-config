@@ -969,6 +969,53 @@
   margin-top: 2rem;
 }
 
+.exportControls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.exportButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.exportButton:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+}
+
+.exportButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.exportError {
+  color: var(--color-danger);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 768px) {
+  .exportControls {
+    align-items: stretch;
+  }
+
+  .exportButton {
+    justify-content: center;
+  }
+}
+
 .activeUsersWidget {
   background-color: var(--color-white);
   border: 1px solid var(--color-border);
