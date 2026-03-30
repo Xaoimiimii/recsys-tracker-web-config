@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import ExcelJS from 'exceljs';
 import { ActionType } from '../../generated/prisma/enums';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -13,6 +14,12 @@ export class EventService {
         if (eventTypeId === 3) return 'Review';
         if (eventTypeId === 1) return actionType ?? 'UnknownActionType';
         return `EventType:${eventTypeId}`;
+    }
+
+    private buildExportFileName(domainKey: string) {
+        const safeDomainKey = domainKey.replace(/[^a-zA-Z0-9-_]/g, '_');
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        return `events_${safeDomainKey}_${timestamp}.xlsx`;
     }
 
     async countActiveUsersByDomainKeyAndMinutes(key: string, minutes: number) {
@@ -179,5 +186,99 @@ export class EventService {
                 }
             }
         });
+    }
+
+    async exportEventsByDomainKeyToExcel(key: string, ruleId?: number) {
+        const domain = await this.prismaService.domain.findUnique({
+            where: {
+                Key: key,
+            },
+        });
+
+        if (!domain) throw new NotFoundException('Domain not found');
+
+        const events = await this.prismaService.event.findMany({
+            where: {
+                TrackingRule: {
+                    DomainID: domain.Id,
+                    ...(ruleId && { Id: ruleId }),
+                },
+            },
+            orderBy: {
+                Timestamp: 'desc',
+            },
+            select: {
+                Id: true,
+                EventTypeId: true,
+                UserId: true,
+                ItemId: true,
+                AnonymousId: true,
+                RatingValue: true,
+                ReviewValue: true,
+                Timestamp: true,
+                TrackingRule: {
+                    select: {
+                        Id: true,
+                        Name: true,
+                        ActionType: true,
+                    },
+                },
+            },
+        });
+
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Events');
+
+        worksheet.columns = [
+            { header: 'EventId', key: 'eventId', width: 14 },
+            { header: 'DomainKey', key: 'domainKey', width: 24 },
+            { header: 'TrackingRuleId', key: 'trackingRuleId', width: 16 },
+            { header: 'TrackingRuleName', key: 'trackingRuleName', width: 30 },
+            { header: 'ActionType', key: 'actionType', width: 18 },
+            { header: 'InteractionType', key: 'interactionType', width: 18 },
+            { header: 'EventTypeId', key: 'eventTypeId', width: 12 },
+            { header: 'UserId', key: 'userId', width: 20 },
+            { header: 'AnonymousId', key: 'anonymousId', width: 24 },
+            { header: 'ItemId', key: 'itemId', width: 20 },
+            { header: 'RatingValue', key: 'ratingValue', width: 14 },
+            { header: 'ReviewValue', key: 'reviewValue', width: 36 },
+            { header: 'Timestamp', key: 'timestamp', width: 30 },
+        ];
+
+        for (const event of events) {
+            const userId = event.UserId ?? '';
+            const anonymousId = event.UserId ? '' : (event.AnonymousId ?? '');
+
+            worksheet.addRow({
+                eventId: event.Id,
+                domainKey: domain.Key,
+                trackingRuleId: event.TrackingRule.Id,
+                trackingRuleName: event.TrackingRule.Name,
+                actionType: event.TrackingRule.ActionType ?? '',
+                interactionType: this.resolveInteractionTypeLabel(
+                    event.EventTypeId,
+                    event.TrackingRule.ActionType,
+                ),
+                eventTypeId: event.EventTypeId,
+                userId,
+                anonymousId,
+                itemId: event.ItemId ?? '',
+                ratingValue: event.RatingValue ?? '',
+                reviewValue: event.ReviewValue ?? '',
+                timestamp: event.Timestamp.toISOString(),
+            });
+        }
+
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.views = [{ state: 'frozen', ySplit: 1 }];
+
+        const excelBuffer = await workbook.xlsx.writeBuffer();
+        const buffer = Buffer.isBuffer(excelBuffer) ? excelBuffer : Buffer.from(excelBuffer);
+
+        return {
+            fileName: this.buildExportFileName(key),
+            total: events.length,
+            buffer,
+        };
     }
 }
