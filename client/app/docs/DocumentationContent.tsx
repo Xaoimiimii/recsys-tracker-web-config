@@ -364,7 +364,7 @@ const DemoContent = () => (
         </p>
         <div className={styles.videoWrapper}>
           <iframe width="560" height="315" 
-            src="https://www.youtube.com/embed/Nwm0CiO1CSI?si=BHRetEHlBBiyhVLP" 
+            src="https://www.youtube.com/embed/IYMu-Z1qFfw?si=uNMYIxAMrFynvohp" 
             title="YouTube video player" 
             frameborder="0" 
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" 
