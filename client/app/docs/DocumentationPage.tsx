@@ -1,13 +1,13 @@
 import React, { useState } from 'react'; // Thêm useState
-import { useNavigate } from 'react-router-dom';
-import { Book, Upload, ListChecks, Sparkles, ArrowLeft, Code, MonitorPlay} from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Book, Upload, ListChecks, Sparkles, ArrowLeft, Code, MonitorPlay, Shield} from 'lucide-react';
 import styles from './DocumentationPage.module.css';
 import { DocumentationContent } from './DocumentationContent'; 
 
 export const DocumentationPage: React.FC = () => {
   const navigate = useNavigate();
-  
-  const [activeTab, setActiveTab] = useState('intro');
+
+  const [searchParams, setSearchParams] = useSearchParams();
   const tabLabels: Record<string, string> = {
     intro: 'Introduction',
     upload: 'Item Upload',
@@ -15,7 +15,16 @@ export const DocumentationPage: React.FC = () => {
     recommendation: 'Recommendation',
     loaderscript: 'Loader Script',
     admin: 'Admin',
-    demo: 'Demostration'
+    demo: 'Demostration',
+    privacypolicy: 'Privacy Policy'
+  };
+
+  const initialTab = searchParams.get('tab') || 'intro';
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setSearchParams({ tab });
   };
 
   return (
@@ -31,50 +40,57 @@ export const DocumentationPage: React.FC = () => {
               {/* Bước 3: Cập nhật class active động và thêm sự kiện onClick */}
               <li 
                 className={activeTab === 'intro' ? styles.active : ''} 
-                onClick={() => setActiveTab('intro')}
+                onClick={() => handleTabChange('intro')}
               >
                 <Book size={18} /> Introduction
               </li>
               <li 
                 className={activeTab === 'upload' ? styles.active : ''} 
-                onClick={() => setActiveTab('upload')}
+                onClick={() => handleTabChange('upload')}
               >
                 <Upload className="w-5 h-5" /> Item Upload
               </li>
               <li 
                 className={activeTab === 'trackingrule' ? styles.active : ''} 
-                onClick={() => setActiveTab('trackingrule')}
+                onClick={() => handleTabChange('trackingrule')}
               >
                 <ListChecks className="w-5 h-5" />
                 Tracking Rules
               </li>
               <li 
                 className={activeTab === 'recommendation' ? styles.active : ''} 
-                onClick={() => setActiveTab('recommendation')}
+                onClick={() => handleTabChange('recommendation')}
               >
                 <Sparkles className="w-5 h-5" />
                 Recommendation
               </li>
               <li 
                 className={activeTab === 'loaderscript' ? styles.active : ''} 
-                onClick={() => setActiveTab('loaderscript')}
+                onClick={() => handleTabChange('loaderscript')}
               >
                 <Code className="w-5 h-5" />
                 Loader Script
               </li>
               <li 
                 className={activeTab === 'admin' ? styles.active : ''} 
-                onClick={() => setActiveTab('admin')}
+                onClick={() => handleTabChange('admin')}
               >
                 <Sparkles className="w-5 h-5" />
                 Admin
               </li>
               <li 
                 className={activeTab === 'demo' ? styles.active : ''} 
-                onClick={() => setActiveTab('demo')}
+                onClick={() => handleTabChange('demo')}
               >
                 <MonitorPlay className="w-5 h-5" />
                 Demostration
+              </li>
+              <li 
+                className={activeTab === 'privacypolicy' ? styles.active : ''} 
+                onClick={() => handleTabChange('privacypolicy')}
+              >
+                <Shield className="w-5 h-5" />
+                Privacy Policy
               </li>
             </ul>
           </div>

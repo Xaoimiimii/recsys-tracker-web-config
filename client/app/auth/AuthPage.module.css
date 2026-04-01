@@ -164,6 +164,19 @@
   box-shadow: 0 6px 12px -2px rgba(37, 99, 235, 0.4);
 }
 
+.submitButton:disabled {
+  background-color: var(--color-border);
+  color: var(--color-text-secondary);
+  cursor: not-allowed; 
+  box-shadow: none;
+  transform: none !important; 
+}
+
+.submitButton:disabled:hover {
+  background-color: var(--color-border);
+  box-shadow: none;
+}
+
 .toggleText {
   text-align: center;
   color: var(--color-text-secondary);
@@ -273,4 +286,51 @@
   .formTitle {
     font-size: 1.5rem;
   }
+}
+
+.checkboxGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.checkbox {
+  width: 1.15rem;
+  height: 1.15rem;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+  border-radius: 0.25rem;
+  border: 1px solid var(--color-border);
+}
+
+.checkboxLabel {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.linkButton {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.1rem;
+  text-decoration: none;
+  font-size: inherit;
+  transition: all 0.2s;
+}
+
+.linkButton:hover {
+  text-decoration: underline;
+  color: var(--color-primary-hover);
+}
+
+.requiredStar {
+  color: #dc2626;
+  margin-left: 2px;
+  font-weight: bold;
 }

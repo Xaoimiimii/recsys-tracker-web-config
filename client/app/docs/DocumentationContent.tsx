@@ -430,6 +430,75 @@ const DemoContent = () => (
   </div>
 );
 
+const PrivacyPolicyContent = () => (
+  <div className={styles.article}>
+    <h1>Master Services Agreement & Data Processing Policy</h1>
+    <p>
+      This document ("Agreement") constitutes the primary legal and technical framework governing the relationship between 
+      <b style={{ color:'#14B8A6' }}> Reco</b><b>Track</b> ("Service Provider") and the integrating Entity ("Client"). 
+      By deploying the SDK or accessing the Dashboard, the Client agrees to be bound by these terms.
+    </p>
+
+    <h2>I. General Principles</h2>
+    <h3>I.A. Definitions</h3>
+    <ul className={styles.plainBulletList}>
+      <li><strong>Service</strong>: The RecoTrack SaaS platform, including the tracking SDK, backend APIs, and recommendation engine.</li>
+      <li><strong>SDK</strong>: The JavaScript/TypeScript library provided for embedding into Client digital properties.</li>
+      <li><strong>Event Data</strong>: Raw interaction signals (clicks, searches, ratings) captured from the Client’s end-users.</li>
+      <li><strong>Domain Key</strong>: A unique identifier used to secure and isolate the Client’s data environment.</li>
+    </ul>
+
+    <h3>I.B. Updates to Terms</h3>
+    <p>
+      RecoTrack reserves the right to modify these terms to reflect evolving data privacy laws (GDPR, CCPA) or system enhancements. 
+      Continued use of the SDK constitutes acceptance of the updated framework.
+    </p>
+
+    <h2>II. Usage and Integration Policy</h2>
+    <h3>II.A. License and Restrictions</h3>
+    <p>
+      RecoTrack grants a non-exclusive, non-transferable license to use the SDK for behavioral analysis. The Client is strictly prohibited from:
+    </p>
+    <ul className={styles.plainBulletList}>
+      <li>Tracking sensitive PII (Personally Identifiable Information) such as medical records, financial data, or passwords.</li>
+      <li>Attempting to reverse-engineer the core recommendation algorithms or backend API structures.</li>
+    </ul>
+
+    <h3>II.B. Technical Integration Requirements</h3>
+    <p>
+      <strong>Consent Enforcement</strong>: The Client is responsible for informing end-users of <b style={{ color:'#14B8A6' }}> Reco</b><b>Track</b>’s data 
+        collection activities on their platform. While RecoTrack provides a default consent form and method to manage status, we <b>strongly</b> recommend that the Client incorporates these 
+        disclosures into their own Privacy Policy. By default, the SDK operates in "Passive Mode" (local buffering only); 
+        no data will be dispatched to the server until a positive consent signal is explicitly received.
+    </p>
+
+    <h2>III. Data Processing Agreement (DPA)</h2>
+    <h3>III.A. Roles of the Parties</h3>
+    <ul className={styles.plainBulletList}>
+      <li><strong>The Client (Data Controller)</strong>: You own the relationship with the end-user and are responsible for the legal basis of processing.</li>
+      <li><strong>RecoTrack (Data Processor)</strong>: We process data strictly according to your technical configurations and TrackingRule.</li>
+    </ul>
+
+    <h3>III.B. Categories of Data Processed</h3>
+    <ul className={styles.plainBulletList}>
+      <li><strong>Interaction Metadata</strong>: Click paths, search keywords, and rating values captured via plugins.</li>
+      <li><strong>Pseudonymous Identifiers</strong>: AnonymousId (stored in LocalStorage) and UserId provided by the Client.</li>
+    </ul>
+
+    <h2>IV. Liability and Termination</h2>
+    <ul className={styles.plainBulletList}>
+      <li><strong>Limitation of Liability</strong>: RecoTrack is not liable for legal consequences arising from the Client's failure to obtain proper consent or misconfiguration of tracking rules.</li>
+      <li><strong>Retention</strong>: Behavioral data is retained to facilitate AI training. Upon termination, data is deleted or anonymized within 30 days unless otherwise required by law.</li>
+    </ul>
+
+    <h2>V. Academic Disclaimer</h2>
+    <p>
+      As part of the <strong>ĐA_T426_HTTT01</strong> graduation project at the <strong>Ho Chi Minh City University of Science (HCMUS)</strong>, 
+      this service is provided for academic and research purposes. All data is handled with the highest regard for academic ethics and privacy.
+    </p>
+  </div>
+);
+
 
 export const DocumentationContent: React.FC<DocsContentProps> = ({ activeTab }) => {
   const contentMap: Record<string, React.ReactNode> = {
@@ -440,6 +509,7 @@ export const DocumentationContent: React.FC<DocsContentProps> = ({ activeTab }) 
     'loaderscript': <LoaderScriptContent />,
     'admin': <AdminContent />,
     'demo': <DemoContent />,
+    'privacypolicy': <PrivacyPolicyContent />,
   };
 
   return <>{contentMap[activeTab] || <h1>Select a topic</h1>}</>;

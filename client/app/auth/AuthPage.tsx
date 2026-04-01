@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import styles from './AuthPage.module.css';
 import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from 'react-router-dom';
 
 interface AuthPageProps {
   onLogin: (e: React.FormEvent) => void;
 }
 
 export const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
+  const navigate = useNavigate();
   const [isSignUp, setIsSignUp] = useState(false);
   const { signin, signup } = useAuth();
 
@@ -17,12 +19,15 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [agreedToPrivacy, setAgreedToPrivacy] = useState(false);
 
   // Clear error and success messages when switching between sign in and sign up
   useEffect(() => {
     setError(null);
     setSuccessMessage(null);
+    setAgreedToPrivacy(false);
   }, [isSignUp]);
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +37,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
       if (!isSignUp) {
         await signin({ username, password });
       } else {
+        if (!agreedToPrivacy) {
+          setError("You must agree to the privacy policies to continue.");
+          return;
+        }
         if (password !== confirmPassword) {
           setError("Passwords do not match!");
           return;
@@ -238,11 +247,41 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onLogin }) => {
                 )}
               </AnimatePresence>
 
+              <AnimatePresence mode="wait">
+                {isSignUp && (
+                  <motion.div 
+                    className={styles.checkboxGroup}
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3, delay: 0.15 }}
+                  >
+                    <input 
+                      type="checkbox" 
+                      id="privacy" 
+                      checked={agreedToPrivacy}
+                      onChange={(e) => setAgreedToPrivacy(e.target.checked)}
+                      className={styles.checkbox}
+                    />
+                    <label htmlFor="privacy" className={styles.checkboxLabel}>
+                      I agree to RecoTrack's  
+                        <button type="button" 
+                          className={styles.linkButton} 
+                          onClick={() => navigate('/documentation?tab=privacypolicy')}>
+                            privacy policies
+                        </button>
+                        <span className={styles.requiredStar}> *</span>
+                    </label>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               <motion.button 
                 type="submit" 
                 className={styles.submitButton}
-                whileHover={{ y: -2, scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                disabled={isSignUp && !agreedToPrivacy}
+                whileHover={isSignUp && !agreedToPrivacy ? {} : { y: -2, scale: 1.02 }}
+                whileTap={isSignUp && !agreedToPrivacy ? {} : { scale: 0.98 }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: isSignUp ? 0.4 : 0.3 }}
