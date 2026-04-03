@@ -209,7 +209,7 @@ export const LandingPage: React.FC = () => {
             <ul>
               <li>
                 <Mail size={18} color="#34d399" />
-                <a href="mailto:contact@recotrack.com">contact@recotrack.com</a>
+                <a href="mailto:recotrackrecommender@gmail.com">recotrackrecommender@gmail.com</a>
               </li>
               <li>
                 <MapPin size={18} color="#34d399" />
