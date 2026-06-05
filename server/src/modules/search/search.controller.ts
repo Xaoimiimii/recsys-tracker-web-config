@@ -1,6 +1,6 @@
 import { Controller, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
 import { SearchService } from './search.service';
-import { ApiQuery } from '@nestjs/swagger/dist/decorators/api-query.decorator';
+import { ApiQuery } from '@nestjs/swagger';
 
 @Controller('search')
 export class SearchController {
